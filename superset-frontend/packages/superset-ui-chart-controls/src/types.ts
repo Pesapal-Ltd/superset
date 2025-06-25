@@ -303,7 +303,7 @@ export interface FilterOption<T extends SelectOption> {
   data: T;
 }
 
-// Ref: superset-frontend/@superset-ui/core/components/Select/SupersetStyledSelect.tsx
+// Ref: superset-frontend/src/components/Select/SupersetStyledSelect.tsx
 export interface SelectControlConfig<
   O extends SelectOption = SelectOption,
   T extends SelectControlType = SelectControlType,
