@@ -18,17 +18,85 @@ from flask_appbuilder import permission_name
 from flask_appbuilder.api import expose
 from flask_appbuilder.security.decorators import has_access
 
+<<<<<<<< HEAD:superset/views/user_registrations.py
 from superset.superset_typing import FlaskResponse
 
 from .base import BaseSupersetView
+========
+import logging
+from typing import Optional
+
+from flask import flash, g, redirect
+from flask_appbuilder import expose
+from flask_appbuilder._compat import as_unicode
+from flask_appbuilder.const import LOGMSG_ERR_SEC_NO_REGISTER_HASH
+from flask_appbuilder.security.decorators import no_cache
+from flask_appbuilder.security.views import AuthView, WerkzeugResponse
+from flask_babel import lazy_gettext
+
+from superset.views.base import BaseSupersetView
+>>>>>>>> a13a59079 (feat(User Registrations): Migrate user registrations fab view (#33631)):superset/views/auth.py
+
+logger = logging.getLogger(__name__)
 
 
 class UserRegistrationsView(BaseSupersetView):
     route_base = "/"
     class_permission_name = "security"
 
+<<<<<<<< HEAD:superset/views/user_registrations.py
     @expose("/registrations/")
     @has_access
     @permission_name("read")
     def list(self) -> FlaskResponse:
+========
         return super().render_app_template()
+
+
+class SupersetRegisterUserView(BaseSupersetView):
+    route_base = "/register"
+    activation_template = ""
+    error_message = lazy_gettext(
+        "Not possible to register you at the moment, try again later"
+    )
+    false_error_message = lazy_gettext("Registration not found")
+
+    @expose("/")
+    @no_cache
+    def register(self) -> WerkzeugResponse:
+>>>>>>>> a13a59079 (feat(User Registrations): Migrate user registrations fab view (#33631)):superset/views/auth.py
+        return super().render_app_template()
+
+    @expose("/activation/<string:activation_hash>")
+    def activation(self, activation_hash: str) -> WerkzeugResponse:
+        """
+        Endpoint to expose an activation url, this url
+        is sent to the user by email, when accessed the user is inserted
+        and activated
+        """
+        reg = self.appbuilder.sm.find_register_user(activation_hash)
+        if not reg:
+            logger.error(LOGMSG_ERR_SEC_NO_REGISTER_HASH, activation_hash)
+            flash(as_unicode(self.false_error_message), "danger")
+            return redirect(self.appbuilder.get_url_for_index)
+        if not self.appbuilder.sm.add_user(
+            username=reg.username,
+            email=reg.email,
+            first_name=reg.first_name,
+            last_name=reg.last_name,
+            role=self.appbuilder.sm.find_role(
+                self.appbuilder.sm.auth_user_registration_role
+            ),
+            hashed_password=reg.password,
+        ):
+            flash(as_unicode(self.error_message), "danger")
+            return redirect(self.appbuilder.get_url_for_index)
+        else:
+            self.appbuilder.sm.del_register_user(reg)
+            return super().render_app_template(
+                {
+                    "username": reg.username,
+                    "first_name": reg.first_name,
+                    "last_name": reg.last_name,
+                },
+            )
