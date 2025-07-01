@@ -17,6 +17,7 @@
  * under the License.
  */
 <<<<<<<< HEAD:superset-frontend/src/types/DiffType.ts
+<<<<<<<< HEAD:superset-frontend/src/types/DiffType.ts
 export type FilterItemType = {
   comparator?: string | string[];
   subject: string;
@@ -39,6 +40,8 @@ export type DiffType = {
   before: DiffItemType;
   after: DiffItemType;
 ========
+========
+>>>>>>>> 057218d87 (feat: Add confirmation modal for unsaved changes (#33809)):superset-frontend/src/components/AlteredSliceTag/types.ts
 import type { QueryFormData } from '@superset-ui/core';
 import { DiffType } from 'src/types/DiffType';
 
