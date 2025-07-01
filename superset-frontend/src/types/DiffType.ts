@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+<<<<<<<< HEAD:superset-frontend/src/types/DiffType.ts
 export type FilterItemType = {
   comparator?: string | string[];
   subject: string;
@@ -37,4 +38,27 @@ export type DiffItemType<
 export type DiffType = {
   before: DiffItemType;
   after: DiffItemType;
+========
+import type { QueryFormData } from '@superset-ui/core';
+import { DiffType } from 'src/types/DiffType';
+
+export interface AlteredSliceTagProps {
+  className?: string;
+  diffs: Record<string, DiffType>;
+  origFormData: QueryFormData;
+  currentFormData: QueryFormData;
+}
+
+export interface ControlMap {
+  [key: string]: {
+    label?: string;
+    type?: string;
+  };
+}
+
+export type RowType = {
+  before: string | number;
+  after: string | number;
+  control: string;
+>>>>>>>> 057218d87 (feat: Add confirmation modal for unsaved changes (#33809)):superset-frontend/src/components/AlteredSliceTag/types.ts
 };
