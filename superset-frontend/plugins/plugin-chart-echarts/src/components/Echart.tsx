@@ -47,10 +47,12 @@ import {
   TreemapChart,
   HeatmapChart,
   SunburstChart,
+  CustomChart,
 } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import {
   TooltipComponent,
+  TitleComponent,
   GridComponent,
   VisualMapComponent,
   LegendComponent,
@@ -82,6 +84,7 @@ use([
   CanvasRenderer,
   BarChart,
   BoxplotChart,
+  CustomChart,
   FunnelChart,
   GaugeChart,
   GraphChart,
@@ -103,6 +106,7 @@ use([
   LegendComponent,
   ToolboxComponent,
   TooltipComponent,
+  TitleComponent,
   VisualMapComponent,
   LabelLayout,
 ]);
