@@ -38,6 +38,7 @@ import { isUserAdmin } from 'src/dashboard/util/permissionUtils';
 import { Icons } from 'src/components/Icons';
 import { fetchPaginatedData } from 'src/utils/fetchOptions';
 import { fetchUserOptions } from 'src/features/groups/utils';
+import { WIDER_DROPDOWN_WIDTH } from 'src/components/ListView/utils';
 import { GroupObject } from '../GroupsList';
 
 const PAGE_SIZE = 25;
@@ -317,6 +318,7 @@ function RolesList({ addDangerToast, addSuccessToast, user }: RolesListProps) {
         unfilteredLabel: t('All'),
         fetchSelects: async (filterValue, page, pageSize) =>
           fetchUserOptions(filterValue, page, pageSize, addDangerToast),
+        dropdownStyle: { minWidth: WIDER_DROPDOWN_WIDTH },
       },
       {
         Header: t('Permissions'),
@@ -330,6 +332,7 @@ function RolesList({ addDangerToast, addSuccessToast, user }: RolesListProps) {
           value: permission.id,
         })),
         loading: loadingState.permissions,
+        dropdownStyle: { minWidth: WIDER_DROPDOWN_WIDTH },
       },
       {
         Header: t('Groups'),
@@ -343,6 +346,7 @@ function RolesList({ addDangerToast, addSuccessToast, user }: RolesListProps) {
           value: group.id,
         })),
         loading: loadingState.groups,
+        dropdownStyle: { minWidth: WIDER_DROPDOWN_WIDTH },
       },
     ],
     [permissions, groups, loadingState.groups, loadingState.permissions],
