@@ -147,6 +147,8 @@ const HorizontalFormItem = styled(StyledFormItem)<{
   }
 
   .ant-form-item-label {
+    display: flex;
+    align-items: center;
     overflow: visible;
     padding-bottom: 0;
     margin-right: ${({ theme }) => theme.gridUnit * 2}px;
@@ -162,7 +164,7 @@ const HorizontalFormItem = styled(StyledFormItem)<{
   }
 
   .ant-form-item-control {
-    width: ${({ inverseSelection }) => (inverseSelection ? 252 : 164)}px;
+    min-width: ${({ inverseSelection }) => (inverseSelection ? 252 : 164)}px;
   }
 
   .select-container {
