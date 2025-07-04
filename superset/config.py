@@ -1534,13 +1534,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = "emailout.pesapal.com"
-SMTP_STARTTLS = False
+SMTP_HOST = "localhost"
+SMTP_STARTTLS = True
 SMTP_SSL = False
 SMTP_USER = "superset"
-SMTP_PORT = 2527
-SMTP_PASSWORD = "8Q94cXq60kyS5mOXRnzH"  # noqa: S105
-SMTP_MAIL_FROM = "superset@pesapal.com"
+SMTP_PORT = 25
+SMTP_PASSWORD = "superset"  # noqa: S105
+SMTP_MAIL_FROM = "superset@superset.com"
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
