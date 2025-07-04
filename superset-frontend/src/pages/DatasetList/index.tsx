@@ -653,7 +653,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
           placement="bottomRight"
         >
           <Icons.DownloadOutlined
-            iconColor={theme.colors.primary.dark1}
+            iconColor={theme.colorPrimary}
             data-test="import-button"
           />
         </Tooltip>

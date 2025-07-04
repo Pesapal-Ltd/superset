@@ -515,7 +515,7 @@ const SliceHeaderControls = (
         />
       )}
       <NoAnimationDropdown
-        dropdownRender={() => menu}
+        popupRender={() => menu}
         overlayStyle={dropdownOverlayStyle}
         trigger={['click']}
         placement="bottomRight"

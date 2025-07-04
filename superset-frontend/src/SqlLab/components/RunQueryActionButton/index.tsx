@@ -49,7 +49,7 @@ const buildText = (
   if (shouldShowStopButton) {
     return (
       <>
-        <Icons.Square iconSize="xs" iconColor={theme.colors.primary.light5} />
+        <Icons.Square iconSize="xs" iconColor={theme.colorIcon} />
         {t('Stop')}
       </>
     );

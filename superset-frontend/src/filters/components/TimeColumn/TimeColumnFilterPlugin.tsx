@@ -124,7 +124,7 @@ export default function PluginFilterTimeColumn(
           onMouseLeave={unsetHoveredFilter}
           ref={inputRef}
           options={options}
-          onDropdownVisibleChange={setFilterActive}
+          onOpenChange={setFilterActive}
         />
       </StyledFormItem>
     </FilterPluginStyle>

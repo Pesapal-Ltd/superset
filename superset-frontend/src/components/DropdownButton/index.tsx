@@ -29,7 +29,7 @@ export type DropdownButtonProps = ComponentProps<typeof Dropdown.Button> & {
 };
 
 export const DropdownButton = ({
-  dropdownRender,
+  popupRender,
   tooltip,
   tooltipPlacement,
   children,
@@ -58,7 +58,7 @@ export const DropdownButton = ({
   `;
   const button = (
     <Dropdown.Button
-      dropdownRender={dropdownRender}
+      popupRender={popupRender}
       {...rest}
       css={[
         defaultBtnCss,

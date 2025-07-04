@@ -213,7 +213,7 @@ const FilterBarSettings = () => {
                 {selectedFilterBarOrientation ===
                   FilterBarOrientation.Vertical && (
                   <Icons.CheckOutlined
-                    iconColor={theme.colors.primary.base}
+                    iconColor={theme.colorPrimary}
                     css={css`
                       vertical-align: -${theme.gridUnit * 0.03125}em;
                     `}

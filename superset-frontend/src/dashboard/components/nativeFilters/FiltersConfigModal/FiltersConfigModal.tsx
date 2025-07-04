@@ -709,7 +709,7 @@ function FiltersConfigModal({
       maskClosable={false}
       title={t('Add and edit filters')}
       expanded={expanded}
-      destroyOnClose
+      destroyOnHidden
       onCancel={handleCancel}
       onOk={handleSave}
       centered

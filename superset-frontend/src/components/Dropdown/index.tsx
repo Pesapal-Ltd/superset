@@ -102,7 +102,7 @@ export const MenuDotsDropdown = ({
   iconOrientation = IconOrientation.Vertical,
   ...rest
 }: MenuDotsDropdownProps) => (
-  <AntdDropdown dropdownRender={() => overlay} {...rest}>
+  <AntdDropdown popupRender={() => overlay} {...rest}>
     <MenuDotsWrapper data-test="dropdown-trigger">
       {RenderIcon(iconOrientation)}
     </MenuDotsWrapper>

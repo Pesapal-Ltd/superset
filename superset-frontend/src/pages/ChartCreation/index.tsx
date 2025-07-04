@@ -309,7 +309,7 @@ export class ChartCreation extends PureComponent<
           data-test="add-chart-new-dataset-instructions"
         >
           {`${VIEW_INSTRUCTIONS_TEXT} `}
-          <Icons.Full iconSize="m" iconColor={theme.colors.primary.dark1} />
+          <Icons.Full iconSize="m" iconColor={theme.colorPrimary} />
         </a>
         .
       </span>
@@ -321,7 +321,7 @@ export class ChartCreation extends PureComponent<
           target="_blank"
         >
           {`${VIEW_INSTRUCTIONS_TEXT} `}
-          <Icons.Full iconSize="m" iconColor={theme.colors.primary.dark1} />
+          <Icons.Full iconSize="m" iconColor={theme.colorPrimary} />
         </a>
         .
       </span>

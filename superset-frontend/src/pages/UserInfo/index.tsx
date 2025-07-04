@@ -122,7 +122,7 @@ export function UserInfo({ user }: UserInfoProps) {
       name: (
         <>
           <Icons.LockOutlined
-            iconColor={theme.colors.primary.base}
+            iconColor={theme.colorPrimary}
             iconSize="m"
             css={css`
               margin: auto ${theme.gridUnit * 2}px auto 0;
@@ -142,7 +142,7 @@ export function UserInfo({ user }: UserInfoProps) {
       name: (
         <>
           <Icons.FormOutlined
-            iconColor={theme.colors.primary.light5}
+            iconColor={theme.colorIcon}
             iconSize="m"
             css={css`
               margin: auto ${theme.gridUnit * 2}px auto 0;

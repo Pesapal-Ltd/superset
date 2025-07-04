@@ -138,7 +138,7 @@ export default function DrillDetailModal({
         },
       }}
       draggable
-      destroyOnClose
+      destroyOnHidden
       maskClosable={false}
     >
       <DrillDetailPane formData={formData} initialFilters={initialFilters} />

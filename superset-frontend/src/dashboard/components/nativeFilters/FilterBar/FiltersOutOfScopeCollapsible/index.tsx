@@ -38,7 +38,7 @@ export const FiltersOutOfScopeCollapsible = ({
   <AntdCollapse
     ghost
     bordered
-    expandIconPosition="right"
+    expandIconPosition="end"
     collapsible={filtersOutOfScope.length === 0 ? 'disabled' : undefined}
     css={(theme: SupersetTheme) =>
       horizontalOverflow

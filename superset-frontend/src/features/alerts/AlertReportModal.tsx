@@ -1470,7 +1470,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       openerRef={openerRef}
     >
       <Collapse
-        expandIconPosition="right"
+        expandIconPosition="end"
         defaultActiveKey="general"
         accordion
         css={css`

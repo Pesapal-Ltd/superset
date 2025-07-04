@@ -84,7 +84,7 @@ const ExtraOptions = ({
 
   return (
     <Collapse
-      expandIconPosition="right"
+      expandIconPosition="end"
       accordion
       css={(theme: SupersetTheme) => antdCollapseStyles(theme)}
     >
