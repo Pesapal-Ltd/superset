@@ -311,7 +311,7 @@ export const getSliceDashboards =
     try {
       const response = await SupersetClient.get({
         endpoint: `/api/v1/chart/${slice.slice_id}?q=${rison.encode({
-          columns: ['dashboards.id'],
+          select_columns: ['dashboards.id'],
         })}`,
       });
 
