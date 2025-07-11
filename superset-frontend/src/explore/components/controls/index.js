@@ -55,6 +55,7 @@ import MapViewControl from './MapViewControl/MapViewControl';
 import ZoomConfigControl from './ZoomConfigControl/ZoomConfigControl';
 import NumberControl from './NumberControl';
 import TimeRangeControl from './TimeRangeControl';
+import ColorBreakpointsControl from './ColorBreakpointsControl';
 
 const controlMap = {
   AnnotationLayerControl,
@@ -72,6 +73,7 @@ const controlMap = {
   DndFilterSelect,
   DndMetricSelect,
   FixedOrMetricControl,
+  ColorBreakpointsControl,
   HiddenControl,
   LayerConfigsControl,
   MapViewControl,
