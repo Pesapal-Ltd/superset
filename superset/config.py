@@ -819,6 +819,8 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     "DRILL_TO_DETAIL": True,  # deprecated
     "DRILL_BY": True,
     "DATAPANEL_CLOSED_BY_DEFAULT": False,
+    # When you open the dashboard, the filter panel will be closed
+    "FILTERBAR_CLOSED_BY_DEFAULT": False,
     # The feature is off by default, and currently only supported in Presto and Postgres,  # noqa: E501
     # and Bigquery.
     # It also needs to be enabled on a per-database basis, by adding the key/value pair
@@ -867,6 +869,10 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # Allow metrics and columns to be grouped into (potentially nested) folders in the
     # chart builder
     "DATASET_FOLDERS": False,
+    # Enable Table V2 Viz plugin
+    "AG_GRID_TABLE_ENABLED": False,
+    # Enable Table v2 time comparison feature
+    "TABLE_V2_TIME_COMPARISON_ENABLED": False,
 }
 
 # ------------------------------
@@ -1058,7 +1064,7 @@ SCREENSHOT_WAIT_FOR_ERROR_MODAL_INVISIBLE = 5
 # Event that Playwright waits for when loading a new page
 # Possible values: "load", "commit", "domcontentloaded", "networkidle"
 # Docs: https://playwright.dev/python/docs/api/class-page#page-goto-option-wait-until
-SCREENSHOT_PLAYWRIGHT_WAIT_EVENT = "load"
+SCREENSHOT_PLAYWRIGHT_WAIT_EVENT = "domcontentloaded"
 # Default timeout for Playwright browser context for all operations
 SCREENSHOT_PLAYWRIGHT_DEFAULT_TIMEOUT = int(
     timedelta(seconds=60).total_seconds() * 1000
