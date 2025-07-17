@@ -19,7 +19,6 @@
  */
 import { ValueGetterParams } from 'ag-grid-community';
 
-<<<<<<<< HEAD:superset-frontend/plugins/plugin-chart-ag-grid-table/src/utils/filterValueGetter.ts
 const filterValueGetter = (params: ValueGetterParams) => {
   const raw = params.data[params.colDef.field as string];
   const formatter = params.colDef.valueFormatter as Function;
@@ -33,28 +32,3 @@ const filterValueGetter = (params: ValueGetterParams) => {
 };
 
 export default filterValueGetter;
-========
-import { isValidElement } from 'react';
-import { render, screen } from 'spec/helpers/testing-library';
-import CachedLabel, { CacheLabelProps } from '.';
-
-const defaultProps = {
-  onClick: () => {},
-  cachedTimestamp: '2017-01-01',
-};
-
-const setup = (props: CacheLabelProps) => <CachedLabel {...props} />;
-
-describe('CachedLabel', () => {
-  it('is valid', () => {
-    expect(isValidElement(<CachedLabel {...defaultProps} />)).toBe(true);
-  });
-
-  it('renders', () => {
-    render(setup(defaultProps));
-
-    const label = screen.getByText(/cached/i);
-    expect(label).toBeVisible();
-  });
-});
->>>>>>>> 9338bdf60 (Revert "Merge branch 'apache:master' into master"):superset-frontend/src/components/CachedLabel/CachedLabel.test.tsx
