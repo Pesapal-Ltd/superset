@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+<<<<<<<< HEAD:superset-frontend/src/components/IconButton/IconButton.stories.tsx
 import { Meta, StoryObj } from '@storybook/react';
 import { IconButton } from 'src/components/IconButton';
 
@@ -48,5 +49,41 @@ export const CustomIcon: Story = {
     buttonText: 'Custom icon IconButton',
     altText: 'Custom icon button alt text',
     icon: '/images/sqlite.png',
+========
+import TextControl from 'src/explore/components/controls/TextControl';
+import CheckboxControl from 'src/explore/components/controls/CheckboxControl';
+import FormRow from '.';
+
+export default {
+  title: 'FormRow',
+};
+
+export const InteractiveFormRow = ({ isCheckbox, ...rest }: any) => {
+  const control = isCheckbox ? (
+    <CheckboxControl label="Checkbox" />
+  ) : (
+    <TextControl />
+  );
+  return (
+    <div style={{ width: 300 }}>
+      <FormRow {...rest} control={control} isCheckbox={isCheckbox} />
+    </div>
+  );
+};
+
+InteractiveFormRow.args = {
+  label: 'Label',
+  tooltip: 'Tooltip',
+  control: <TextControl />,
+  isCheckbox: false,
+};
+
+InteractiveFormRow.argTypes = {
+  control: {
+    defaultValue: <TextControl />,
+    table: {
+      disable: true,
+    },
+>>>>>>>> 470785be0 (brought in the changes):superset-frontend/src/components/FormRow/FormRow.stories.tsx
   },
 };
