@@ -16,27 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+// eslint-disable-next-line no-restricted-imports
+import AntdForm, { FormProps } from 'antd/lib/form'; // TODO: Remove antd
+import { styled } from '@superset-ui/core';
 
+<<<<<<<< HEAD:superset-frontend/src/components/CachedLabel/CachedLabel.test.tsx
 import { isValidElement } from 'react';
 import { render, screen } from 'spec/helpers/testing-library';
 import CachedLabel, { CacheLabelProps } from '.';
+========
+const StyledForm = styled(AntdForm)`
+  &.ant-form label {
+    font-size: ${({ theme }) => theme.typography.sizes.s}px;
+  }
+  .ant-form-item {
+    margin-bottom: ${({ theme }) => theme.gridUnit * 4}px;
+  }
+`;
+>>>>>>>> 470785be0 (brought in the changes):superset-frontend/src/components/Form/Form.tsx
 
-const defaultProps = {
-  onClick: () => {},
-  cachedTimestamp: '2017-01-01',
-};
+function Form(props: FormProps) {
+  return <StyledForm {...props} />;
+}
 
-const setup = (props: CacheLabelProps) => <CachedLabel {...props} />;
-
-describe('CachedLabel', () => {
-  it('is valid', () => {
-    expect(isValidElement(<CachedLabel {...defaultProps} />)).toBe(true);
-  });
-
-  it('renders', () => {
-    render(setup(defaultProps));
-
-    const label = screen.getByText(/cached/i);
-    expect(label).toBeVisible();
-  });
+export default Object.assign(Form, {
+  useForm: AntdForm.useForm,
+  Item: AntdForm.Item,
+  List: AntdForm.List,
+  ErrorList: AntdForm.ErrorList,
+  Provider: AntdForm.Provider,
 });
+
+export type { FormProps };
