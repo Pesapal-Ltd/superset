@@ -16,15 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ArcLayer } from '@deck.gl/layers';
-import { JsonObject, QueryFormData, t } from '@superset-ui/core';
-import { COLOR_SCHEME_TYPES } from '../../utilities/utils';
+import { ArcLayer } from 'deck.gl/typed';
+import {
+  HandlerFunction,
+  JsonObject,
+  QueryFormData,
+  t,
+} from '@superset-ui/core';
 import { commonLayerProps } from '../common';
-import { GetLayerType, createCategoricalDeckGLComponent } from '../../factory';
+import { createCategoricalDeckGLComponent } from '../../factory';
 import TooltipRow from '../../TooltipRow';
+import { TooltipProps } from '../../components/Tooltip';
 import { Point } from '../../types';
 
-export function getPoints(data: JsonObject[]) {
+function getPoints(data: JsonObject[]) {
   const points: Point[] = [];
   data.forEach(d => {
     points.push(d.sourcePosition);
@@ -55,50 +60,26 @@ function setTooltipContent(formData: QueryFormData) {
   );
 }
 
-export const getLayer: GetLayerType<ArcLayer> = function ({
-  formData,
-  payload,
-  setTooltip,
-  filterState,
-  setDataMask,
-  onContextMenu,
-  emitCrossFilters,
-}) {
-  const fd = formData;
+export function getLayer(
+  fd: QueryFormData,
+  payload: JsonObject,
+  onAddFilter: HandlerFunction,
+  setTooltip: (tooltip: TooltipProps['tooltip']) => void,
+) {
   const data = payload.data.features;
   const sc = fd.color_picker;
   const tc = fd.target_color_picker;
 
-  const colorSchemeType = fd.color_scheme_type;
-
   return new ArcLayer({
     data,
-    getSourceColor: (d: any) => {
-      if (colorSchemeType === COLOR_SCHEME_TYPES.fixed_color) {
-        return [sc.r, sc.g, sc.b, 255 * sc.a];
-      }
-
-      return d.targetColor || d.color;
-    },
-    getTargetColor: (d: any) => {
-      if (colorSchemeType === COLOR_SCHEME_TYPES.fixed_color) {
-        return [tc.r, tc.g, tc.b, 255 * tc.a];
-      }
-
-      return d.targetColor || d.color;
-    },
+    getSourceColor: d =>
+      d.sourceColor || d.color || [sc.r, sc.g, sc.b, 255 * sc.a],
+    getTargetColor: d =>
+      d.targetColor || d.color || [tc.r, tc.g, tc.b, 255 * tc.a],
     id: `path-layer-${fd.slice_id}` as const,
-    getWidth: fd.stroke_width ? fd.stroke_width : 3,
-    ...commonLayerProps({
-      formData: fd,
-      setTooltip,
-      setTooltipContent: setTooltipContent(fd),
-      onContextMenu,
-      setDataMask,
-      filterState,
-      emitCrossFilters,
-    }),
+    strokeWidth: fd.stroke_width ? fd.stroke_width : 3,
+    ...commonLayerProps(fd, setTooltip, setTooltipContent(fd)),
   });
-};
+}
 
 export default createCategoricalDeckGLComponent(getLayer, getPoints);

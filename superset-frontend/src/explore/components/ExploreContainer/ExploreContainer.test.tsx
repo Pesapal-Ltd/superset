@@ -76,7 +76,7 @@ test('should only propagate dragging state when dragging the panel option', () =
   const { container, getByText } = render(
     <ExploreContainer>
       <DatasourcePanelDragOption
-        value={{ metric_name: 'panel option', uuid: '1' }}
+        value={{ metric_name: 'panel option' }}
         type={DndItemType.Metric}
       />
       <OptionControlLabel

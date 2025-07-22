@@ -18,11 +18,12 @@
  */
 
 import { ErrorLevel, ErrorSource, ErrorTypeEnum } from '@superset-ui/core';
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
-import { DatabaseErrorMessage } from './DatabaseErrorMessage';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
+import DatabaseErrorMessage from './DatabaseErrorMessage';
 
 jest.mock(
-  '@superset-ui/core/components/Icons/AsyncIcon',
+  'src/components/Icons/Icon',
   () =>
     ({ fileName }: { fileName: string }) => (
       <span role="img" aria-label={fileName.replace('_', '-')} />

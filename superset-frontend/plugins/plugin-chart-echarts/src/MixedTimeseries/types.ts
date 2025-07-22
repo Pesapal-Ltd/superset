@@ -61,7 +61,6 @@ export type EchartsMixedTimeseriesFormData = QueryFormData & {
   zoomable: boolean;
   richTooltip: boolean;
   xAxisLabelRotation: number;
-  xAxisLabelInterval?: number | string;
   colorScheme?: string;
   // types specific to Query A and Query B
   area: boolean;
@@ -134,7 +133,6 @@ export const DEFAULT_FORM_DATA: EchartsMixedTimeseriesFormData = {
   zoomable: TIMESERIES_DEFAULTS.zoomable,
   richTooltip: TIMESERIES_DEFAULTS.richTooltip,
   xAxisLabelRotation: TIMESERIES_DEFAULTS.xAxisLabelRotation,
-  xAxisLabelInterval: TIMESERIES_DEFAULTS.xAxisLabelInterval,
   ...DEFAULT_TITLE_FORM_DATA,
 };
 

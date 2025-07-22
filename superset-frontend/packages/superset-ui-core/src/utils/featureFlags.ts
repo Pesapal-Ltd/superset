@@ -30,10 +30,12 @@ export enum FeatureFlag {
   AvoidColorsCollision = 'AVOID_COLORS_COLLISION',
   ChartPluginsExperimental = 'CHART_PLUGINS_EXPERIMENTAL',
   ConfirmDashboardDiff = 'CONFIRM_DASHBOARD_DIFF',
+  /** @deprecated */
+  DashboardCrossFilters = 'DASHBOARD_CROSS_FILTERS',
   DashboardVirtualization = 'DASHBOARD_VIRTUALIZATION',
   DashboardRbac = 'DASHBOARD_RBAC',
   DatapanelClosedByDefault = 'DATAPANEL_CLOSED_BY_DEFAULT',
-  /** @deprecated */
+  DisableLegacyDatasourceEditor = 'DISABLE_LEGACY_DATASOURCE_EDITOR',
   DrillToDetail = 'DRILL_TO_DETAIL',
   DrillBy = 'DRILL_BY',
   DynamicPlugins = 'DYNAMIC_PLUGINS',
@@ -45,24 +47,21 @@ export enum FeatureFlag {
   EnableTemplateProcessing = 'ENABLE_TEMPLATE_PROCESSING',
   EscapeMarkdownHtml = 'ESCAPE_MARKDOWN_HTML',
   EstimateQueryCost = 'ESTIMATE_QUERY_COST',
-  FilterBarClosedByDefault = 'FILTERBAR_CLOSED_BY_DEFAULT',
   GlobalAsyncQueries = 'GLOBAL_ASYNC_QUERIES',
+  HorizontalFilterBar = 'HORIZONTAL_FILTER_BAR',
   ListviewsDefaultCardView = 'LISTVIEWS_DEFAULT_CARD_VIEW',
   ScheduledQueries = 'SCHEDULED_QUERIES',
+  ShareQueriesViaKvStore = 'SHARE_QUERIES_VIA_KV_STORE',
   SqllabBackendPersistence = 'SQLLAB_BACKEND_PERSISTENCE',
   SqlValidatorsByEngine = 'SQL_VALIDATORS_BY_ENGINE',
   SshTunneling = 'SSH_TUNNELING',
   TaggingSystem = 'TAGGING_SYSTEM',
-  ThemeEnableDarkThemeSwitch = 'THEME_ENABLE_DARK_THEME_SWITCH',
-  ThemeAllowThemeEditorBeta = 'THEME_ALLOW_THEME_EDITOR_BETA',
   Thumbnails = 'THUMBNAILS',
-  UseAnalogousColors = 'USE_ANALOGOUS_COLORS',
+  UseAnalagousColors = 'USE_ANALAGOUS_COLORS',
   ForceSqlLabRunAsync = 'SQLLAB_FORCE_RUN_ASYNC',
   SlackEnableAvatars = 'SLACK_ENABLE_AVATARS',
   EnableDashboardScreenshotEndpoints = 'ENABLE_DASHBOARD_SCREENSHOT_ENDPOINTS',
   EnableDashboardDownloadWebDriverScreenshot = 'ENABLE_DASHBOARD_DOWNLOAD_WEBDRIVER_SCREENSHOT',
-  TableV2TimeComparisonEnabled = 'TABLE_V2_TIME_COMPARISON_ENABLED',
-  AgGridTableEnabled = 'AG_GRID_TABLE_ENABLED',
 }
 
 export type ScheduleQueriesProps = {
@@ -97,7 +96,7 @@ export function initFeatureFlags(featureFlags?: FeatureFlagMap) {
 
 export function isFeatureEnabled(feature: FeatureFlag): boolean {
   try {
-    return !!window.featureFlags[feature as keyof FeatureFlagMap];
+    return !!window.featureFlags[feature];
   } catch (error) {
     logger.error(`Failed to query feature flag ${feature}`);
   }

@@ -25,7 +25,6 @@ import {
   autozoom,
   extruded,
   filterNulls,
-  generateDeckGLColorSchemeControls,
   gridSize,
   jsColumns,
   jsDataMutator,
@@ -53,8 +52,7 @@ const config: ControlPanelConfig = {
       label: t('Map'),
       controlSetRows: [
         [mapboxStyle],
-        ...generateDeckGLColorSchemeControls({}),
-        [viewport],
+        ['color_scheme', viewport],
         [autozoom],
         [gridSize],
         [extruded],

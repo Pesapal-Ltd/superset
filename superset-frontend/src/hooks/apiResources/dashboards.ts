@@ -19,7 +19,6 @@
 
 import { Dashboard, Datasource, EmbeddedDashboard } from 'src/dashboard/types';
 import { Chart } from 'src/types/Chart';
-import { Currency } from '@superset-ui/core';
 import { useApiV1Resource, useTransformedResource } from './apiResources';
 
 export const useDashboard = (idOrSlug: string | number) =>
@@ -44,21 +43,7 @@ export const useDashboardCharts = (idOrSlug: string | number) =>
 // important: this endpoint only returns the fields in the dataset
 // that are necessary for rendering the given dashboard
 export const useDashboardDatasets = (idOrSlug: string | number) =>
-  useTransformedResource(
-    useApiV1Resource<Datasource[]>(`/api/v1/dashboard/${idOrSlug}/datasets`),
-    datasets =>
-      datasets.map(dataset => ({
-        ...dataset,
-        currencyFormats: Object.fromEntries(
-          (dataset.metrics ?? [])
-            .filter(metric => !!metric.currency)
-            .map((metric): [string, Currency] => [
-              metric.metric_name,
-              metric.currency!,
-            ]),
-        ),
-      })),
-  );
+  useApiV1Resource<Datasource[]>(`/api/v1/dashboard/${idOrSlug}/datasets`);
 
 export const useEmbeddedDashboard = (idOrSlug: string | number) =>
   useApiV1Resource<EmbeddedDashboard>(`/api/v1/dashboard/${idOrSlug}/embedded`);

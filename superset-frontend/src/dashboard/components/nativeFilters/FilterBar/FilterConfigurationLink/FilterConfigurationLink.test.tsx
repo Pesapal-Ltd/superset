@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import FilterConfigurationLink from '.';
 
 test('should render', () => {
@@ -37,16 +38,11 @@ test('should render the config link text', () => {
 });
 
 test('should render the modal on click', () => {
-  const showModal = jest.fn();
-  render(
-    <FilterConfigurationLink onClick={showModal}>
-      Config link
-    </FilterConfigurationLink>,
-    {
-      useRedux: true,
-    },
-  );
+  render(<FilterConfigurationLink>Config link</FilterConfigurationLink>, {
+    useRedux: true,
+  });
   const configLink = screen.getByText('Config link');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   userEvent.click(configLink);
-  expect(showModal).toHaveBeenCalled();
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
 });

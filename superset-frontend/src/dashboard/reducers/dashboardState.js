@@ -209,17 +209,12 @@ export default function dashboardStateReducer(state = {}, action) {
       };
     },
     [SET_ACTIVE_TAB]() {
-      const newActiveTabs = new Set(state.activeTabs).difference(
-        new Set(action.inactiveTabs.concat(action.prevTabId)),
-      );
-      const newInactiveTabs = new Set(state.inactiveTabs)
-        .difference(new Set(action.activeTabs))
-        .union(new Set(action.inactiveTabs));
-
+      const newActiveTabs = new Set(state.activeTabs);
+      newActiveTabs.delete(action.prevTabId);
+      newActiveTabs.add(action.tabId);
       return {
         ...state,
-        inactiveTabs: Array.from(newInactiveTabs),
-        activeTabs: Array.from(newActiveTabs.union(new Set(action.activeTabs))),
+        activeTabs: Array.from(newActiveTabs),
       };
     },
     [SET_ACTIVE_TABS]() {

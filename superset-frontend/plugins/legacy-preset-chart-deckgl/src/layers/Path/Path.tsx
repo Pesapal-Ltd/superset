@@ -17,12 +17,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { PathLayer } from '@deck.gl/layers';
-import { JsonObject } from '@superset-ui/core';
+import { PathLayer } from 'deck.gl/typed';
+import { JsonObject, QueryFormData } from '@superset-ui/core';
 import { commonLayerProps } from '../common';
 import sandboxedEval from '../../utils/sandbox';
-import { GetLayerType, createDeckGLComponent } from '../../factory';
+import { createDeckGLComponent } from '../../factory';
 import TooltipRow from '../../TooltipRow';
+import { TooltipProps } from '../../components/Tooltip';
 import { Point } from '../../types';
 
 function setTooltipContent(o: JsonObject) {
@@ -41,15 +42,12 @@ function setTooltipContent(o: JsonObject) {
   );
 }
 
-export const getLayer: GetLayerType<PathLayer> = function ({
-  formData,
-  payload,
-  onContextMenu,
-  filterState,
-  setDataMask,
-  setTooltip,
-  emitCrossFilters,
-}) {
+export function getLayer(
+  formData: QueryFormData,
+  payload: JsonObject,
+  onAddFilter: () => void,
+  setTooltip: (tooltip: TooltipProps['tooltip']) => void,
+) {
   const fd = formData;
   const c = fd.color_picker;
   const fixedColor = [c.r, c.g, c.b, 255 * c.a];
@@ -67,26 +65,18 @@ export const getLayer: GetLayerType<PathLayer> = function ({
 
   return new PathLayer({
     id: `path-layer-${fd.slice_id}` as const,
-    getColor: (d: any) => d.color,
-    getPath: (d: any) => d.path,
-    getWidth: (d: any) => d.width,
+    getColor: d => d.color,
+    getPath: d => d.path,
+    getWidth: d => d.width,
     data,
     rounded: true,
     widthScale: 1,
     widthUnits: fd.line_width_unit,
-    ...commonLayerProps({
-      formData: fd,
-      setTooltip,
-      setTooltipContent,
-      setDataMask,
-      filterState,
-      onContextMenu,
-      emitCrossFilters,
-    }),
+    ...commonLayerProps(fd, setTooltip, setTooltipContent),
   });
-};
+}
 
-export function getPoints(data: JsonObject[]) {
+function getPoints(data: JsonObject[]) {
   let points: Point[] = [];
   data.forEach(d => {
     points = points.concat(d.path);

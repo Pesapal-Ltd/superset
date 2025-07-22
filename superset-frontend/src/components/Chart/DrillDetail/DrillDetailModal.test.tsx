@@ -18,7 +18,8 @@
  */
 
 import { useState } from 'react';
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
+import { render, screen } from 'spec/helpers/testing-library';
 import { getMockStoreWithNativeFilters } from 'spec/fixtures/mockStore';
 import chartQueries, { sliceId } from 'spec/fixtures/mockChartQueries';
 import DrillDetailModal from './DrillDetailModal';

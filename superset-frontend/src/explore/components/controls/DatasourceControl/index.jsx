@@ -21,7 +21,6 @@
 import { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import {
-  css,
   DatasourceType,
   SupersetClient,
   styled,
@@ -30,31 +29,29 @@ import {
 } from '@superset-ui/core';
 import { getTemporalColumns } from '@superset-ui/chart-controls';
 import { getUrlParam } from 'src/utils/urlUtils';
-import {
-  Dropdown,
-  Tooltip,
-  Button,
-  ModalTrigger,
-} from '@superset-ui/core/components';
+import { AntdDropdown } from 'src/components';
+import { Menu } from 'src/components/Menu';
+import { Tooltip } from 'src/components/Tooltip';
+import Icons from 'src/components/Icons';
 import {
   ChangeDatasourceModal,
   DatasourceModal,
-  ErrorAlert,
-} from 'src/components';
-import { Menu } from '@superset-ui/core/components/Menu';
-import { Icons } from '@superset-ui/core/components/Icons';
-import WarningIconWithTooltip from '@superset-ui/core/components/WarningIconWithTooltip';
+} from 'src/components/Datasource';
+import Button from 'src/components/Button';
+import ErrorAlert from 'src/components/ErrorMessage/ErrorAlert';
+import WarningIconWithTooltip from 'src/components/WarningIconWithTooltip';
 import { URL_PARAMS } from 'src/constants';
 import { getDatasourceAsSaveableDataset } from 'src/utils/datasourceUtils';
 import {
   userHasPermission,
   isUserAdmin,
 } from 'src/dashboard/util/permissionUtils';
-import { ErrorMessageWithStackTrace } from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
+import ModalTrigger from 'src/components/ModalTrigger';
 import ViewQueryModalFooter from 'src/explore/components/controls/ViewQueryModalFooter';
 import ViewQuery from 'src/explore/components/controls/ViewQuery';
 import { SaveDatasetModal } from 'src/SqlLab/components/SaveDatasetModal';
 import { safeStringify } from 'src/utils/safeStringify';
+import { isString } from 'lodash';
 import { Link } from 'react-router-dom';
 
 const propTypes = {
@@ -74,30 +71,24 @@ const defaultProps = {
   isEditable: true,
 };
 
-const getDatasetType = datasource => {
-  if (datasource.type === 'query') {
-    return 'query';
-  }
-  if (datasource.type === 'table' && datasource.sql) {
-    return 'virtual_dataset';
-  }
-  return 'physical_dataset';
-};
-
 const Styles = styled.div`
   .data-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid ${({ theme }) => theme.colorSplit};
-    padding: ${({ theme }) => 4 * theme.sizeUnit}px;
-    padding-right: ${({ theme }) => 2 * theme.sizeUnit}px;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
+    padding: ${({ theme }) => 4 * theme.gridUnit}px;
+    padding-right: ${({ theme }) => 2 * theme.gridUnit}px;
   }
   .error-alert {
-    margin: ${({ theme }) => 2 * theme.sizeUnit}px;
+    margin: ${({ theme }) => 2 * theme.gridUnit}px;
   }
   .ant-dropdown-trigger {
-    margin-left: ${({ theme }) => 2 * theme.sizeUnit}px;
+    margin-left: ${({ theme }) => 2 * theme.gridUnit}px;
+    box-shadow: none;
+    &:active {
+      box-shadow: none;
+    }
   }
   .btn-group .open .dropdown-toggle {
     box-shadow: none;
@@ -106,30 +97,32 @@ const Styles = styled.div`
     }
   }
   i.angle {
-    color: ${({ theme }) => theme.colorPrimary};
+    color: ${({ theme }) => theme.colors.primary.base};
   }
   svg.datasource-modal-trigger {
-    color: ${({ theme }) => theme.colorPrimary};
+    color: ${({ theme }) => theme.colors.primary.base};
     cursor: pointer;
   }
   .title-select {
     flex: 1 1 100%;
     display: inline-block;
-    padding: ${({ theme }) => theme.sizeUnit * 2}px 0px;
+    background-color: ${({ theme }) => theme.colors.grayscale.light3};
+    padding: ${({ theme }) => theme.gridUnit * 2}px;
     border-radius: ${({ theme }) => theme.borderRadius}px;
+    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
   }
   .datasource-svg {
-    margin-right: ${({ theme }) => 2 * theme.sizeUnit}px;
+    margin-right: ${({ theme }) => 2 * theme.gridUnit}px;
     flex: none;
   }
   span[aria-label='dataset-physical'] {
     color: ${({ theme }) => theme.colors.grayscale.base};
   }
-  span[aria-label='more'] {
-    color: ${({ theme }) => theme.colorPrimary};
+  span[aria-label='more-vert'] {
+    color: ${({ theme }) => theme.colors.primary.base};
   }
 `;
 
@@ -143,11 +136,12 @@ const SAVE_AS_DATASET = 'save_as_dataset';
 // a tooltip for user can see the full name by hovering over the visually truncated string in UI
 const VISIBLE_TITLE_LENGTH = 25;
 
-// Assign icon for each DatasourceType.  If no icon assignment is found in the lookup, no icon will render
+// Assign icon for each DatasourceType.  If no icon assingment is found in the lookup, no icon will render
 export const datasourceIconLookup = {
-  query: <Icons.ConsoleSqlOutlined className="datasource-svg" />,
-  physical_dataset: <Icons.TableOutlined className="datasource-svg" />,
-  virtual_dataset: <Icons.ConsoleSqlOutlined className="datasource-svg" />,
+  [DatasourceType.Query]: (
+    <Icons.ConsoleSqlOutlined className="datasource-svg" />
+  ),
+  [DatasourceType.Table]: <Icons.DatasetPhysical className="datasource-svg" />,
 };
 
 // Render title for datasource with tooltip only if text is longer than VISIBLE_TITLE_LENGTH
@@ -194,7 +188,7 @@ class DatasourceControl extends PureComponent {
     const { columns } = datasource;
     // the current granularity_sqla might not be a temporal column anymore
     const timeCol = this.props.form_data?.granularity_sqla;
-    const isGranularitySqlaTemporal = columns.find(
+    const isGranularitySqalTemporal = columns.find(
       ({ column_name }) => column_name === timeCol,
     )?.is_dttm;
     // the current main_dttm_col might not be a temporal column anymore
@@ -204,7 +198,7 @@ class DatasourceControl extends PureComponent {
 
     // if the current granularity_sqla is empty or it is not a temporal column anymore
     // let's update the control value
-    if (datasource.type === 'table' && !isGranularitySqlaTemporal) {
+    if (datasource.type === 'table' && !isGranularitySqalTemporal) {
       const temporalColumn = isDefaultTemporal
         ? defaultTemporalColumn
         : temporalColumns?.[0];
@@ -282,17 +276,7 @@ class DatasourceControl extends PureComponent {
       showSaveDatasetModal,
     } = this.state;
     const { datasource, onChange, theme } = this.props;
-    let extra;
-    if (datasource?.extra) {
-      if (typeof datasource.extra === 'string') {
-        try {
-          extra = JSON.parse(datasource.extra);
-        } catch {} // eslint-disable-line no-empty
-      } else {
-        extra = datasource.extra; // eslint-disable-line prefer-destructuring
-      }
-    }
-    const isMissingDatasource = !datasource?.id || Boolean(extra?.error);
+    const isMissingDatasource = !datasource?.id;
     let isMissingParams = false;
     if (isMissingDatasource) {
       const datasourceId = getUrlParam(URL_PARAMS.datasourceId);
@@ -359,7 +343,7 @@ class DatasourceControl extends PureComponent {
         <Menu.Item key={QUERY_PREVIEW}>
           <ModalTrigger
             triggerNode={
-              <div data-test="view-query-menu-item">{t('Query preview')}</div>
+              <span data-test="view-query-menu-item">{t('Query preview')}</span>
             }
             modalTitle={t('Query preview')}
             modalBody={
@@ -397,33 +381,38 @@ class DatasourceControl extends PureComponent {
 
     const { health_check_message: healthCheckMessage } = datasource;
 
-    const titleText =
-      isMissingDatasource && !datasource.name
-        ? t('Missing dataset')
-        : getDatasourceTitle(datasource);
+    let extra;
+    if (datasource?.extra) {
+      if (isString(datasource.extra)) {
+        try {
+          extra = JSON.parse(datasource.extra);
+        } catch {} // eslint-disable-line no-empty
+      } else {
+        extra = datasource.extra; // eslint-disable-line prefer-destructuring
+      }
+    }
+
+    const titleText = isMissingDatasource
+      ? t('Missing dataset')
+      : getDatasourceTitle(datasource);
 
     const tooltip = titleText;
 
     return (
       <Styles data-test="datasource-control" className="DatasourceControl">
         <div className="data-container">
-          {datasourceIconLookup[getDatasetType(datasource)]}
+          {datasourceIconLookup[datasource?.type]}
           {renderDatasourceTitle(titleText, tooltip)}
           {healthCheckMessage && (
             <Tooltip title={healthCheckMessage}>
-              <Icons.WarningOutlined
-                css={css`
-                  margin-left: ${theme.sizeUnit * 2}px;
-                `}
-                iconColor={theme.colorWarning}
-              />
+              <Icons.AlertSolid iconColor={theme.colors.warning.base} />
             </Tooltip>
           )}
           {extra?.warning_markdown && (
             <WarningIconWithTooltip warningMarkdown={extra.warning_markdown} />
           )}
-          <Dropdown
-            popupRender={() =>
+          <AntdDropdown
+            overlay={
               datasource.type === DatasourceType.Query
                 ? queryDatasourceMenu
                 : defaultDatasourceMenu
@@ -431,66 +420,57 @@ class DatasourceControl extends PureComponent {
             trigger={['click']}
             data-test="datasource-menu"
           >
-            <Icons.MoreOutlined
-              iconSize="xl"
-              iconColor={theme.colorPrimary}
+            <Icons.MoreVert
               className="datasource-modal-trigger"
               data-test="datasource-menu-trigger"
             />
-          </Dropdown>
+          </AntdDropdown>
         </div>
         {/* missing dataset */}
         {isMissingDatasource && isMissingParams && (
           <div className="error-alert">
             <ErrorAlert
               level="warning"
-              errorType={t('Missing URL parameters')}
-              description={t(
-                'The URL is missing the dataset_id or slice_id parameters.',
-              )}
+              title={t('Missing URL parameters')}
+              source="explore"
+              subtitle={
+                <>
+                  <p>
+                    {t(
+                      'The URL is missing the dataset_id or slice_id parameters.',
+                    )}
+                  </p>
+                </>
+              }
             />
           </div>
         )}
         {isMissingDatasource && !isMissingParams && (
           <div className="error-alert">
-            {extra?.error ? (
-              <div className="error-alert">
-                <ErrorMessageWithStackTrace
-                  title={extra.error.statusText || extra.error.message}
-                  subtitle={
-                    extra.error.statusText ? extra.error.message : undefined
-                  }
-                  error={extra.error}
-                  source="explore"
-                />
-              </div>
-            ) : (
-              <ErrorAlert
-                type="warning"
-                errorType={t('Missing dataset')}
-                descriptionPre={false}
-                descriptionDetailsCollapsed={false}
-                descriptionDetails={
-                  <>
-                    <p>
-                      {t(
-                        'The dataset linked to this chart may have been deleted.',
-                      )}
-                    </p>
-                    <p>
-                      <Button
-                        buttonStyle="warning"
-                        onClick={() =>
-                          this.handleMenuItemClick({ key: CHANGE_DATASET })
-                        }
-                      >
-                        {t('Swap dataset')}
-                      </Button>
-                    </p>
-                  </>
-                }
-              />
-            )}
+            <ErrorAlert
+              level="warning"
+              title={t('Missing dataset')}
+              source="explore"
+              subtitle={
+                <>
+                  <p>
+                    {t(
+                      'The dataset linked to this chart may have been deleted.',
+                    )}
+                  </p>
+                  <p>
+                    <Button
+                      buttonStyle="primary"
+                      onClick={() =>
+                        this.handleMenuItemClick({ key: CHANGE_DATASET })
+                      }
+                    >
+                      {t('Swap dataset')}
+                    </Button>
+                  </p>
+                </>
+              }
+            />
           </div>
         )}
         {showEditDatasourceModal && (

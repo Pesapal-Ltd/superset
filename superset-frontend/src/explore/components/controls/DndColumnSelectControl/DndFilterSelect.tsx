@@ -30,7 +30,7 @@ import {
   isColumnMeta,
   isTemporalColumn,
 } from '@superset-ui/chart-controls';
-import { Modal } from '@superset-ui/core/components';
+import Modal from 'src/components/Modal';
 import {
   OPERATOR_ENUM_TO_OPERATOR_TYPE,
   Operators,
@@ -90,10 +90,7 @@ const DndFilterSelect = (props: DndFilterSelectProps) => {
     let extra = {};
     if (datasource?.extra) {
       try {
-        extra =
-          typeof datasource.extra === 'string'
-            ? JSON.parse(datasource.extra)
-            : datasource.extra;
+        extra = JSON.parse(datasource.extra);
       } catch {} // eslint-disable-line no-empty
     }
     return extra;

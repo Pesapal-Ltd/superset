@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { QueryFormData, QueryFormMetric, VizType } from '@superset-ui/core';
+import { QueryFormData, QueryFormMetric } from '@superset-ui/core';
 import { extractExtraMetrics } from '@superset-ui/chart-controls';
 
 const baseFormData: QueryFormData = {
   datasource: 'dummy',
-  viz_type: VizType.Table,
+  viz_type: 'table',
   metrics: ['a', 'b'],
   columns: ['foo', 'bar'],
   limit: 100,
@@ -125,7 +125,7 @@ test('returns empty array if timeseries_limit_metric and x_axis_sort are include
   ).toEqual([]);
 });
 
-test('returns empty array if timeseries_limit_metric is an empty array', () => {
+test('returns emoty array if timeseries_limit_metric is an empty array', () => {
   expect(
     extractExtraMetrics({
       ...baseFormData,

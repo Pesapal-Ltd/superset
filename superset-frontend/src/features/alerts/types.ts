@@ -47,11 +47,6 @@ export enum NotificationMethodOption {
   SlackV2 = 'SlackV2',
 }
 
-export type SelectValue = {
-  value: string;
-  label: string;
-};
-
 export type NotificationSetting = {
   method?: NotificationMethodOption;
   recipients: string;
@@ -67,12 +62,6 @@ export type SlackChannel = {
   is_private: boolean;
 };
 
-export type TabNode = {
-  title: string;
-  value: string;
-  children?: TabNode[];
-};
-
 export type Recipient = {
   recipient_config_json: {
     target: string;
@@ -86,16 +75,6 @@ export type MetaObject = {
   id?: number;
   label?: string;
   value?: number | string;
-};
-
-export type DashboardState = {
-  activeTabs?: Array<string>;
-  dataMask?: Object;
-  anchor?: string;
-};
-
-export type Extra = {
-  dashboard?: DashboardState;
 };
 
 export type Operator = '<' | '>' | '<=' | '>=' | '==' | '!=' | 'not null';
@@ -117,7 +96,6 @@ export type AlertObject = {
   description?: string;
   email_subject?: string;
   error?: string;
-  extra?: Extra;
   force_screenshot: boolean;
   grace_period?: number;
   id: number;
@@ -185,9 +163,4 @@ export enum Sections {
   Alert = 'alertConditionSection',
   Schedule = 'scheduleSection',
   Notification = 'notificationSection',
-}
-
-export enum ContentType {
-  Dashboard = 'dashboard',
-  Chart = 'chart',
 }

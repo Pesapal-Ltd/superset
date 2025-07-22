@@ -40,8 +40,6 @@ export type ColumnConfig = {
  * formatting.
  */
 export interface ColumnConfigInfo {
-  isChildColumn: boolean;
-  isTimeComparisonColumn: boolean;
   name: string;
   type?: GenericDataType;
   config: JsonObject;

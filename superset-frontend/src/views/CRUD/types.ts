@@ -70,7 +70,6 @@ export interface Dashboard {
 
 export type SavedQueryObject = {
   id: number;
-  catalog: string | null;
   changed_on: string;
   changed_on_delta_humanized: string;
   database: {

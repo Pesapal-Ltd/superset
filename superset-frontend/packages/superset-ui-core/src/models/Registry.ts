@@ -22,11 +22,11 @@ export enum OverwritePolicy {
   Warn = 'WARN',
 }
 
-export interface ItemWithValue<T> {
+interface ItemWithValue<T> {
   value: T;
 }
 
-export interface ItemWithLoader<T> {
+interface ItemWithLoader<T> {
   loader: () => T;
 }
 

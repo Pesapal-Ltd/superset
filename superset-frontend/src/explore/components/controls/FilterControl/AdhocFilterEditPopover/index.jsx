@@ -18,11 +18,11 @@
  */
 import { createRef, Component } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Icons, Select } from '@superset-ui/core/components';
-import { ErrorBoundary } from 'src/components';
-import { styled, t, SupersetClient } from '@superset-ui/core';
+import Button from 'src/components/Button';
+import { styled, t } from '@superset-ui/core';
 
-import Tabs from '@superset-ui/core/components/Tabs';
+import ErrorBoundary from 'src/components/ErrorBoundary';
+import Tabs from 'src/components/Tabs';
 import adhocMetricType from 'src/explore/components/controls/MetricControl/adhocMetricType';
 import AdhocFilter from 'src/explore/components/controls/FilterControl/AdhocFilter';
 import AdhocFilterEditPopoverSimpleTabContent from 'src/explore/components/controls/FilterControl/AdhocFilterEditPopoverSimpleTabContent';
@@ -32,8 +32,6 @@ import {
   POPOVER_INITIAL_HEIGHT,
   POPOVER_INITIAL_WIDTH,
 } from 'src/explore/constants';
-import rison from 'rison';
-import { isObject } from 'lodash';
 import { ExpressionTypes } from '../types';
 
 const propTypes = {
@@ -56,12 +54,16 @@ const propTypes = {
   requireSave: PropTypes.bool,
 };
 
+const ResizeIcon = styled.i`
+  margin-left: ${({ theme }) => theme.gridUnit * 2}px;
+`;
+
 const FilterPopoverContentContainer = styled.div`
   .adhoc-filter-edit-tabs > .nav-tabs {
-    margin-bottom: ${({ theme }) => theme.sizeUnit * 2}px;
+    margin-bottom: ${({ theme }) => theme.gridUnit * 2}px;
 
     & > li > a {
-      padding: ${({ theme }) => theme.sizeUnit}px;
+      padding: ${({ theme }) => theme.gridUnit}px;
     }
   }
 
@@ -70,27 +72,22 @@ const FilterPopoverContentContainer = styled.div`
   }
 
   .filter-edit-clause-info {
-    font-size: ${({ theme }) => theme.fontSizeXS}px;
+    font-size: ${({ theme }) => theme.typography.sizes.xs}px;
   }
 
   .filter-edit-clause-section {
     display: flex;
     flex-direction: row;
-    gap: ${({ theme }) => theme.sizeUnit * 5}px;
+    gap: ${({ theme }) => theme.gridUnit * 5}px;
   }
 
   .adhoc-filter-simple-column-dropdown {
-    margin-top: ${({ theme }) => theme.sizeUnit * 5}px;
+    margin-top: ${({ theme }) => theme.gridUnit * 5}px;
   }
 `;
 
 const FilterActionsContainer = styled.div`
-  margin-top: ${({ theme }) => theme.sizeUnit * 2}px;
-`;
-
-const LayerSelectContainer = styled.div`
-  margin-top: ${({ theme }) => theme.sizeUnit * 2}px;
-  margin-bottom: ${({ theme }) => theme.sizeUnit * 12}px;
+  margin-top: ${({ theme }) => theme.gridUnit * 2}px;
 `;
 
 export default class AdhocFilterEditPopover extends Component {
@@ -104,8 +101,6 @@ export default class AdhocFilterEditPopover extends Component {
     this.setSimpleTabIsValid = this.setSimpleTabIsValid.bind(this);
     this.adjustHeight = this.adjustHeight.bind(this);
     this.onTabChange = this.onTabChange.bind(this);
-    this.loadLayerOptions = this.loadLayerOptions.bind(this);
-    this.onLayerChange = this.onLayerChange.bind(this);
 
     this.state = {
       adhocFilter: this.props.adhocFilter,
@@ -113,9 +108,6 @@ export default class AdhocFilterEditPopover extends Component {
       height: POPOVER_INITIAL_HEIGHT,
       activeKey: this.props?.adhocFilter?.expressionType || 'SIMPLE',
       isSimpleTabValid: true,
-      selectedLayers: [{ id: null, value: -1, label: 'All' }],
-      layerOptions: [],
-      hasLayerFilterScopeChanged: false,
     };
 
     this.popoverContentRef = createRef();
@@ -123,26 +115,6 @@ export default class AdhocFilterEditPopover extends Component {
 
   componentDidMount() {
     document.addEventListener('mouseup', this.onMouseUp);
-
-    // Load layer options if deck_slices exist
-    if (
-      this.props.adhocFilter?.deck_slices &&
-      this.props.adhocFilter.deck_slices.length > 0
-    ) {
-      this.loadLayerOptions(0, 100).then(result => {
-        this.setState({ layerOptions: result.data });
-        const layerFilterScope = this.props.adhocFilter?.layerFilterScope;
-        if (layerFilterScope) {
-          const selectedLayers = layerFilterScope.map(item => {
-            const layerOption = result.data.find(
-              option => option.value === item,
-            );
-            return layerOption;
-          });
-          this.setState({ selectedLayers });
-        }
-      });
-    }
   }
 
   componentWillUnmount() {
@@ -159,28 +131,7 @@ export default class AdhocFilterEditPopover extends Component {
   }
 
   onSave() {
-    const hasDeckSlices =
-      this.state.adhocFilter.deck_slices &&
-      this.state.adhocFilter.deck_slices.length > 0;
-
-    if (!hasDeckSlices) {
-      this.props.onChange(this.state.adhocFilter);
-      this.props.onClose();
-      return;
-    }
-    // Update layer filter scope for deck multi
-    const selectedLayers = this.state.selectedLayers.map(item => {
-      if (isObject(item)) {
-        return item.value;
-      }
-      return item;
-    });
-    const correctedAdhocFilter = {
-      ...this.state.adhocFilter,
-      layerFilterScope: selectedLayers,
-    };
-    this.setState({ hasLayerFilterScopeChanged: false });
-    this.props.onChange(correctedAdhocFilter);
+    this.props.onChange(this.state.adhocFilter);
     this.props.onClose();
   }
 
@@ -220,86 +171,6 @@ export default class AdhocFilterEditPopover extends Component {
     this.setState(state => ({ height: state.height + heightDifference }));
   }
 
-  loadLayerOptions(page, pageSize) {
-    const query = rison.encode({
-      columns: ['id', 'slice_name', 'viz_type'],
-      filters: [{ col: 'viz_type', opr: 'sw', value: 'deck' }],
-      page,
-      page_size: pageSize,
-      order_column: 'slice_name',
-      order_direction: 'asc',
-    });
-
-    return SupersetClient.get({
-      endpoint: `/api/v1/chart/?q=${query}`,
-    }).then(response => {
-      if (!response?.json?.result) {
-        return {
-          data: [
-            {
-              id: null,
-              value: -1,
-              label: 'All',
-            },
-          ],
-          totalCount: 1,
-        };
-      }
-
-      const deckSlices = this.props.adhocFilter?.deck_slices || [];
-
-      const list = [
-        {
-          id: null,
-          value: -1,
-          label: 'All',
-        },
-        ...response.json.result
-          .map(item => {
-            const sliceIndex = deckSlices.indexOf(item.id);
-            return {
-              id: item.id,
-              value: sliceIndex >= 0 ? sliceIndex : item.id,
-              label: item.slice_name,
-              sliceIndex,
-            };
-          })
-          .filter(item => item.sliceIndex !== -1)
-          .map(({ sliceIndex, ...item }) => item),
-      ];
-
-      return {
-        data: list,
-        totalCount: list.length,
-      };
-    });
-  }
-
-  onLayerChange(selectedValue) {
-    let updatedSelectedLayers = selectedValue;
-
-    if (!selectedValue || selectedValue.length === 0) {
-      updatedSelectedLayers = [{ id: null, value: -1, label: 'All' }];
-    } else if (
-      selectedValue.length > 1 &&
-      selectedValue.some(item => item.value === -1 || item === -1)
-    ) {
-      if (
-        selectedValue[selectedValue.length - 1].value === -1 ||
-        selectedValue[selectedValue.length - 1] === -1
-      ) {
-        updatedSelectedLayers = [{ id: null, value: -1, label: 'All' }];
-      } else {
-        updatedSelectedLayers = selectedValue
-          .filter(item => item.value !== -1)
-          .filter(item => item !== -1);
-      }
-    }
-
-    this.setState({ selectedLayers: updatedSelectedLayers });
-    this.setState({ hasLayerFilterScopeChanged: true });
-  }
-
   render() {
     const {
       adhocFilter: propsAdhocFilter,
@@ -315,16 +186,10 @@ export default class AdhocFilterEditPopover extends Component {
       ...popoverProps
     } = this.props;
 
-    const { adhocFilter, selectedLayers, hasLayerFilterScopeChanged } =
-      this.state;
+    const { adhocFilter } = this.state;
     const stateIsValid = adhocFilter.isValid();
     const hasUnsavedChanges =
-      requireSave ||
-      !adhocFilter.equals(propsAdhocFilter) ||
-      hasLayerFilterScopeChanged;
-
-    const hasDeckSlices =
-      adhocFilter.deck_slices && adhocFilter.deck_slices.length > 0;
+      requireSave || !adhocFilter.equals(propsAdhocFilter);
 
     return (
       <FilterPopoverContentContainer
@@ -341,61 +206,44 @@ export default class AdhocFilterEditPopover extends Component {
           style={{ minHeight: this.state.height, width: this.state.width }}
           allowOverflow
           onChange={this.onTabChange}
-          items={[
-            {
-              key: ExpressionTypes.Simple,
-              label: t('Simple'),
-              children: (
-                <ErrorBoundary>
-                  <AdhocFilterEditPopoverSimpleTabContent
-                    operators={operators}
-                    adhocFilter={this.state.adhocFilter}
-                    onChange={this.onAdhocFilterChange}
-                    options={options}
-                    datasource={datasource}
-                    onHeightChange={this.adjustHeight}
-                    partitionColumn={partitionColumn}
-                    popoverRef={this.popoverContentRef.current}
-                    validHandler={this.setSimpleTabIsValid}
-                  />
-                </ErrorBoundary>
-              ),
-            },
-            {
-              key: ExpressionTypes.Sql,
-              label: t('Custom SQL'),
-              children: (
-                <ErrorBoundary>
-                  <AdhocFilterEditPopoverSqlTabContent
-                    adhocFilter={this.state.adhocFilter}
-                    onChange={this.onAdhocFilterChange}
-                    options={this.props.options}
-                    height={this.state.height}
-                    activeKey={this.state.activeKey}
-                  />
-                </ErrorBoundary>
-              ),
-            },
-          ]}
-        />
-        {hasDeckSlices && (
-          <LayerSelectContainer>
-            <Select
-              options={this.state.layerOptions}
-              onChange={this.onLayerChange}
-              value={selectedLayers}
-              mode="multiple"
-            />
-          </LayerSelectContainer>
-        )}
-
-        <FilterActionsContainer>
-          <Button
-            buttonStyle="secondary"
-            buttonSize="small"
-            onClick={this.props.onClose}
-            cta
+        >
+          <Tabs.TabPane
+            className="adhoc-filter-edit-tab"
+            key={ExpressionTypes.Simple}
+            tab={t('Simple')}
           >
+            <ErrorBoundary>
+              <AdhocFilterEditPopoverSimpleTabContent
+                operators={operators}
+                adhocFilter={this.state.adhocFilter}
+                onChange={this.onAdhocFilterChange}
+                options={options}
+                datasource={datasource}
+                onHeightChange={this.adjustHeight}
+                partitionColumn={partitionColumn}
+                popoverRef={this.popoverContentRef.current}
+                validHandler={this.setSimpleTabIsValid}
+              />
+            </ErrorBoundary>
+          </Tabs.TabPane>
+          <Tabs.TabPane
+            className="adhoc-filter-edit-tab"
+            key={ExpressionTypes.Sql}
+            tab={t('Custom SQL')}
+          >
+            <ErrorBoundary>
+              <AdhocFilterEditPopoverSqlTabContent
+                adhocFilter={this.state.adhocFilter}
+                onChange={this.onAdhocFilterChange}
+                options={this.props.options}
+                height={this.state.height}
+                activeKey={this.state.activeKey}
+              />
+            </ErrorBoundary>
+          </Tabs.TabPane>
+        </Tabs>
+        <FilterActionsContainer>
+          <Button buttonSize="small" onClick={this.props.onClose} cta>
             {t('Close')}
           </Button>
           <Button
@@ -407,17 +255,18 @@ export default class AdhocFilterEditPopover extends Component {
             }
             buttonStyle="primary"
             buttonSize="small"
+            className="m-r-5"
             onClick={this.onSave}
             cta
           >
             {t('Save')}
           </Button>
-          <Icons.ArrowsAltOutlined
+          <ResizeIcon
             role="button"
             aria-label="Resize"
             tabIndex={0}
             onMouseDown={this.onDragDown}
-            className="edit-popover-resize"
+            className="fa fa-expand edit-popover-resize text-muted"
           />
         </FilterActionsContainer>
       </FilterPopoverContentContainer>

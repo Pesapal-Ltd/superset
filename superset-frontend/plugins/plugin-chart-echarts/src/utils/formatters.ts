@@ -78,7 +78,7 @@ export function getTooltipTimeFormatter(
   format?: string,
 ): TimeFormatter | StringConstructor {
   if (format === SMART_DATE_ID) {
-    return getSmartDateVerboseFormatter();
+    return getSmartDateDetailedFormatter();
   }
   if (format) {
     return getTimeFormatter(format);

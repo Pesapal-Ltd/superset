@@ -27,17 +27,15 @@ import {
   useCSSTextTruncation,
   fetchTimeRange,
 } from '@superset-ui/core';
-import {
-  Button,
-  Constants,
-  Divider,
-  Modal,
-  Tooltip,
-  Select,
-} from '@superset-ui/core/components';
+import Button from 'src/components/Button';
 import ControlHeader from 'src/explore/components/ControlHeader';
-import { Icons } from '@superset-ui/core/components/Icons';
+import Modal from 'src/components/Modal';
+import { Divider } from 'src/components';
+import Icons from 'src/components/Icons';
+import Select from 'src/components/Select/Select';
+import { Tooltip } from 'src/components/Tooltip';
 import { useDebouncedEffect } from 'src/explore/exploreUtils';
+import { SLOW_DEBOUNCE } from 'src/constants';
 import { noOp } from 'src/utils/common';
 import ControlPopover from '../ControlPopover/ControlPopover';
 
@@ -67,9 +65,14 @@ const ContentStyleWrapper = styled.div`
       margin-top: 8px;
     }
 
+    .ant-input-number {
+      width: 100%;
+    }
+
     .ant-picker {
       padding: 4px 17px 4px;
       border-radius: 4px;
+      width: 100%;
     }
 
     .ant-divider-horizontal {
@@ -77,14 +80,23 @@ const ContentStyleWrapper = styled.div`
     }
 
     .control-label {
-      font-size: ${theme.fontSizeSM}px;
+      font-size: 11px;
+      font-weight: ${theme.typography.weights.medium};
+      color: ${theme.colors.grayscale.light2};
       line-height: 16px;
+      text-transform: uppercase;
       margin: 8px 0;
+    }
+
+    .vertical-radio {
+      display: block;
+      height: 40px;
+      line-height: 40px;
     }
 
     .section-title {
       font-style: normal;
-      font-weight: ${theme.fontWeightStrong};
+      font-weight: ${theme.typography.weights.bold};
       font-size: 15px;
       line-height: 24px;
       margin-bottom: 8px;
@@ -106,14 +118,14 @@ const ContentStyleWrapper = styled.div`
 
 const IconWrapper = styled.span`
   span {
-    margin-right: ${({ theme }) => 2 * theme.sizeUnit}px;
+    margin-right: ${({ theme }) => 2 * theme.gridUnit}px;
     vertical-align: middle;
   }
   .text {
     vertical-align: middle;
   }
   .error {
-    color: ${({ theme }) => theme.colorError};
+    color: ${({ theme }) => theme.colors.error.base};
   }
 `;
 
@@ -128,7 +140,7 @@ const getTooltipTitle = (
       {range && (
         <div
           css={(theme: SupersetTheme) => css`
-            margin-top: ${theme.sizeUnit}px;
+            margin-top: ${theme.gridUnit}px;
           `}
         >
           {range}
@@ -141,7 +153,6 @@ const getTooltipTitle = (
 
 export default function DateFilterLabel(props: DateFilterControlProps) {
   const {
-    name,
     onChange,
     onOpenPopover = noOp,
     onClosePopover = noOp,
@@ -232,7 +243,7 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
         });
       }
     },
-    Constants.SLOW_DEBOUNCE,
+    SLOW_DEBOUNCE,
     [timeRangeValue],
   );
 
@@ -273,9 +284,9 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
 
   const overlayContent = (
     <ContentStyleWrapper>
-      <div className="control-label">{t('Range type')}</div>
+      <div className="control-label">{t('RANGE TYPE')}</div>
       <StyledRangeType
-        ariaLabel={t('Range type')}
+        ariaLabel={t('RANGE TYPE')}
         options={FRAME_OPTIONS}
         value={frame}
         onChange={onChangeFrame}
@@ -297,11 +308,7 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
         <AdvancedFrame value={timeRangeValue} onChange={setTimeRangeValue} />
       )}
       {frame === 'Custom' && (
-        <CustomFrame
-          value={timeRangeValue}
-          onChange={setTimeRangeValue}
-          isOverflowingFilterBar={isOverflowingFilterBar}
-        />
+        <CustomFrame value={timeRangeValue} onChange={setTimeRangeValue} />
       )}
       {frame === 'No filter' && <div data-test={DateFilterTestKey.NoFilter} />}
       <Divider />
@@ -314,7 +321,7 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
         )}
         {!validTimeRange && (
           <IconWrapper className="warning">
-            <Icons.ExclamationCircleOutlined iconColor={theme.colorError} />
+            <Icons.ErrorSolidSmall iconColor={theme.colors.error.base} />
             <span className="text error">{evalResponse}</span>
           </IconWrapper>
         )}
@@ -346,34 +353,34 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
 
   const title = (
     <IconWrapper>
-      <Icons.EditOutlined />
+      <Icons.EditAlt iconColor={theme.colors.grayscale.base} />
       <span className="text">{t('Edit time range')}</span>
     </IconWrapper>
   );
+
   const popoverContent = (
     <ControlPopover
-      autoAdjustOverflow={false}
-      trigger="click"
       placement="right"
+      trigger="click"
       content={overlayContent}
       title={title}
-      defaultOpen={show}
-      open={show}
-      onOpenChange={toggleOverlay}
+      defaultVisible={show}
+      visible={show}
+      onVisibleChange={toggleOverlay}
       overlayStyle={{ width: '600px' }}
-      destroyTooltipOnHide
-      getPopupContainer={nodeTrigger =>
+      getPopupContainer={triggerNode =>
         isOverflowingFilterBar
-          ? (nodeTrigger.parentNode as HTMLElement)
+          ? (triggerNode.parentNode as HTMLElement)
           : document.body
       }
-      overlayClassName="time-range-popover"
+      destroyTooltipOnHide
     >
-      <Tooltip placement="top" title={tooltipTitle}>
+      <Tooltip
+        placement="top"
+        title={tooltipTitle}
+        getPopupContainer={trigger => trigger.parentElement as HTMLElement}
+      >
         <DateLabel
-          name={name}
-          aria-labelledby={`filter-name-${props.name}`}
-          aria-describedby={`date-label-${props.name}`}
           label={actualTimeRange}
           isActive={show}
           isPlaceholder={actualTimeRange === NO_TIME_RANGE}
@@ -386,11 +393,12 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
 
   const modalContent = (
     <>
-      <Tooltip placement="top" title={tooltipTitle}>
+      <Tooltip
+        placement="top"
+        title={tooltipTitle}
+        getPopupContainer={trigger => trigger.parentElement as HTMLElement}
+      >
         <DateLabel
-          name={name}
-          aria-labelledby={`filter-name-${props.name}`}
-          aria-describedby={`date-label-${props.name}`}
           onClick={toggleOverlay}
           label={actualTimeRange}
           isActive={show}

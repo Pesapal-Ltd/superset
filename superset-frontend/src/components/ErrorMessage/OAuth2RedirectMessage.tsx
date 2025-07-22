@@ -27,8 +27,8 @@ import { triggerQuery } from 'src/components/Chart/chartAction';
 import { onRefresh } from 'src/dashboard/actions/dashboardState';
 import { QueryResponse, t } from '@superset-ui/core';
 
-import type { ErrorMessageComponentProps } from './types';
-import { ErrorAlert } from './ErrorAlert';
+import { ErrorMessageComponentProps } from './types';
+import ErrorAlert from './ErrorAlert';
 
 interface OAuth2RedirectExtra {
   url: string;
@@ -59,7 +59,7 @@ interface OAuth2RedirectExtra {
  * by the backend and sent from the opened tab to the original tab. For extra security,
  * we also check that the source of the message is the opened tab via a ref.
  */
-export function OAuth2RedirectMessage({
+function OAuth2RedirectMessage({
   error,
   source,
 }: ErrorMessageComponentProps<OAuth2RedirectExtra>) {
@@ -162,16 +162,19 @@ export function OAuth2RedirectMessage({
       >
         provide authorization
       </a>{' '}
-      in order to run this operation.
+      in order to run this query.
     </>
   );
 
   return (
     <ErrorAlert
-      errorType={t('Authorization needed')}
-      message={subtitle}
-      type={level}
-      description={body}
+      title={t('Authorization needed')}
+      subtitle={subtitle}
+      level={level}
+      source={source}
+      body={body}
     />
   );
 }
+
+export default OAuth2RedirectMessage;

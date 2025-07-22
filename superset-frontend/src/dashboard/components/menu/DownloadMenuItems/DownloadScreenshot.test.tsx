@@ -17,13 +17,9 @@
  * under the License.
  */
 
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-} from 'spec/helpers/testing-library';
-import { Menu } from '@superset-ui/core/components/Menu';
+import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
+import { Menu } from 'src/components/Menu';
 import fetchMock from 'fetch-mock';
 import { logging } from '@superset-ui/core';
 import { DownloadScreenshotFormat } from './types';
@@ -46,7 +42,7 @@ jest.mock('src/components/MessageToasts/withToasts', () => ({
 
 const defaultProps = () => ({
   text: 'Download',
-  dashboardId: 123,
+  dashboardId: '123',
   format: DownloadScreenshotFormat.PDF,
   logEvent: mockLogEvent,
 });

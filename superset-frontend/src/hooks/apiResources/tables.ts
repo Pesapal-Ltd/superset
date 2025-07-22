@@ -66,12 +66,10 @@ export type FetchTableMetadataQueryParams = {
 };
 
 type ColumnKeyTypeType = 'pk' | 'fk' | 'index';
-export interface Column {
+interface Column {
   name: string;
   keys?: { type: ColumnKeyTypeType }[];
   type: string;
-  comment?: string;
-  longType: string;
 }
 
 export type TableMetaData = {
@@ -85,10 +83,9 @@ export type TableMetaData = {
   selectStar?: string;
   view?: string;
   columns: Column[];
-  comment?: string;
 };
 
-type TableMetadataResponse = {
+type TableMetadataReponse = {
   json: TableMetaData;
   response: Response;
 };
@@ -133,7 +130,7 @@ const tableApi = api.injectEndpoints({
           catalog,
           schema,
         })}`,
-        transformResponse: ({ json }: TableMetadataResponse) => json,
+        transformResponse: ({ json }: TableMetadataReponse) => json,
       }),
     }),
     tableExtendedMetadata: builder.query<
@@ -146,9 +143,6 @@ const tableApi = api.injectEndpoints({
         )}`,
         transformResponse: ({ json }: JsonResponse) => json,
       }),
-      providesTags: (result, error, { table }) => [
-        { type: 'TableMetadatas', id: table },
-      ],
     }),
   }),
 });
@@ -156,8 +150,6 @@ const tableApi = api.injectEndpoints({
 export const {
   useLazyTablesQuery,
   useTablesQuery,
-  useLazyTableMetadataQuery,
-  useLazyTableExtendedMetadataQuery,
   useTableMetadataQuery,
   useTableExtendedMetadataQuery,
   endpoints: tableEndpoints,

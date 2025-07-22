@@ -17,7 +17,7 @@
  * under the License.
  */
 import { useHistory } from 'react-router-dom';
-import { Button } from '@superset-ui/core/components';
+import Button from 'src/components/Button';
 import { t } from '@superset-ui/core';
 import { useSingleViewResource } from 'src/views/CRUD/hooks';
 import { logEvent } from 'src/logger/actions';
@@ -64,7 +64,7 @@ function Footer({
   const createLogAction = (dataset: Partial<DatasetObject>) => {
     let totalCount = 0;
     const value = Object.keys(dataset).reduce((total, key) => {
-      if (INPUT_FIELDS.includes(key) && dataset[key as keyof DatasetObject]) {
+      if (INPUT_FIELDS.includes(key) && dataset[key]) {
         totalCount += 1;
       }
       return totalCount;
@@ -114,9 +114,7 @@ function Footer({
 
   return (
     <>
-      <Button buttonStyle="secondary" onClick={cancelButtonOnClick}>
-        {t('Cancel')}
-      </Button>
+      <Button onClick={cancelButtonOnClick}>{t('Cancel')}</Button>
       <Button
         buttonStyle="primary"
         disabled={disabledCheck}

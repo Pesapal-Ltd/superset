@@ -17,8 +17,7 @@
  * under the License.
  */
 import { fireEvent, render } from 'spec/helpers/testing-library';
-import { JsonModal } from '.';
-import { convertBigIntStrToNumber } from './utils';
+import JsonModal, { convertBigIntStrToNumber } from '.';
 
 jest.mock('react-json-tree', () => ({
   JSONTree: () => <div data-test="mock-json-tree" />,
@@ -39,21 +38,6 @@ test('renders JSON object in a tree view in a modal', () => {
   );
   expect(queryByTestId('mock-json-tree')).not.toBeInTheDocument();
   const link = getByText(jsonValue);
-  fireEvent.click(link);
-  expect(getByTestId('mock-json-tree')).toBeInTheDocument();
-});
-
-test('renders an object in a tree view in a modal', () => {
-  const jsonData = { a: 1 };
-  const expected = JSON.stringify(jsonData);
-  const { getByText, getByTestId, queryByTestId } = render(
-    <JsonModal jsonObject={jsonData} jsonValue={jsonData} modalTitle="title" />,
-    {
-      useRedux: true,
-    },
-  );
-  expect(queryByTestId('mock-json-tree')).not.toBeInTheDocument();
-  const link = getByText(expected);
   fireEvent.click(link);
   expect(getByTestId('mock-json-tree')).toBeInTheDocument();
 });

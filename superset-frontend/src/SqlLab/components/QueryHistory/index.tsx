@@ -20,7 +20,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
 import { useInView } from 'react-intersection-observer';
 import { omit } from 'lodash';
-import { EmptyState, Skeleton } from '@superset-ui/core/components';
+import { EmptyStateMedium } from 'src/components/EmptyState';
 import {
   t,
   styled,
@@ -31,6 +31,7 @@ import {
 import QueryTable from 'src/SqlLab/components/QueryTable';
 import { SqlLabRootState } from 'src/SqlLab/types';
 import { useEditorQueriesQuery } from 'src/hooks/apiResources/queries';
+import { Skeleton } from 'src/components';
 import useEffectEvent from 'src/hooks/useEffectEvent';
 
 interface QueryHistoryProps {
@@ -142,9 +143,8 @@ const QueryHistory = ({
     </>
   ) : (
     <StyledEmptyStateWrapper>
-      <EmptyState
+      <EmptyStateMedium
         title={t('Run a query to display query history')}
-        size="medium"
         image="document.svg"
       />
     </StyledEmptyStateWrapper>

@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import SSHTunnelSwitch from './SSHTunnelSwitch';
 import { DatabaseForm, DatabaseObject } from '../types';
 
@@ -25,8 +26,8 @@ jest.mock('@superset-ui/core', () => ({
   isFeatureEnabled: jest.fn().mockReturnValue(true),
 }));
 
-jest.mock('@superset-ui/core/components/Switch', () => ({
-  Switch: ({
+jest.mock('src/components', () => ({
+  AntdSwitch: ({
     checked,
     onChange,
   }: {
@@ -148,7 +149,9 @@ test('Displays tooltip text on hover over the InfoTooltip', async () => {
     />,
   );
 
-  const infoTooltipTrigger = screen.getByTestId('info-tooltip-icon');
+  const infoTooltipTrigger = screen.getByRole('img', {
+    name: 'info-solid_small',
+  });
   expect(infoTooltipTrigger).toBeInTheDocument();
 
   userEvent.hover(infoTooltipTrigger);

@@ -18,10 +18,10 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { ensureIsArray, t, usePrevious } from '@superset-ui/core';
+import { ensureIsArray, t, useTheme, usePrevious } from '@superset-ui/core';
 import { isEqual } from 'lodash';
 import ControlHeader from 'src/explore/components/ControlHeader';
-import { Icons } from '@superset-ui/core/components/Icons';
+import Icons from 'src/components/Icons';
 import {
   AddIconButton,
   AddControlLabel,
@@ -124,6 +124,7 @@ const MetricsControl = ({
   ...props
 }) => {
   const [value, setValue] = useState(coerceAdhocMetrics(propsValue));
+  const theme = useTheme();
   const prevColumns = usePrevious(columns);
   const prevSavedMetrics = usePrevious(savedMetrics);
 
@@ -316,7 +317,10 @@ const MetricsControl = ({
             disabled={isAddNewMetricDisabled()}
             data-test="add-metric-button"
           >
-            <Icons.PlusOutlined iconSize="m" />
+            <Icons.PlusLarge
+              iconSize="s"
+              iconColor={theme.colors.grayscale.light5}
+            />
           </AddIconButton>,
         )}
       </HeaderContainer>
@@ -325,7 +329,7 @@ const MetricsControl = ({
           ? value.map((value, index) => valueRenderer(value, index))
           : addNewMetricPopoverTrigger(
               <AddControlLabel>
-                <Icons.PlusOutlined iconSize="m" />
+                <Icons.PlusSmall iconColor={theme.colors.grayscale.light1} />
                 {t('Add metric')}
               </AddControlLabel>,
             )}

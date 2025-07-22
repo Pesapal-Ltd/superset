@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/* eslint-disable import/no-extraneous-dependencies */
 import {
   useCallback,
   useRef,
@@ -25,9 +24,8 @@ import {
   MutableRefObject,
   CSSProperties,
   DragEvent,
-  useEffect,
 } from 'react';
-import { styled, typedMemo, usePrevious } from '@superset-ui/core';
+
 import {
   useTable,
   usePagination,
@@ -41,8 +39,8 @@ import {
   Row,
 } from 'react-table';
 import { matchSorter, rankings } from 'match-sorter';
+import { typedMemo, usePrevious } from '@superset-ui/core';
 import { isEqual } from 'lodash';
-import { Space } from '@superset-ui/core/components';
 import GlobalFilter, { GlobalFilterProps } from './components/GlobalFilter';
 import SelectPageSize, {
   SelectPageSizeProps,
@@ -52,8 +50,6 @@ import SimplePagination from './components/Pagination';
 import useSticky from './hooks/useSticky';
 import { PAGE_SIZE_OPTIONS } from '../consts';
 import { sortAlphanumericCaseInsensitive } from './utils/sortAlphanumericCaseInsensitive';
-import { SearchOption, SortByItem } from '../types';
-import SearchSelectDropdown from './components/SearchSelectDropdown';
 
 export interface DataTableProps<D extends object> extends TableOptions<D> {
   tableClassName?: string;
@@ -66,12 +62,7 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   height?: string | number;
   serverPagination?: boolean;
   onServerPaginationChange: (pageNumber: number, pageSize: number) => void;
-  serverPaginationData: {
-    pageSize?: number;
-    currentPage?: number;
-    sortBy?: SortByItem[];
-    searchColumn?: string;
-  };
+  serverPaginationData: { pageSize?: number; currentPage?: number };
   pageSize?: number;
   noResults?: string | ((filterString: string) => ReactNode);
   sticky?: boolean;
@@ -80,14 +71,6 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   onColumnOrderChange: () => void;
   renderGroupingHeaders?: () => JSX.Element;
   renderTimeComparisonDropdown?: () => JSX.Element;
-  handleSortByChange: (sortBy: SortByItem[]) => void;
-  sortByFromParent: SortByItem[];
-  manualSearch?: boolean;
-  onSearchChange?: (searchText: string) => void;
-  initialSearchText?: string;
-  searchInputId?: string;
-  onSearchColChange: (searchCol: string) => void;
-  searchOptions: SearchOption[];
 }
 
 export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
@@ -97,24 +80,6 @@ export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
 const sortTypes = {
   alphanumeric: sortAlphanumericCaseInsensitive,
 };
-
-const StyledSpace = styled(Space)`
-  display: flex;
-  justify-content: flex-end;
-
-  .search-select-container {
-    display: flex;
-  }
-
-  .search-by-label {
-    align-self: center;
-    margin-right: 4px;
-  }
-`;
-
-const StyledRow = styled.div`
-  display: flex;
-`;
 
 // Be sure to pass our updateMyData and the skipReset option
 export default typedMemo(function DataTable<D extends object>({
@@ -140,14 +105,6 @@ export default typedMemo(function DataTable<D extends object>({
   onColumnOrderChange,
   renderGroupingHeaders,
   renderTimeComparisonDropdown,
-  handleSortByChange,
-  sortByFromParent = [],
-  manualSearch = false,
-  onSearchChange,
-  initialSearchText,
-  searchInputId,
-  onSearchColChange,
-  searchOptions,
   ...moreUseTableOptions
 }: DataTableProps<D>): JSX.Element {
   const tableHooks: PluginHook<D>[] = [
@@ -158,7 +115,6 @@ export default typedMemo(function DataTable<D extends object>({
     doSticky ? useSticky : [],
     hooks || [],
   ].flat();
-
   const columnNames = Object.keys(data?.[0] || {});
   const previousColumnNames = usePrevious(columnNames);
   const resultsSize = serverPagination ? rowCount : data.length;
@@ -171,8 +127,7 @@ export default typedMemo(function DataTable<D extends object>({
     ...initialState_,
     // zero length means all pages, the `usePagination` plugin does not
     // understand pageSize = 0
-    // sortBy: sortByRef.current,
-    sortBy: serverPagination ? sortByFromParent : sortByRef.current,
+    sortBy: sortByRef.current,
     pageSize: initialPageSize > 0 ? initialPageSize : resultsSize || 10,
   };
   const defaultWrapperRef = useRef<HTMLDivElement>(null);
@@ -233,13 +188,7 @@ export default typedMemo(function DataTable<D extends object>({
     wrapStickyTable,
     setColumnOrder,
     allColumns,
-    state: {
-      pageIndex,
-      pageSize,
-      globalFilter: filterValue,
-      sticky = {},
-      sortBy,
-    },
+    state: { pageIndex, pageSize, globalFilter: filterValue, sticky = {} },
   } = useTable<D>(
     {
       columns,
@@ -249,46 +198,10 @@ export default typedMemo(function DataTable<D extends object>({
       globalFilter: defaultGlobalFilter,
       sortTypes,
       autoResetSortBy: !isEqual(columnNames, previousColumnNames),
-      manualSortBy: !!serverPagination,
       ...moreUseTableOptions,
     },
     ...tableHooks,
   );
-
-  const handleSearchChange = useCallback(
-    (query: string) => {
-      if (manualSearch && onSearchChange) {
-        onSearchChange(query);
-      } else {
-        setGlobalFilter(query);
-      }
-    },
-    [manualSearch, onSearchChange, setGlobalFilter],
-  );
-
-  // updating the sort by to the own State of table viz
-  useEffect(() => {
-    const serverSortBy = serverPaginationData?.sortBy || [];
-
-    if (serverPagination && !isEqual(sortBy, serverSortBy)) {
-      if (Array.isArray(sortBy) && sortBy.length > 0) {
-        const [sortByItem] = sortBy;
-        const matchingColumn = columns.find(col => col?.id === sortByItem?.id);
-
-        if (matchingColumn && 'columnKey' in matchingColumn) {
-          const sortByWithColumnKey: SortByItem = {
-            ...sortByItem,
-            key: (matchingColumn as { columnKey: string }).columnKey,
-          };
-
-          handleSortByChange([sortByWithColumnKey]);
-        }
-      } else {
-        handleSortByChange([]);
-      }
-    }
-  }, [sortBy]);
-
   // make setPageSize accept 0
   const setPageSize = (size: number) => {
     if (serverPagination) {
@@ -442,7 +355,6 @@ export default typedMemo(function DataTable<D extends object>({
     resultOnPageChange = (pageNumber: number) =>
       onServerPaginationChange(pageNumber, serverPageSize);
   }
-
   return (
     <div
       ref={wrapperRef}
@@ -450,9 +362,9 @@ export default typedMemo(function DataTable<D extends object>({
     >
       {hasGlobalControl ? (
         <div ref={globalControlRef} className="form-inline dt-controls">
-          <StyledRow className="row">
+          <div className="row">
             <div
-              className={renderTimeComparisonDropdown ? 'col-sm-4' : 'col-sm-5'}
+              className={renderTimeComparisonDropdown ? 'col-sm-5' : 'col-sm-6'}
             >
               {hasPagination ? (
                 <SelectPageSize
@@ -469,35 +381,16 @@ export default typedMemo(function DataTable<D extends object>({
               ) : null}
             </div>
             {searchInput ? (
-              <StyledSpace
-                className={
-                  renderTimeComparisonDropdown ? 'col-sm-7' : 'col-sm-8'
-                }
-              >
-                {serverPagination && (
-                  <div className="search-select-container">
-                    <span className="search-by-label">Search by: </span>
-                    <SearchSelectDropdown
-                      searchOptions={searchOptions}
-                      value={serverPaginationData?.searchColumn || ''}
-                      onChange={onSearchColChange}
-                    />
-                  </div>
-                )}
+              <div className="col-sm-6">
                 <GlobalFilter<D>
                   searchInput={
                     typeof searchInput === 'boolean' ? undefined : searchInput
                   }
                   preGlobalFilteredRows={preGlobalFilteredRows}
-                  setGlobalFilter={
-                    manualSearch ? handleSearchChange : setGlobalFilter
-                  }
-                  filterValue={manualSearch ? initialSearchText : filterValue}
-                  id={searchInputId}
-                  serverPagination={!!serverPagination}
-                  rowCount={rowCount}
+                  setGlobalFilter={setGlobalFilter}
+                  filterValue={filterValue}
                 />
-              </StyledSpace>
+              </div>
             ) : null}
             {renderTimeComparisonDropdown ? (
               <div
@@ -507,7 +400,7 @@ export default typedMemo(function DataTable<D extends object>({
                 {renderTimeComparisonDropdown()}
               </div>
             ) : null}
-          </StyledRow>
+          </div>
         </div>
       ) : null}
       {wrapStickyTable ? wrapStickyTable(renderTable) : renderTable()}

@@ -17,20 +17,9 @@
  * under the License.
  */
 import { supersetTheme } from '@superset-ui/core';
-import {
-  cleanup,
-  render,
-  screen,
-  userEvent,
-} from 'spec/helpers/testing-library';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import FilterScopeSelector from './FilterScopeSelector';
-
-// Add afterEach cleanup
-afterEach(async () => {
-  cleanup();
-  // Wait for any pending effects to complete
-  await new Promise(resolve => setTimeout(resolve, 0));
-});
 
 const ROOT_ID = 'ROOT_ID';
 const GRID = 'GRID';
@@ -168,18 +157,17 @@ function getCheckboxState(name: string): CheckboxState {
   const element = screen.getByRole('link', { name });
   const svgPath = getCheckboxIcon(element).children[1].children[0].children[0];
   const fill = svgPath.getAttribute('fill');
-  return fill === supersetTheme.colorPrimary
+  return fill === supersetTheme.colors.primary.base
     ? CHECKED
     : fill === supersetTheme.colors.grayscale.light1
       ? INDETERMINATE
       : UNCHECKED;
 }
 
-// Replace the original clickCheckbox function with the async version
-async function clickCheckbox(name: string) {
+function clickCheckbox(name: string) {
   const element = screen.getByRole('link', { name });
   const checkboxLabel = getCheckboxIcon(element);
-  await userEvent.click(checkboxLabel);
+  userEvent.click(checkboxLabel);
 }
 
 test('renders with empty filters', () => {
@@ -261,40 +249,56 @@ test('searches for a chart', () => {
   expect(screen.getByRole('link', { name: CHART_C })).toBeInTheDocument();
 });
 
-// Update all tests that use clickCheckbox to be async and await the function call
-test('selects a leaf filter', async () => {
+test('selects a leaf filter', () => {
   render(<FilterScopeSelector {...createProps()} />, {
     useRedux: true,
   });
   expect(getCheckboxState(FILTER_C)).toBe(UNCHECKED);
-  await clickCheckbox(FILTER_C);
+  clickCheckbox(FILTER_C);
   expect(getCheckboxState(FILTER_C)).toBe(CHECKED);
 });
 
-test('selects a leaf chart', async () => {
+test('selects a leaf chart', () => {
   render(<FilterScopeSelector {...createProps()} />, {
     useRedux: true,
   });
   userEvent.click(screen.getAllByRole('button', { name: EXPAND_ALL })[1]);
   expect(getCheckboxState(CHART_D)).toBe(UNCHECKED);
-  await clickCheckbox(CHART_D);
+  clickCheckbox(CHART_D);
   expect(getCheckboxState(CHART_D)).toBe(CHECKED);
 });
 
-test('selects a branch of filters', async () => {
+test('selects a branch of filters', () => {
   render(<FilterScopeSelector {...createProps()} />, {
     useRedux: true,
   });
   expect(getCheckboxState(FILTER_A)).toBe(UNCHECKED);
   expect(getCheckboxState(FILTER_B)).toBe(UNCHECKED);
   expect(getCheckboxState(FILTER_C)).toBe(UNCHECKED);
-  await clickCheckbox(FILTER_A);
+  clickCheckbox(FILTER_A);
   expect(getCheckboxState(FILTER_A)).toBe(CHECKED);
   expect(getCheckboxState(FILTER_B)).toBe(CHECKED);
   expect(getCheckboxState(FILTER_C)).toBe(CHECKED);
 });
 
-test('selects all filters', async () => {
+test('selects a branch of charts', () => {
+  render(<FilterScopeSelector {...createProps()} />, {
+    useRedux: true,
+  });
+
+  const tabA = screen.getByText(TAB_A);
+  userEvent.click(tabA);
+
+  expect(getCheckboxState(TAB_A)).toBe(UNCHECKED);
+  expect(getCheckboxState(CHART_A)).toBe(UNCHECKED);
+  expect(getCheckboxState(CHART_B)).toBe(UNCHECKED);
+  clickCheckbox(TAB_A);
+  expect(getCheckboxState(TAB_A)).toBe(CHECKED);
+  expect(getCheckboxState(CHART_A)).toBe(CHECKED);
+  expect(getCheckboxState(CHART_B)).toBe(CHECKED);
+});
+
+test('selects all filters', () => {
   render(<FilterScopeSelector {...createProps()} />, {
     useRedux: true,
   });
@@ -303,14 +307,14 @@ test('selects all filters', async () => {
   expect(getCheckboxState(FILTER_A)).toBe(UNCHECKED);
   expect(getCheckboxState(FILTER_B)).toBe(UNCHECKED);
   expect(getCheckboxState(FILTER_C)).toBe(UNCHECKED);
-  await clickCheckbox(ALL_FILTERS);
+  clickCheckbox(ALL_FILTERS);
   expect(getCheckboxState(ALL_FILTERS)).toBe(CHECKED);
   expect(getCheckboxState(FILTER_A)).toBe(CHECKED);
   expect(getCheckboxState(FILTER_B)).toBe(CHECKED);
   expect(getCheckboxState(FILTER_C)).toBe(CHECKED);
 });
 
-test('selects all charts', async () => {
+test('selects all charts', () => {
   render(<FilterScopeSelector {...createProps()} />, {
     useRedux: true,
   });
@@ -321,7 +325,7 @@ test('selects all charts', async () => {
   expect(getCheckboxState(TAB_B)).toBe(UNCHECKED);
   expect(getCheckboxState(CHART_C)).toBe(UNCHECKED);
   expect(getCheckboxState(CHART_D)).toBe(UNCHECKED);
-  await clickCheckbox(ALL_CHARTS);
+  clickCheckbox(ALL_CHARTS);
   expect(getCheckboxState(TAB_A)).toBe(CHECKED);
   expect(getCheckboxState(CHART_A)).toBe(CHECKED);
   expect(getCheckboxState(CHART_B)).toBe(CHECKED);

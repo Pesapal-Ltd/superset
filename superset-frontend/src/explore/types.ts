@@ -55,7 +55,7 @@ export interface ChartState {
   latestQueryFormData: Partial<QueryFormData>;
   sliceFormData: QueryFormData | null;
   queryController: AbortController | null;
-  queriesResponse: QueryData[] | null;
+  queriesResponse: QueryData | null;
   triggerQuery: boolean;
 }
 
@@ -69,7 +69,7 @@ export type Datasource = Dataset & {
   catalog?: string | null;
   schema?: string;
   is_sqllab_view?: boolean;
-  extra?: string | object;
+  extra?: string;
 };
 
 export interface ExplorePageInitialData {
@@ -82,10 +82,6 @@ export interface ExplorePageInitialData {
     owners: string[];
     created_by?: string;
     changed_by?: string;
-    dashboards?: {
-      id: number;
-      dashboard_title: string;
-    }[];
   };
   saveAction?: SaveActionType | null;
 }

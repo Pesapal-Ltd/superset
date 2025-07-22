@@ -165,9 +165,9 @@ const ColumnSelectPopoverTrigger = ({
       <ControlPopover
         trigger="click"
         content={overlayContent}
-        defaultOpen={visible}
-        open={visible}
-        onOpenChange={handleTogglePopover}
+        defaultVisible={visible}
+        visible={visible}
+        onVisibleChange={handleTogglePopover}
         title={popoverTitle}
         destroyTooltipOnHide
       >

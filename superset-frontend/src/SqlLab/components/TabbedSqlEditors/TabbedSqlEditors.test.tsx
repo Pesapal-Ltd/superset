@@ -28,6 +28,10 @@ import { Store } from 'redux';
 import { RootState } from 'src/views/store';
 import { SET_ACTIVE_QUERY_EDITOR } from 'src/SqlLab/actions/sqlLab';
 
+fetchMock.get('glob:*/api/v1/database/*', {});
+fetchMock.get('glob:*/api/v1/saved_query/*', {});
+fetchMock.get('glob:*/kv/*', {});
+
 jest.mock('src/SqlLab/components/SqlEditor', () => () => (
   <div data-test="mock-sql-editor" />
 ));
@@ -42,18 +46,9 @@ const setup = (overridesStore?: Store, initialState?: RootState) =>
     initialState,
     ...(overridesStore && { store: overridesStore }),
   });
-let pathStub = jest.spyOn(URI.prototype, 'path');
 
 beforeEach(() => {
-  fetchMock.get('glob:*/api/v1/database/*', {});
-  fetchMock.get('glob:*/api/v1/saved_query/*', {});
-  pathStub = jest.spyOn(URI.prototype, 'path').mockReturnValue(`/sqllab/`);
   store.clearActions();
-});
-
-afterEach(() => {
-  fetchMock.reset();
-  pathStub.mockReset();
 });
 
 describe('componentDidMount', () => {
@@ -67,13 +62,7 @@ describe('componentDidMount', () => {
     replaceState.mockReset();
     uriStub.mockReset();
   });
-  test('should handle id', async () => {
-    const id = 1;
-    fetchMock.get(`glob:*/api/v1/sqllab/permalink/kv:${id}`, {
-      label: 'test permalink',
-      sql: 'SELECT * FROM test_table',
-      dbId: 1,
-    });
+  test('should handle id', () => {
     uriStub.mockReturnValue({ id: 1 });
     setup(store);
     expect(replaceState).toHaveBeenCalledWith(
@@ -81,33 +70,6 @@ describe('componentDidMount', () => {
       expect.anything(),
       '/sqllab',
     );
-    await waitFor(() =>
-      expect(
-        fetchMock.calls(`glob:*/api/v1/sqllab/permalink/kv:${id}`),
-      ).toHaveLength(1),
-    );
-    fetchMock.reset();
-  });
-  test('should handle permalink', async () => {
-    const key = '9sadkfl';
-    fetchMock.get(`glob:*/api/v1/sqllab/permalink/${key}`, {
-      label: 'test permalink',
-      sql: 'SELECT * FROM test_table',
-      dbId: 1,
-    });
-    pathStub.mockReturnValue(`/sqllab/p/${key}`);
-    setup(store);
-    await waitFor(() =>
-      expect(
-        fetchMock.calls(`glob:*/api/v1/sqllab/permalink/${key}`),
-      ).toHaveLength(1),
-    );
-    expect(replaceState).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      '/sqllab',
-    );
-    fetchMock.reset();
   });
   test('should handle savedQueryId', () => {
     uriStub.mockReturnValue({ savedQueryId: 1 });
@@ -148,70 +110,36 @@ test('should removeQueryEditor', async () => {
     undefined,
     initialState,
   );
-  const tabCount = getAllByRole('tab').filter(
-    tab => !tab.classList.contains('ant-tabs-tab-remove'),
-  ).length;
+  const tabCount = getAllByRole('tab').length;
   const tabList = getByRole('tablist');
   const closeButton = tabList.getElementsByTagName('button')[0];
   expect(closeButton).toBeInTheDocument();
   if (closeButton) {
     fireEvent.click(closeButton);
   }
-  await waitFor(() =>
-    expect(
-      getAllByRole('tab').filter(
-        tab => !tab.classList.contains('ant-tabs-tab-remove'),
-      ).length,
-    ).toEqual(tabCount - 1),
-  );
-  expect(
-    queryByText(initialState.sqlLab.queryEditors[0].name),
-  ).not.toBeInTheDocument();
+  await waitFor(() => expect(getAllByRole('tab').length).toEqual(tabCount - 1));
+  expect(queryByText(initialState.sqlLab.queryEditors[0].name)).toBeFalsy();
 });
 test('should add new query editor', async () => {
   const { getAllByLabelText, getAllByRole } = setup(undefined, initialState);
-  const tabCount = getAllByRole('tab').filter(
-    tab => !tab.classList.contains('ant-tabs-tab-remove'),
-  ).length;
+  const tabCount = getAllByRole('tab').length;
   fireEvent.click(getAllByLabelText('Add tab')[0]);
-  await waitFor(() =>
-    expect(
-      getAllByRole('tab').filter(
-        tab => !tab.classList.contains('ant-tabs-tab-remove'),
-      ).length,
-    ).toEqual(tabCount + 1),
+  await waitFor(() => expect(getAllByRole('tab').length).toEqual(tabCount + 1));
+  expect(getAllByRole('tab')[tabCount]).toHaveTextContent(
+    /Untitled Query (\d+)+/,
   );
-  expect(
-    getAllByRole('tab').filter(
-      tab => !tab.classList.contains('ant-tabs-tab-remove'),
-    )[tabCount],
-  ).toHaveTextContent(/Untitled Query (\d+)+/);
 });
 test('should properly increment query tab name', async () => {
   const { getAllByLabelText, getAllByRole } = setup(undefined, initialState);
-  const tabCount = getAllByRole('tab').filter(
-    tab => !tab.classList.contains('ant-tabs-tab-remove'),
-  ).length;
+  const tabCount = getAllByRole('tab').length;
   const newTitle = newQueryTabName(initialState.sqlLab.queryEditors);
   fireEvent.click(getAllByLabelText('Add tab')[0]);
-  await waitFor(() =>
-    expect(
-      getAllByRole('tab').filter(
-        tab => !tab.classList.contains('ant-tabs-tab-remove'),
-      ).length,
-    ).toEqual(tabCount + 1),
-  );
-  expect(
-    getAllByRole('tab').filter(
-      tab => !tab.classList.contains('ant-tabs-tab-remove'),
-    )[tabCount],
-  ).toHaveTextContent(newTitle);
+  await waitFor(() => expect(getAllByRole('tab').length).toEqual(tabCount + 1));
+  expect(getAllByRole('tab')[tabCount]).toHaveTextContent(newTitle);
 });
 test('should handle select', async () => {
   const { getAllByRole } = setup(store);
-  const tabs = getAllByRole('tab').filter(
-    tab => !tab.classList.contains('ant-tabs-tab-remove'),
-  );
+  const tabs = getAllByRole('tab');
   fireEvent.click(tabs[1]);
   await waitFor(() => expect(store.getActions()).toHaveLength(1));
   expect(store.getActions()[0]).toEqual(
@@ -223,9 +151,7 @@ test('should handle select', async () => {
 });
 test('should render', () => {
   const { getAllByRole } = setup(store);
-  const tabs = getAllByRole('tab').filter(
-    tab => !tab.classList.contains('ant-tabs-tab-remove'),
-  );
+  const tabs = getAllByRole('tab');
   expect(tabs).toHaveLength(initialState.sqlLab.queryEditors.length);
 });
 test('should disable new tab when offline', () => {
@@ -249,7 +175,7 @@ test('should have an empty state when query editors is empty', async () => {
   });
 
   // Clear the new tab applied in componentDidMount and check the state of the empty tab
-  const removeTabButton = getByRole('tab', { name: 'remove' });
+  const removeTabButton = getByRole('button', { name: 'remove' });
   fireEvent.click(removeTabButton);
 
   await waitFor(() =>

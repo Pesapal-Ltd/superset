@@ -32,7 +32,6 @@ export const DEFAULT_FORM_DATA: Partial<EchartsBubbleFormData> = {
   xAxisBounds: [null, null],
   yAxisBounds: [null, null],
   xAxisLabelRotation: defaultXAxis.xAxisLabelRotation,
-  xAxisLabelInterval: defaultXAxis.xAxisLabelInterval,
   opacity: 0.6,
 };
 

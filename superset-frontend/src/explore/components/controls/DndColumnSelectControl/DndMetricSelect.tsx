@@ -18,7 +18,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { nanoid } from 'nanoid';
 import {
   ensureIsArray,
   GenericDataType,
@@ -78,7 +77,6 @@ const coerceMetrics = (
       return {
         metric_name: metric,
         error_text: t('This metric might be incompatible with current dataset'),
-        uuid: nanoid(),
       };
     }
     if (!isDictionaryForAdhocMetric(metric)) {

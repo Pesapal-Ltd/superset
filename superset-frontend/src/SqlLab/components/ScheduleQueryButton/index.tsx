@@ -18,23 +18,14 @@
  */
 import { FunctionComponent, useState, useRef, ChangeEvent } from 'react';
 
-import SchemaForm, { FormProps } from '@rjsf/core';
-import { FormValidation } from '@rjsf/utils';
-import validator from '@rjsf/validator-ajv8';
+import SchemaForm, { FormProps, FormValidation } from 'react-jsonschema-form';
+import { Row, Col } from 'src/components';
+import { Input, TextArea } from 'src/components/Input';
 import { t, styled } from '@superset-ui/core';
-import { parseDate } from 'chrono-node';
-import {
-  ModalTrigger,
-  ModalTriggerRef,
-} from '@superset-ui/core/components/ModalTrigger';
-import {
-  Input,
-  Button,
-  Form,
-  FormItem,
-  Row,
-  Col,
-} from '@superset-ui/core/components';
+import * as chrono from 'chrono-node';
+import ModalTrigger, { ModalTriggerRef } from 'src/components/ModalTrigger';
+import { Form, FormItem } from 'src/components/Form';
+import Button from 'src/components/Button';
 import getBootstrapData from 'src/utils/getBootstrapData';
 
 const bootstrapData = getBootstrapData();
@@ -54,10 +45,11 @@ const getJSONSchema = () => {
     Object.entries(jsonSchema.properties).forEach(
       ([key, value]: [string, any]) => {
         if (value.default && value.format === 'date-time') {
-          const parsedDate = parseDate(value.default);
           jsonSchema.properties[key] = {
             ...value,
-            default: parsedDate ? parsedDate.toISOString() : null,
+            default: value.default
+              ? chrono.parseDate(value.default)?.toISOString()
+              : null,
           };
         }
       },
@@ -75,11 +67,11 @@ const getValidator = () => {
   const rules: any = getValidationRules();
   return (formData: Record<string, any>, errors: FormValidation) => {
     rules.forEach((rule: any) => {
-      const test = validators[rule.name as keyof typeof validators];
+      const test = validators[rule.name];
       const args = rule.arguments.map((name: string) => formData[name]);
       const container = rule.container || rule.arguments.slice(-1)[0];
-      if (!test(args[0], args[1])) {
-        errors[container]?.addError(rule.message);
+      if (!test(...args)) {
+        errors[container].addError(rule.message);
       }
     });
     return errors;
@@ -99,7 +91,7 @@ interface ScheduleQueryButtonProps {
 }
 
 const StyledRow = styled(Row)`
-  padding-bottom: ${({ theme }) => theme.sizeUnit * 2}px;
+  padding-bottom: ${({ theme }) => theme.gridUnit * 2}px;
 `;
 
 export const StyledButtonComponent = styled(Button)`
@@ -107,14 +99,17 @@ export const StyledButtonComponent = styled(Button)`
     background: none;
     text-transform: none;
     padding: 0px;
+    color: ${theme.colors.grayscale.dark2};
     font-size: 14px;
-    font-weight: ${theme.fontWeightNormal};
+    font-weight: ${theme.typography.weights.normal};
     margin-left: 0;
     &:disabled {
       margin-left: 0;
       background: none;
+      color: ${theme.colors.grayscale.dark2};
       &:hover {
         background: none;
+        color: ${theme.colors.grayscale.dark2};
       }
     }
   `}
@@ -156,7 +151,7 @@ const ScheduleQueryButton: FunctionComponent<ScheduleQueryButtonProps> = ({
   const onScheduleSubmit = ({
     formData,
   }: {
-    formData?: Omit<FormProps<Record<string, any>>, 'schema'>;
+    formData: Omit<FormProps<Record<string, any>>, 'schema'>;
   }) => {
     const query = {
       label,
@@ -189,7 +184,7 @@ const ScheduleQueryButton: FunctionComponent<ScheduleQueryButtonProps> = ({
       <StyledRow>
         <Col xs={24}>
           <FormItem label={t('Description')}>
-            <Input.TextArea
+            <TextArea
               rows={4}
               placeholder={t('Write a description for your query')}
               value={description}
@@ -207,8 +202,7 @@ const ScheduleQueryButton: FunctionComponent<ScheduleQueryButtonProps> = ({
               schema={getJSONSchema()}
               uiSchema={getUISchema()}
               onSubmit={onScheduleSubmit}
-              customValidate={getValidator()}
-              validator={validator}
+              validate={getValidator()}
             >
               <Button
                 buttonStyle="primary"

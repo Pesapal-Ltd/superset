@@ -25,7 +25,6 @@ import {
   JsonObject,
   NativeFilterScope,
   NativeFiltersState,
-  NativeFilterTarget,
 } from '@superset-ui/core';
 import { Dataset } from '@superset-ui/chart-controls';
 import { chart } from 'src/components/Chart/chartReducer';
@@ -34,14 +33,9 @@ import Database from 'src/types/Database';
 import { UrlParamEntries } from 'src/utils/urlUtils';
 
 import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
-import Owner from 'src/types/Owner';
 import { ChartState } from '../explore/types';
 
 export type { Dashboard } from 'src/types/Dashboard';
-
-export interface ExtendedNativeFilterScope extends NativeFilterScope {
-  selectedLayers?: string[];
-}
 
 export type ChartReducerInitialState = typeof chart;
 
@@ -145,11 +139,6 @@ export type DashboardInfo = {
   };
   crossFiltersEnabled: boolean;
   filterBarOrientation: FilterBarOrientation;
-  created_on_delta_humanized: string;
-  changed_on_delta_humanized: string;
-  changed_by?: Owner;
-  created_by?: Owner;
-  owners: Owner[];
 };
 
 export type ChartsState = { [key: string]: Chart };
@@ -188,35 +177,28 @@ export type Charts = { [key: number]: Chart };
 type ComponentTypesKeys = keyof typeof componentTypes;
 export type ComponentType = (typeof componentTypes)[ComponentTypesKeys];
 
-export type LayoutItemMeta = {
-  chartId: number;
-  defaultText?: string;
-  height: number;
-  placeholder?: string;
-  sliceName?: string;
-  sliceNameOverride?: string;
-  text?: string;
-  uuid: string;
-  width: number;
-};
-
 /** State of dashboardLayout item in redux */
 export type LayoutItem = {
   children: string[];
   parents?: string[];
   type: ComponentType;
   id: string;
-  meta: LayoutItemMeta;
+  meta: {
+    chartId: number;
+    defaultText?: string;
+    height: number;
+    placeholder?: string;
+    sliceName?: string;
+    sliceNameOverride?: string;
+    text?: string;
+    uuid: string;
+    width: number;
+  };
 };
 
 type ActiveFilter = {
-  filterType?: string;
-  targets: number[] | [Partial<NativeFilterTarget>];
   scope: number[];
   values: ExtraFormData;
-  layerScope?: {
-    [chartId: number]: number[];
-  };
 };
 
 export type ActiveFilters = {

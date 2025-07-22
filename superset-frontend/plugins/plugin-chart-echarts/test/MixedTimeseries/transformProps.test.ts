@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ChartProps, supersetTheme, VizType } from '@superset-ui/core';
+import { ChartProps, supersetTheme } from '@superset-ui/core';
 import {
   LegendOrientation,
   LegendType,
   EchartsTimeseriesSeriesType,
-} from '../../src';
+} from '@superset-ui/plugin-chart-echarts';
 import transformProps from '../../src/MixedTimeseries/transformProps';
 import {
   EchartsMixedTimeseriesFormData,
@@ -76,7 +76,7 @@ const formData: EchartsMixedTimeseriesFormData = {
   groupbyB: ['gender'],
   seriesType: EchartsTimeseriesSeriesType.Line,
   seriesTypeB: EchartsTimeseriesSeriesType.Bar,
-  viz_type: VizType.MixedTimeseries,
+  viz_type: 'mixed_timeseries',
   forecastEnabled: false,
   forecastPeriods: [],
   forecastInterval: 0,
@@ -118,9 +118,7 @@ const chartPropsConfig = {
 
 it('should transform chart props for viz', () => {
   const chartProps = new ChartProps(chartPropsConfig);
-  const transformed = transformProps(chartProps as EchartsMixedTimeseriesProps);
-
-  expect(transformed).toEqual(
+  expect(transformProps(chartProps as EchartsMixedTimeseriesProps)).toEqual(
     expect.objectContaining({
       echartOptions: expect.objectContaining({
         series: expect.arrayContaining([
@@ -129,7 +127,7 @@ it('should transform chart props for viz', () => {
               [599616000000, 1],
               [599916000000, 3],
             ],
-            id: 'sum__num (Query A), boy',
+            id: 'boy',
             stack: 'obs\na',
           }),
           expect.objectContaining({
@@ -137,16 +135,15 @@ it('should transform chart props for viz', () => {
               [599616000000, 2],
               [599916000000, 4],
             ],
-            id: 'sum__num (Query A), girl',
+            id: 'girl',
             stack: 'obs\na',
           }),
-          // Query B — Bar series
           expect.objectContaining({
             data: [
               [599616000000, 1],
               [599916000000, 3],
             ],
-            id: 'sum__num (Query B), boy',
+            id: 'boy (1)',
             stack: 'obs\nb',
           }),
           expect.objectContaining({
@@ -154,7 +151,7 @@ it('should transform chart props for viz', () => {
               [599616000000, 2],
               [599916000000, 4],
             ],
-            id: 'sum__num (Query B), girl',
+            id: 'girl (1)',
             stack: 'obs\nb',
           }),
         ]),

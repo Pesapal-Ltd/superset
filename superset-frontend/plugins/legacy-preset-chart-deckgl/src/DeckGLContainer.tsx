@@ -24,17 +24,14 @@ import {
   forwardRef,
   memo,
   ReactNode,
-  MouseEvent,
   useCallback,
   useEffect,
   useImperativeHandle,
   useState,
-  useRef,
 } from 'react';
 import { isEqual } from 'lodash';
 import { StaticMap } from 'react-map-gl';
-import DeckGL from '@deck.gl/react';
-import type { Layer } from '@deck.gl/core';
+import DeckGL, { Layer } from 'deck.gl/typed';
 import { JsonObject, JsonValue, styled, usePrevious } from '@superset-ui/core';
 import Tooltip, { TooltipProps } from './components/Tooltip';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -60,14 +57,6 @@ export const DeckGLContainer = memo(
     const [lastUpdate, setLastUpdate] = useState<number | null>(null);
     const [viewState, setViewState] = useState(props.viewport);
     const prevViewport = usePrevious(props.viewport);
-    const glContextRef = useRef<WebGL2RenderingContext | null>(null);
-
-    useEffect(
-      () => () => {
-        glContextRef.current?.getExtension('WEBGL_lose_context')?.loseContext();
-      },
-      [],
-    );
 
     useImperativeHandle(ref, () => ({ setTooltip }), []);
 
@@ -116,23 +105,15 @@ export const DeckGLContainer = memo(
 
     return (
       <>
-        <div
-          style={{ position: 'relative', width, height }}
-          onContextMenu={(e: MouseEvent<HTMLDivElement>) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
+        <div style={{ position: 'relative', width, height }}>
           <DeckGL
             controller
             width={width}
             height={height}
             layers={layers()}
             viewState={viewState}
+            glOptions={{ preserveDrawingBuffer: true }}
             onViewStateChange={onViewStateChange}
-            onAfterRender={context => {
-              glContextRef.current = context.gl;
-            }}
           >
             <StaticMap
               preserveDrawingBuffer

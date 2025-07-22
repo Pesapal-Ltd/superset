@@ -21,7 +21,7 @@ import {
   DataRecordValue,
   PartialFilters,
 } from '@superset-ui/core';
-import { ChartConfiguration, ActiveFilters } from 'src/dashboard/types';
+import { ChartConfiguration } from 'src/dashboard/types';
 
 export interface DashboardContextForExplore {
   labelsColor: Record<string, string>;
@@ -40,7 +40,5 @@ export interface DashboardContextForExplore {
         };
       }
     | {};
-  activeFilters?: ActiveFilters;
   isRedundant?: boolean;
-  dashboardPageId?: string;
 }

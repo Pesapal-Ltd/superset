@@ -26,7 +26,6 @@ import {
   NumberFormats,
   tooltipHtml,
   ValueFormatter,
-  VizType,
 } from '@superset-ui/core';
 import type { CallbackDataParams } from 'echarts/types/src/util/types';
 import type { EChartsCoreOption } from 'echarts/core';
@@ -227,14 +226,12 @@ export default function transformProps(
   const defaultLabel = {
     formatter,
     show: showLabels,
-    color: theme.colorText,
-    textBorderColor: theme.colorBgBase,
-    textBorderWidth: 1,
+    color: theme.colors.grayscale.dark2,
   };
 
   const series: FunnelSeriesOption[] = [
     {
-      type: VizType.Funnel,
+      type: 'funnel',
       ...getChartPadding(showLegend, legendOrientation, legendMargin),
       animation: true,
       minSize: '0%',
@@ -247,6 +244,7 @@ export default function transformProps(
       label: {
         ...defaultLabel,
         position: labelLine ? 'outer' : 'inner',
+        textBorderColor: 'transparent',
       },
       emphasis: {
         label: {

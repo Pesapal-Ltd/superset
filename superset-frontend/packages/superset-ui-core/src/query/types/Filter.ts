@@ -62,10 +62,6 @@ export interface FreeFormAdhocFilter extends BaseAdhocFilter {
   sqlExpression: string;
 }
 
-export interface LatestPartitionAdhocFilter extends BaseAdhocFilter {
-  datasource?: { schema?: string; datasource_name?: string };
-}
-
 export type AdhocFilter = SimpleAdhocFilter | FreeFormAdhocFilter;
 
 //---------------------------------------------------

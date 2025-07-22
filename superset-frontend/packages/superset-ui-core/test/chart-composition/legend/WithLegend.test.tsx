@@ -17,33 +17,32 @@
  * under the License.
  */
 
+import { mount, shallow } from 'enzyme';
 import { triggerResizeObserver } from 'resize-observer-polyfill';
 import { promiseTimeout, WithLegend } from '@superset-ui/core';
-import { render } from '@testing-library/react';
 
 let renderChart = jest.fn();
 let renderLegend = jest.fn();
 
-// TODO: rewrite to rtl
-describe.skip('WithLegend', () => {
+describe('WithLegend', () => {
   beforeEach(() => {
     renderChart = jest.fn(() => <div className="chart" />);
     renderLegend = jest.fn(() => <div className="legend" />);
   });
 
   it('sets className', () => {
-    const { container } = render(
+    const wrapper = shallow(
       <WithLegend
         className="test-class"
         renderChart={renderChart}
         renderLegend={renderLegend}
       />,
     );
-    expect(container.querySelectorAll('.test-class')).toHaveLength(1);
+    expect(wrapper.hasClass('test-class')).toEqual(true);
   });
 
   it('renders when renderLegend is not set', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         width={500}
@@ -56,13 +55,13 @@ describe.skip('WithLegend', () => {
     // Have to delay more than debounceTime (1ms)
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(0);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(0);
     }, 100);
   });
 
   it('renders', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         width={500}
@@ -77,13 +76,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders without width or height', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         renderChart={renderChart}
@@ -96,13 +95,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders legend on the left', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         position="left"
@@ -116,13 +115,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders legend on the right', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         position="right"
@@ -136,13 +135,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders legend on the top', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         position="top"
@@ -156,13 +155,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders legend on the bottom', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         position="bottom"
@@ -176,13 +175,13 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 
   it('renders legend with justifyContent set', () => {
-    const { container } = render(
+    const wrapper = mount(
       <WithLegend
         debounceTime={1}
         position="right"
@@ -197,8 +196,8 @@ describe.skip('WithLegend', () => {
     return promiseTimeout(() => {
       expect(renderChart).toHaveBeenCalledTimes(1);
       expect(renderLegend).toHaveBeenCalledTimes(1);
-      expect(container.querySelectorAll('div.chart')).toHaveLength(1);
-      expect(container.querySelectorAll('div.legend')).toHaveLength(1);
+      expect(wrapper.render().find('div.chart')).toHaveLength(1);
+      expect(wrapper.render().find('div.legend')).toHaveLength(1);
     }, 100);
   });
 });

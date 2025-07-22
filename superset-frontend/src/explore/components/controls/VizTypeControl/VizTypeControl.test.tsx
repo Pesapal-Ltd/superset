@@ -16,19 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Preset, VizType } from '@superset-ui/core';
+import { Preset } from '@superset-ui/core';
 import {
   render,
   cleanup,
   screen,
-  userEvent,
   within,
   waitFor,
 } from 'spec/helpers/testing-library';
 import { stateWithoutNativeFilters } from 'spec/fixtures/mockStore';
-import { DynamicPluginProvider } from 'src/components';
+import userEvent from '@testing-library/user-event';
+import { DynamicPluginProvider } from 'src/components/DynamicPlugins';
 import { testWithId } from 'src/utils/testUtils';
-import TimeTableChartPlugin from 'src/visualizations/TimeTable';
 import {
   BigNumberTotalChartPlugin,
   EchartsAreaChartPlugin,
@@ -37,8 +36,9 @@ import {
   EchartsTimeseriesBarChartPlugin,
   EchartsTimeseriesChartPlugin,
   EchartsTimeseriesLineChartPlugin,
-} from '../../../../../plugins/plugin-chart-echarts/src';
-import TableChartPlugin from '../../../../../plugins/plugin-chart-table/src';
+} from '@superset-ui/plugin-chart-echarts';
+import TableChartPlugin from '@superset-ui/plugin-chart-table';
+import TimeTableChartPlugin from 'src/visualizations/TimeTable';
 import VizTypeControl, { VIZ_TYPE_CONTROL_TEST_ID } from './index';
 
 jest.useFakeTimers();
@@ -48,26 +48,24 @@ class MainPreset extends Preset {
     super({
       name: 'Legacy charts',
       plugins: [
-        new TableChartPlugin().configure({ key: VizType.Table }),
-        new BigNumberTotalChartPlugin().configure({
-          key: VizType.BigNumberTotal,
-        }),
+        new TableChartPlugin().configure({ key: 'table' }),
+        new BigNumberTotalChartPlugin().configure({ key: 'big_number_total' }),
         new EchartsTimeseriesLineChartPlugin().configure({
-          key: VizType.Line,
+          key: 'echarts_timeseries_line',
         }),
         new EchartsAreaChartPlugin().configure({
-          key: VizType.Area,
+          key: 'echarts_area',
         }),
         new EchartsTimeseriesBarChartPlugin().configure({
-          key: VizType.Bar,
+          key: 'echarts_timeseries_bar',
         }),
-        new EchartsPieChartPlugin().configure({ key: VizType.Pie }),
+        new EchartsPieChartPlugin().configure({ key: 'pie' }),
         new EchartsTimeseriesChartPlugin().configure({
-          key: VizType.Timeseries,
+          key: 'echarts_timeseries',
         }),
-        new TimeTableChartPlugin().configure({ key: VizType.TimeTable }),
+        new TimeTableChartPlugin().configure({ key: 'time_table' }),
         new EchartsMixedTimeseriesChartPlugin().configure({
-          key: VizType.MixedTimeseries,
+          key: 'mixed_timeseries',
         }),
       ],
     });
@@ -116,15 +114,15 @@ describe('VizTypeControl', () => {
   it('Fast viz switcher tiles render', async () => {
     const props = {
       ...defaultProps,
-      value: VizType.Line,
+      value: 'echarts_timeseries_line',
       isModalOpenInit: false,
     };
     await waitForRenderWrapper(props);
-    expect(screen.getByLabelText('table')).toBeVisible();
-    expect(screen.getByLabelText('big-number_chart_tile')).toBeVisible();
-    expect(screen.getByLabelText('pie-chart')).toBeVisible();
-    expect(screen.getByLabelText('bar-chart')).toBeVisible();
-    expect(screen.getByLabelText('area-chart')).toBeVisible();
+    expect(screen.getByLabelText('table-chart-tile')).toBeVisible();
+    expect(screen.getByLabelText('big-number-chart-tile')).toBeVisible();
+    expect(screen.getByLabelText('pie-chart-tile')).toBeVisible();
+    expect(screen.getByLabelText('bar-chart-tile')).toBeVisible();
+    expect(screen.getByLabelText('area-chart-tile')).toBeVisible();
     expect(screen.queryByLabelText('monitor')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('check-square')).not.toBeInTheDocument();
 
@@ -165,14 +163,14 @@ describe('VizTypeControl', () => {
   it('Render viz tiles when non-featured is rendered', async () => {
     const props = {
       ...defaultProps,
-      value: VizType.Sankey,
+      value: 'line',
       isModalOpenInit: false,
     };
     const state = {
       charts: {
         1: {
           latestQueryFormData: {
-            viz_type: VizType.Sankey,
+            viz_type: 'line',
           },
         },
       },
@@ -192,7 +190,7 @@ describe('VizTypeControl', () => {
   it('Change viz type on click', async () => {
     const props = {
       ...defaultProps,
-      value: VizType.Line,
+      value: 'echarts_timeseries_line',
       isModalOpenInit: false,
     };
     await waitForRenderWrapper(props);
@@ -214,7 +212,7 @@ describe('VizTypeControl', () => {
     userEvent.click(screen.getByText('View all charts'));
     expect(
       await screen.findByText('Select a visualization type'),
-    ).toBeInTheDocument();
+    ).toBeVisible();
   });
 
   it('Search visualization type', async () => {
@@ -222,11 +220,9 @@ describe('VizTypeControl', () => {
 
     const visualizations = screen.getByTestId(getTestId('viz-row'));
 
-    userEvent.click(screen.getByRole('tab', { name: 'All charts' }));
+    userEvent.click(screen.getByRole('button', { name: 'ballot All charts' }));
 
-    expect(
-      await within(visualizations).findByText('Line Chart'),
-    ).toBeInTheDocument();
+    expect(await within(visualizations).findByText('Line Chart')).toBeVisible();
 
     // search
     userEvent.type(
@@ -235,7 +231,7 @@ describe('VizTypeControl', () => {
     );
     expect(
       await within(visualizations).findByText('Time-series Table'),
-    ).toBeInTheDocument();
+    ).toBeVisible();
     expect(within(visualizations).queryByText('Table')).not.toBeInTheDocument();
     expect(
       within(visualizations).queryByText('Big Number'),
@@ -247,13 +243,15 @@ describe('VizTypeControl', () => {
 
   it('Submit on viz type double-click', async () => {
     await waitForRenderWrapper();
-    userEvent.click(screen.getByRole('tab', { name: 'All charts' }));
+    userEvent.click(screen.getByRole('button', { name: 'ballot All charts' }));
     const visualizations = screen.getByTestId(getTestId('viz-row'));
     userEvent.click(within(visualizations).getByText('Bar Chart'));
 
-    expect(defaultProps.onChange).not.toHaveBeenCalled();
+    expect(defaultProps.onChange).not.toBeCalled();
     userEvent.dblClick(within(visualizations).getByText('Line Chart'));
 
-    expect(defaultProps.onChange).toHaveBeenCalledWith(VizType.Line);
+    expect(defaultProps.onChange).toHaveBeenCalledWith(
+      'echarts_timeseries_line',
+    );
   });
 });

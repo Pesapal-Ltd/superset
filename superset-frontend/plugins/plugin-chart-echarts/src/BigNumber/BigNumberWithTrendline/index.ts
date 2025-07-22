@@ -37,7 +37,6 @@ const metadata = {
   name: t('Big Number with Trendline'),
   tags: [
     t('Advanced-Analytics'),
-    t('ECharts'),
     t('Line'),
     t('Percentages'),
     t('Featured'),

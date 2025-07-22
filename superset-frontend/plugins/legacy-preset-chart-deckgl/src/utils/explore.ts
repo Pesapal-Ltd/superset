@@ -36,7 +36,7 @@ export function getExploreLongUrl(
   formData: JsonObject,
   endpointType: string,
   allowOverflow = true,
-  extraSearch: Record<string, any> = {},
+  extraSearch = {},
 ): string | undefined {
   if (!formData.datasource) {
     return undefined;

@@ -80,12 +80,10 @@ export type CommonRangeType =
 
 export const PreviousCalendarWeek = 'previous calendar week';
 export const PreviousCalendarMonth = 'previous calendar month';
-export const PreviousCalendarQuarter = 'previous calendar quarter';
 export const PreviousCalendarYear = 'previous calendar year';
 export type CalendarRangeType =
   | typeof PreviousCalendarWeek
   | typeof PreviousCalendarMonth
-  | typeof PreviousCalendarQuarter
   | typeof PreviousCalendarYear;
 
 export const CurrentDay = 'Current day';
@@ -103,7 +101,6 @@ export type CurrentRangeType =
 export type FrameComponentProps = {
   onChange: (timeRange: string) => void;
   value: string;
-  isOverflowingFilterBar?: boolean;
 };
 
 export interface DateFilterControlProps {

@@ -35,8 +35,7 @@ export type Locale =
   | 'pt'
   | 'pt_BR'
   | 'ru'
-  | 'zh'
-  | 'zh_TW'; // supported locales in Superset
+  | 'zh'; // supported locales in Superset
 
 /**
  * Language pack provided to `jed`.

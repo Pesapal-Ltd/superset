@@ -18,11 +18,8 @@
  */
 
 import { MemoryRouter } from 'react-router-dom';
-import {
-  JsonResponse,
-  SupersetClient,
-  isFeatureEnabled,
-} from '@superset-ui/core';
+import { FeatureFlag, SupersetClient } from '@superset-ui/core';
+import * as uiCore from '@superset-ui/core';
 
 import { render, screen, waitFor } from 'spec/helpers/testing-library';
 
@@ -51,19 +48,17 @@ const mockSaveFavoriteStatus = jest.fn();
 const mockHandleBulkDashboardExport = jest.fn();
 const mockOnDelete = jest.fn();
 
-jest.mock('@superset-ui/core', () => ({
-  ...jest.requireActual('@superset-ui/core'),
-  isFeatureEnabled: jest.fn(),
-}));
-
-const mockedIsFeatureEnabled = isFeatureEnabled as jest.Mock;
+let isFeatureEnabledMock: jest.MockInstance<boolean, [feature: FeatureFlag]>;
 
 beforeAll(() => {
-  mockedIsFeatureEnabled.mockReturnValue(true);
+  isFeatureEnabledMock = jest
+    .spyOn(uiCore, 'isFeatureEnabled')
+    .mockImplementation(() => true);
 });
 
 afterAll(() => {
-  mockedIsFeatureEnabled.mockClear();
+  // @ts-ignore
+  isFeatureEnabledMock.mockClear();
 });
 
 beforeEach(() => {
@@ -106,9 +101,11 @@ it('Renders the modified date', () => {
 
 it('should fetch thumbnail when dashboard has no thumbnail URL and feature flag is enabled', async () => {
   const mockGet = jest.spyOn(SupersetClient, 'get').mockResolvedValue({
-    json: { result: { thumbnail_url: '/new-thumbnail.png' } },
-  } as unknown as JsonResponse);
-
+    response: new Response(
+      JSON.stringify({ thumbnail_url: '/new-thumbnail.png' }),
+    ),
+    json: () => Promise.resolve({ thumbnail_url: '/new-thumbnail.png' }),
+  });
   const { rerender } = render(
     <DashboardCard
       dashboard={{

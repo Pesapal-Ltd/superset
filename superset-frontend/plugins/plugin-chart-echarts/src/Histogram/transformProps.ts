@@ -25,7 +25,7 @@ import {
   CategoricalColorNamespace,
   NumberFormats,
   getColumnLabel,
-  getValueFormatter,
+  getNumberFormatter,
   tooltipHtml,
 } from '@superset-ui/core';
 import { HistogramChartProps, HistogramTransformedProps } from './types';
@@ -41,7 +41,6 @@ export default function transformProps(
   const refs: Refs = {};
   let focusedSeries: number | undefined;
   const {
-    datasource: { currencyFormats = {}, columnFormats = {} },
     formData,
     height,
     hooks,
@@ -59,33 +58,19 @@ export default function transformProps(
     showLegend,
     showValue,
     sliceId,
-    xAxisFormat,
     xAxisTitle,
     yAxisTitle,
-    yAxisFormat,
   } = formData;
   const { data } = queriesData[0];
   const colorFn = CategoricalColorNamespace.getScale(colorScheme);
-
-  const formatter = (format: string) =>
-    getValueFormatter(
-      column,
-      currencyFormats,
-      columnFormats,
-      format,
-      undefined,
-    );
-  const xAxisFormatter = formatter(xAxisFormat);
-  const yAxisFormatter = formatter(yAxisFormat);
-
+  const formatter = getNumberFormatter(
+    normalize ? NumberFormats.FLOAT_2_POINT : NumberFormats.INTEGER,
+  );
   const percentFormatter = getPercentFormatter(NumberFormats.PERCENT_2_POINT);
   const groupbySet = new Set(groupby);
-  const xAxisData: string[] = Object.keys(data[0])
-    .filter(key => !groupbySet.has(key))
-    .map(key => {
-      const array = key.split(' - ').map(value => parseFloat(value));
-      return `${xAxisFormatter(array[0])} - ${xAxisFormatter(array[1])}`;
-    });
+  const xAxisData: string[] = Object.keys(data[0]).filter(
+    key => !groupbySet.has(key),
+  );
   const barSeries: BarSeriesOption[] = data.map(datum => {
     const seriesName =
       groupby.length > 0
@@ -106,7 +91,7 @@ export default function transformProps(
         position: 'top',
         formatter: params => {
           const { value } = params;
-          return yAxisFormatter.format(value as number);
+          return formatter.format(value as number);
         },
       },
     };
@@ -123,7 +108,7 @@ export default function transformProps(
     const title = params[0].name;
     const rows = params.map(param => {
       const { marker, seriesName, value } = param;
-      return [`${marker}${seriesName}`, yAxisFormatter.format(value as number)];
+      return [`${marker}${seriesName}`, formatter.format(value as number)];
     });
     if (groupby.length > 0) {
       const total = params.reduce(
@@ -137,7 +122,7 @@ export default function transformProps(
           ),
         );
       }
-      const totalRow = ['Total', yAxisFormatter.format(total)];
+      const totalRow = ['Total', formatter.format(total)];
       if (!normalize) {
         totalRow.push(percentFormatter.format(1));
       }
@@ -174,7 +159,7 @@ export default function transformProps(
       type: 'value',
       nameLocation: 'middle',
       axisLabel: {
-        formatter: (value: number) => yAxisFormatter.format(value),
+        formatter: (value: number) => formatter.format(value),
       },
     },
     series: barSeries,

@@ -16,15 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ComponentProps, RefObject } from 'react';
+import { RefObject } from 'react';
 import copyTextToClipboard from 'src/utils/copy';
 import { t, logging } from '@superset-ui/core';
-import { Menu } from '@superset-ui/core/components/Menu';
+import { Menu } from 'src/components/Menu';
 import { getDashboardPermalink } from 'src/utils/urlUtils';
 import { MenuKeys, RootState } from 'src/dashboard/types';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
-interface ShareMenuItemProps extends ComponentProps<typeof Menu.SubMenu> {
+interface ShareMenuItemProps {
   url?: string;
   copyMenuItemTitle: string;
   emailMenuItemTitle: string;
@@ -37,9 +37,6 @@ interface ShareMenuItemProps extends ComponentProps<typeof Menu.SubMenu> {
   copyMenuItemRef?: RefObject<any>;
   shareByEmailMenuItemRef?: RefObject<any>;
   selectedKeys?: string[];
-  setOpenKeys?: Function;
-  title: string;
-  disabled?: boolean;
 }
 
 const ShareMenuItems = (props: ShareMenuItemProps) => {
@@ -52,17 +49,15 @@ const ShareMenuItems = (props: ShareMenuItemProps) => {
     addSuccessToast,
     dashboardId,
     dashboardComponentId,
-    title,
-    disabled,
+    copyMenuItemRef,
+    shareByEmailMenuItemRef,
+    selectedKeys,
     ...rest
   } = props;
-  const { dataMask, activeTabs } = useSelector(
-    (state: RootState) => ({
-      dataMask: state.dataMask,
-      activeTabs: state.dashboardState.activeTabs,
-    }),
-    shallowEqual,
-  );
+  const { dataMask, activeTabs } = useSelector((state: RootState) => ({
+    dataMask: state.dataMask,
+    activeTabs: state.dashboardState.activeTabs,
+  }));
 
   async function generateUrl() {
     return getDashboardPermalink({
@@ -97,19 +92,28 @@ const ShareMenuItems = (props: ShareMenuItemProps) => {
   }
 
   return (
-    <Menu.SubMenu
-      title={title}
-      key={MenuKeys.Share}
-      disabled={disabled}
-      {...rest}
+    <Menu
+      selectable={false}
+      selectedKeys={selectedKeys}
+      onClick={e =>
+        e.key === MenuKeys.CopyLink ? onCopyLink() : onShareByEmail()
+      }
     >
-      <Menu.Item key={MenuKeys.CopyLink} onClick={() => onCopyLink()}>
-        {copyMenuItemTitle}
+      <Menu.Item key={MenuKeys.CopyLink} ref={copyMenuItemRef} {...rest}>
+        <div role="button" tabIndex={0}>
+          {copyMenuItemTitle}
+        </div>
       </Menu.Item>
-      <Menu.Item key={MenuKeys.ShareByEmail} onClick={() => onShareByEmail()}>
-        {emailMenuItemTitle}
+      <Menu.Item
+        key={MenuKeys.ShareByEmail}
+        ref={shareByEmailMenuItemRef}
+        {...rest}
+      >
+        <div role="button" tabIndex={0}>
+          {emailMenuItemTitle}
+        </div>
       </Menu.Item>
-    </Menu.SubMenu>
+    </Menu>
   );
 };
 export default ShareMenuItems;

@@ -18,7 +18,7 @@
  */
 import { useEffect } from 'react';
 import { t } from '@superset-ui/core';
-import { Radio } from '@superset-ui/core/components/Radio';
+import { Radio } from 'src/components/Radio';
 import {
   CALENDAR_RANGE_OPTIONS,
   CALENDAR_RANGE_SET,
@@ -45,18 +45,16 @@ export function CalendarFrame({ onChange, value }: FrameComponentProps) {
       <div className="section-title">
         {t('Configure Time Range: Previous...')}
       </div>
-      <Radio.GroupWrapper
-        spaceConfig={{
-          direction: 'vertical',
-          size: 15,
-          align: 'start',
-          wrap: false,
-        }}
-        size="large"
+      <Radio.Group
         value={value}
         onChange={(e: any) => onChange(e.target.value)}
-        options={CALENDAR_RANGE_OPTIONS}
-      />
+      >
+        {CALENDAR_RANGE_OPTIONS.map(({ value, label }) => (
+          <Radio key={value} value={value} className="vertical-radio">
+            {label}
+          </Radio>
+        ))}
+      </Radio.Group>
     </>
   );
 }

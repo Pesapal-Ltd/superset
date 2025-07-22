@@ -67,7 +67,7 @@ export interface Aggregates {
 export type DefaultPostProcessing = undefined;
 
 interface _PostProcessingAggregation {
-  operation: 'aggregate';
+  operation: 'aggregation';
   options: {
     groupby: string[];
     aggregates: Aggregates;
@@ -97,7 +97,6 @@ interface _PostProcessingContribution {
     orientation?: 'row' | 'column';
     columns?: string[];
     rename_columns?: string[];
-    contribution_totals?: Record<string, number>;
   };
 }
 export type PostProcessingContribution =
@@ -272,7 +271,7 @@ export type PostProcessingRule =
 export function isPostProcessingAggregation(
   rule?: PostProcessingRule,
 ): rule is PostProcessingAggregation {
-  return rule?.operation === 'aggregate';
+  return rule?.operation === 'aggregation';
 }
 
 export function isPostProcessingBoxplot(

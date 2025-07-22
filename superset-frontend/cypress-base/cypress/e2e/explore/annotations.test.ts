@@ -16,21 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { interceptChart } from 'cypress/utils';
-
-describe.skip('Annotations', () => {
+describe('Annotations', () => {
   beforeEach(() => {
-    interceptChart({ legacy: false }).as('chartData');
+    cy.intercept('POST', '/superset/explore_json/**').as('postJson');
+    cy.intercept('GET', '/superset/explore_json/**').as('getJson');
   });
 
   it('Create formula annotation y-axis goal line', () => {
     cy.visitChartByName('Num Births Trend');
-    cy.verifySliceSuccess({ waitAlias: '@chartData' });
+    cy.verifySliceSuccess({ waitAlias: '@postJson' });
 
     const layerLabel = 'Goal line';
-
-    // get by text Annotations and Layers
-    cy.get('span').contains('Annotations and Layers').click();
 
     cy.get('[data-test=annotation_layers]').click();
 
@@ -43,6 +39,10 @@ describe.skip('Annotations', () => {
     cy.get('button[data-test="run-query-button"]').click();
     cy.get('[data-test=annotation_layers]').contains(layerLabel);
 
-    cy.verifySliceSuccess({ waitAlias: '@chartData' });
+    cy.verifySliceSuccess({
+      waitAlias: '@postJson',
+      chartSelector: 'svg',
+    });
+    cy.get('.nv-legend-text').should('have.length', 2);
   });
 });

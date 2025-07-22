@@ -88,9 +88,6 @@ describe('Horizontal FilterBar', () => {
     cy.getBySel('horizontal-filterbar-empty')
       .contains('No filters are currently added to this dashboard.')
       .should('exist');
-    cy.get(nativeFilters.filtersPanel.filterGear).click({
-      force: true,
-    });
     cy.getBySel('filter-bar__create-filter').should('exist');
     cy.getBySel('filterbar-action-buttons').should('exist');
   });
@@ -123,7 +120,7 @@ describe('Horizontal FilterBar', () => {
 
     cy.getBySel('form-item-value').should('have.length', 3);
     cy.viewport(768, 1024);
-    cy.getBySel('form-item-value').should('have.length', 1);
+    cy.getBySel('form-item-value').should('have.length', 0);
     openMoreFilters(false);
     cy.getBySel('form-item-value').should('have.length', 3);
 
@@ -138,7 +135,7 @@ describe('Horizontal FilterBar', () => {
     cy.getBySel('dropdown-container-btn').should('not.exist');
   });
 
-  it.only('should show "more filters" and scroll', () => {
+  it('should show "more filters" and scroll', () => {
     prepareDashboardFilters([
       { name: 'test_1', column: 'country_name', datasetId: 2 },
       { name: 'test_2', column: 'country_code', datasetId: 2 },
@@ -157,11 +154,11 @@ describe('Horizontal FilterBar', () => {
     cy.get('.filter-item-wrapper').should('have.length', 3);
     openMoreFilters();
     cy.getBySel('form-item-value').should('have.length', 12);
-    cy.getBySel('filter-control-name').contains('test_3').should('be.visible');
+    cy.getBySel('filter-control-name').contains('test_10').should('be.visible');
     cy.getBySel('filter-control-name')
       .contains('test_12')
       .should('not.be.visible');
-    cy.getBySel('filter-control-name').contains('test_12').scrollIntoView();
+    cy.get('.ant-popover-inner-content').scrollTo('bottom');
     cy.getBySel('filter-control-name').contains('test_12').should('be.visible');
   });
 
@@ -176,8 +173,8 @@ describe('Horizontal FilterBar', () => {
     validateFilterNameOnDashboard(testItems.topTenChart.filterColumn);
   });
 
-  it.skip('should spot changes in "more filters" and apply their values', () => {
-    cy.intercept(`**/api/v1/chart/data?form_data=**`).as('chart');
+  it('should spot changes in "more filters" and apply their values', () => {
+    cy.intercept(`/api/v1/chart/data?form_data=**`).as('chart');
     prepareDashboardFilters([
       { name: 'test_1', column: 'country_name', datasetId: 2 },
       { name: 'test_2', column: 'country_code', datasetId: 2 },
@@ -197,14 +194,14 @@ describe('Horizontal FilterBar', () => {
     applyNativeFilterValueWithIndex(8, testItems.filterDefaultValue);
     cy.get(nativeFilters.applyFilter).click({ force: true });
     cy.wait('@chart');
-    cy.get('.ant-scroll-number.ant-badge-count').should(
+    cy.get('.antd5-scroll-number.antd5-badge-count').should(
       'have.attr',
       'title',
       '1',
     );
   });
 
-  it.skip('should focus filter and open "more filters" programmatically', () => {
+  it('should focus filter and open "more filters" programmatically', () => {
     prepareDashboardFilters([
       { name: 'test_1', column: 'country_name', datasetId: 2 },
       { name: 'test_2', column: 'country_code', datasetId: 2 },
@@ -226,12 +223,12 @@ describe('Horizontal FilterBar', () => {
     cy.getBySel('slice-header').within(() => {
       cy.get('.filter-counts').trigger('mouseover');
     });
-    cy.getBySel('filter-status-popover').contains('test_9').click();
+    cy.get('.filterStatusPopover').contains('test_9').click();
     cy.getBySel('dropdown-content').should('be.visible');
     cy.get('.ant-select-focused').should('be.visible');
   });
 
-  it.skip('should show tag count and one plain tag on focus and only count on blur in select ', () => {
+  it('should show tag count and one plain tag on focus and only count on blur in select ', () => {
     prepareDashboardFilters([
       { name: 'test_1', column: 'country_name', datasetId: 2 },
     ]);

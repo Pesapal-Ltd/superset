@@ -19,8 +19,9 @@
 import { RefObject, useEffect, useRef, KeyboardEvent } from 'react';
 
 import { useSelector } from 'react-redux';
-import { t, useTheme } from '@superset-ui/core';
-import { Popover } from '@superset-ui/core/components';
+import { Global, css } from '@emotion/react';
+import { t } from '@superset-ui/core';
+import Popover from 'src/components/Popover';
 import {
   FiltersContainer,
   FiltersDetailsContainer,
@@ -119,7 +120,7 @@ const DetailsPanelPopover = ({
 
   const indicatorKey = (indicator: Indicator): string =>
     `${indicator.column} - ${indicator.name}`;
-  const theme = useTheme();
+
   const content = (
     <FiltersDetailsContainer
       ref={popoverContentRef}
@@ -128,6 +129,54 @@ const DetailsPanelPopover = ({
       onKeyDown={handleKeyDown}
       role="menu"
     >
+      <Global
+        styles={theme => css`
+          .filterStatusPopover {
+            .ant-popover-inner {
+              background-color: ${theme.colors.grayscale.dark2}cc;
+              .ant-popover-inner-content {
+                padding: ${theme.gridUnit * 2}px;
+              }
+            }
+            &.ant-popover-placement-bottom,
+            &.ant-popover-placement-bottomLeft,
+            &.ant-popover-placement-bottomRight {
+              & > .ant-popover-content > .ant-popover-arrow {
+                border-top-color: ${theme.colors.grayscale.dark2}cc;
+                border-left-color: ${theme.colors.grayscale.dark2}cc;
+              }
+            }
+            &.ant-popover-placement-top,
+            &.ant-popover-placement-topLeft,
+            &.ant-popover-placement-topRight {
+              & > .ant-popover-content > .ant-popover-arrow {
+                border-bottom-color: ${theme.colors.grayscale.dark2}cc;
+                border-right-color: ${theme.colors.grayscale.dark2}cc;
+              }
+            }
+            &.ant-popover-placement-left,
+            &.ant-popover-placement-leftTop,
+            &.ant-popover-placement-leftBottom {
+              & > .ant-popover-content > .ant-popover-arrow {
+                border-top-color: ${theme.colors.grayscale.dark2}cc;
+                border-right-color: ${theme.colors.grayscale.dark2}cc;
+              }
+            }
+            &.ant-popover-placement-right,
+            &.ant-popover-placement-rightTop,
+            &.ant-popover-placement-rightBottom {
+              & > .ant-popover-content > .ant-popover-arrow {
+                border-bottom-color: ${theme.colors.grayscale.dark2}cc;
+                border-left-color: ${theme.colors.grayscale.dark2}cc;
+              }
+            }
+            &.ant-popover {
+              color: ${theme.colors.grayscale.light4};
+              z-index: 99;
+            }
+          }
+        `}
+      />
       <div>
         {appliedCrossFilterIndicators.length ? (
           <div>
@@ -175,13 +224,12 @@ const DetailsPanelPopover = ({
 
   return (
     <Popover
-      color={`${theme.colors.grayscale.dark2}cc`}
+      overlayClassName="filterStatusPopover"
       content={content}
-      open={popoverVisible}
-      onOpenChange={handleVisibility}
+      visible={popoverVisible}
+      onVisibleChange={handleVisibility}
       placement="bottomRight"
       trigger={['hover']}
-      data-test="filter-status-popover"
     >
       {children}
     </Popover>

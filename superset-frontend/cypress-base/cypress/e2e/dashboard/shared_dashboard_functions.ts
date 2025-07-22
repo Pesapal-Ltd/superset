@@ -55,7 +55,6 @@ export function prepareDashboardFilters(
         controlValues: {
           enableEmptyFilter: false,
           defaultToFirstItem: false,
-          creatable: true,
           multiSelect: true,
           searchAllOptions: false,
           inverseSelection: false,

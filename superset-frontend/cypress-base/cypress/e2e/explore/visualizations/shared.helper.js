@@ -22,22 +22,15 @@
 
 export const FORM_DATA_DEFAULTS = {
   datasource: '3__table',
+  granularity_sqla: 'ds',
   time_grain_sqla: null,
-  x_axis: 'ds',
-  adhoc_filters: [
-    {
-      clause: 'WHERE',
-      subject: 'ds',
-      operator: 'TEMPORAL_RANGE',
-      comparator: '100 years ago : now',
-      expressionType: 'SIMPLE',
-    },
-  ],
+  time_range: '100 years ago : now',
+  adhoc_filters: [],
   groupby: [],
   limit: null,
   timeseries_limit_metric: null,
   order_desc: false,
-  contributionMode: null,
+  contribution: false,
 };
 
 export const HEALTH_POP_FORM_DATA_DEFAULTS = {

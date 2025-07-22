@@ -32,7 +32,9 @@ test('renders with default props', async () => {
     { useDnd: true },
   );
   expect(container).toBeInTheDocument();
-  expect(await screen.findByRole('img', { name: 'close' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('img', { name: 'x-small' }),
+  ).toBeInTheDocument();
 });
 
 test('triggers onShiftOptions on drop', async () => {

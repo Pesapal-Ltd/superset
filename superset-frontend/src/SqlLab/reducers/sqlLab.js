@@ -19,8 +19,8 @@
 import { normalizeTimestamp, QueryState, t } from '@superset-ui/core';
 import { isEqual, omit } from 'lodash';
 import { shallowEqual } from 'react-redux';
-import { now } from '@superset-ui/core/utils/dates';
 import * as actions from '../actions/sqlLab';
+import { now } from '../../utils/dates';
 import {
   addToObject,
   alterInObject,
@@ -187,40 +187,30 @@ export default function sqlLabReducer(state = {}, action) {
     },
     [actions.MERGE_TABLE]() {
       const at = { ...action.table };
-      const existingTableIndex = state.tables.findIndex(
-        xt =>
+      let existingTable;
+      state.tables.forEach(xt => {
+        if (
           xt.dbId === at.dbId &&
           xt.queryEditorId === at.queryEditorId &&
           xt.catalog === at.catalog &&
           xt.schema === at.schema &&
-          xt.name === at.name,
-      );
-      if (existingTableIndex >= 0) {
+          xt.name === at.name
+        ) {
+          existingTable = xt;
+        }
+      });
+      if (existingTable) {
         if (action.query) {
           at.dataPreviewQueryId = action.query.id;
         }
-        return {
-          ...state,
-          tables: [
-            ...state.tables.slice(0, existingTableIndex),
-            {
-              ...state.tables[existingTableIndex],
-              ...at,
-              ...(state.tables[existingTableIndex].initialized && {
-                id: state.tables[existingTableIndex].id,
-              }),
-            },
-            ...state.tables.slice(existingTableIndex + 1),
-          ],
-          ...(at.expanded && {
-            activeSouthPaneTab: at.id,
-          }),
-        };
+        if (existingTable.initialized) {
+          at.id = existingTable.id;
+        }
+        return alterInArr(state, 'tables', existingTable, at);
       }
       // for new table, associate Id of query for data preview
       at.dataPreviewQueryId = null;
       let newState = addToArr(state, 'tables', at, Boolean(action.prepend));
-      newState.activeSouthPaneTab = at.id;
       if (action.query) {
         newState = alterInArr(newState, 'tables', at, {
           dataPreviewQueryId: action.query.id,
@@ -255,6 +245,7 @@ export default function sqlLabReducer(state = {}, action) {
         ...state,
         queries,
         tables: newTables,
+        activeSouthPaneTab: action.newQuery.id,
       };
     },
     [actions.COLLAPSE_TABLE]() {
@@ -262,18 +253,9 @@ export default function sqlLabReducer(state = {}, action) {
     },
     [actions.REMOVE_TABLES]() {
       const tableIds = action.tables.map(table => table.id);
-      const tables = state.tables.filter(table => !tableIds.includes(table.id));
-
       return {
         ...state,
-        tables,
-        ...(tableIds.includes(state.activeSouthPaneTab) && {
-          activeSouthPaneTab:
-            tables.find(
-              ({ queryEditorId }) =>
-                queryEditorId === action.tables[0].queryEditorId,
-            )?.id ?? 'Results',
-        }),
+        tables: state.tables.filter(table => !tableIds.includes(table.id)),
       };
     },
     [actions.COST_ESTIMATE_STARTED]() {
@@ -333,6 +315,8 @@ export default function sqlLabReducer(state = {}, action) {
           const queries = { ...state.queries, [q.id]: q };
           newState = { ...state, queries };
         }
+      } else {
+        newState.activeSouthPaneTab = action.query.id;
       }
       newState = addToObject(newState, 'queries', action.query);
 

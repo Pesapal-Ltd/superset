@@ -17,7 +17,7 @@
  * under the License.
  */
 import { useTheme } from '@superset-ui/core';
-import { List, type ListItemProps } from '@superset-ui/core/components';
+import { List, ListItemProps } from 'src/components';
 
 export interface CustomListItemProps extends ListItemProps {
   selectable: boolean;
@@ -26,15 +26,16 @@ export interface CustomListItemProps extends ListItemProps {
 export default function CustomListItem(props: CustomListItemProps) {
   const { selectable, children, ...rest } = props;
   const theme = useTheme();
-  const css: Record<string, Record<string, Record<string, number> | string>> = {
+  const css = {
     '&.ant-list-item': {
+      padding: `${theme.gridUnit + 2}px ${theme.gridUnit * 3}px`,
       ':first-of-type': {
-        borderTopLeftRadius: theme.borderRadius,
-        borderTopRightRadius: theme.borderRadius,
+        borderTopLeftRadius: theme.gridUnit,
+        borderTopRightRadius: theme.gridUnit,
       },
       ':last-of-type': {
-        borderBottomLeftRadius: theme.borderRadius,
-        borderBottomRightRadius: theme.borderRadius,
+        borderBottomLeftRadius: theme.gridUnit,
+        borderBottomRightRadius: theme.gridUnit,
       },
     },
   };

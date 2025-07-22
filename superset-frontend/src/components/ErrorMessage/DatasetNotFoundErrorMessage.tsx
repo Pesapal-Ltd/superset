@@ -18,20 +18,26 @@
  */
 import { t } from '@superset-ui/core';
 
-import type { ErrorMessageComponentProps } from './types';
-import { ErrorAlert } from './ErrorAlert';
+import { ErrorMessageComponentProps } from './types';
+import ErrorAlert from './ErrorAlert';
 
-export function DatasetNotFoundErrorMessage({
+function DatasetNotFoundErrorMessage({
   error,
+  source = 'dashboard',
   subtitle,
 }: ErrorMessageComponentProps) {
   const { level, message } = error;
+
   return (
     <ErrorAlert
-      errorType={t('Missing dataset')}
-      message={subtitle}
-      description={message}
-      type={level}
+      title={t('Missing dataset')}
+      subtitle={subtitle}
+      level={level}
+      source={source}
+      copyText={message}
+      body={null}
     />
   );
 }
+
+export default DatasetNotFoundErrorMessage;

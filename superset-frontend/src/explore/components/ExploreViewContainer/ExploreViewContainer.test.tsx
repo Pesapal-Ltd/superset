@@ -21,23 +21,18 @@ import {
   getChartControlPanelRegistry,
   getChartMetadataRegistry,
   ChartMetadata,
-  VizType,
 } from '@superset-ui/core';
 import { QUERY_MODE_REQUISITES } from 'src/explore/constants';
 import { MemoryRouter, Route } from 'react-router-dom';
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-} from 'spec/helpers/testing-library';
+import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import ExploreViewContainer from '.';
 
 const reduxState = {
   explore: {
     controls: {
       datasource: { value: '1__table' },
-      viz_type: { value: VizType.Table },
+      viz_type: { value: 'table' },
     },
     datasource: {
       id: 1,
@@ -163,7 +158,7 @@ test('renders chart in standalone mode', () => {
       explore: { ...reduxState.explore, standalone: true },
     },
   });
-  expect(queryByTestId('standalone-app')).toBeInTheDocument();
+  expect(queryByTestId('standalone-app')).toBeTruthy();
 });
 
 test('generates a different form_data param when one is provided and is mounting', async () => {

@@ -29,7 +29,7 @@ import {
   getValueFormatter,
 } from '@superset-ui/core';
 import { BigNumberTotalChartProps, BigNumberVizProps } from '../types';
-import { getDateFormatter, getOriginalLabel, parseMetricValue } from '../utils';
+import { getDateFormatter, parseMetricValue } from '../utils';
 import { Refs } from '../../types';
 
 export default function transformProps(
@@ -45,30 +45,21 @@ export default function transformProps(
     datasource: { currencyFormats = {}, columnFormats = {} },
   } = chartProps;
   const {
-    metricNameFontSize,
     headerFontSize,
     metric = 'value',
-    subtitle,
-    subtitleFontSize,
+    subheader = '',
+    subheaderFontSize,
     forceTimestampFormatting,
     timeFormat,
     yAxisFormat,
     conditionalFormatting,
     currencyFormat,
-    subheader,
-    subheaderFontSize,
   } = formData;
   const refs: Refs = {};
-  const { data = [], coltypes = [] } = queriesData[0] || {};
+  const { data = [], coltypes = [] } = queriesData[0];
   const granularity = extractTimegrain(rawFormData as QueryFormData);
-  const metrics = chartProps.datasource?.metrics || [];
-  const originalLabel = getOriginalLabel(metric, metrics);
   const metricName = getMetricLabel(metric);
-  const showMetricName = chartProps.rawFormData?.show_metric_name ?? false;
-  const formattedSubtitle = subtitle?.trim() ? subtitle : subheader || '';
-  const formattedSubtitleFontSize = subtitle?.trim()
-    ? (subtitleFontSize ?? 1)
-    : (subheaderFontSize ?? 1);
+  const formattedSubheader = subheader;
   const bigNumber =
     data.length === 0 ? null : parseMetricValue(data[0][metricName]);
 
@@ -89,7 +80,7 @@ export default function transformProps(
     metric,
     currencyFormats,
     columnFormats,
-    metricEntry?.d3format || yAxisFormat,
+    yAxisFormat,
     currencyFormat,
   );
 
@@ -107,6 +98,7 @@ export default function transformProps(
   const colorThresholdFormatters =
     getColorFormatters(conditionalFormatting, data, false) ??
     defaultColorFormatters;
+
   return {
     width,
     height,
@@ -114,13 +106,9 @@ export default function transformProps(
     headerFormatter,
     headerFontSize,
     subheaderFontSize,
-    subtitleFontSize: formattedSubtitleFontSize,
-    subtitle: formattedSubtitle,
+    subheader: formattedSubheader,
     onContextMenu,
     refs,
     colorThresholdFormatters,
-    metricName: originalLabel,
-    showMetricName,
-    metricNameFontSize,
   };
 }

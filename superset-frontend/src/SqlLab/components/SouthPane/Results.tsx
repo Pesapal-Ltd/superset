@@ -18,7 +18,8 @@
  */
 import { FC } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
-import { Alert, EmptyState } from '@superset-ui/core/components';
+import Alert from 'src/components/Alert';
+import { EmptyStateMedium } from 'src/components/EmptyState';
 import { FeatureFlag, styled, t, isFeatureEnabled } from '@superset-ui/core';
 
 import { SqlLabRootState } from 'src/SqlLab/types';
@@ -66,7 +67,7 @@ const Results: FC<Props> = ({
   ) {
     return (
       <StyledEmptyStateWrapper>
-        <EmptyState
+        <EmptyStateMedium
           title={t('Run a query to display results')}
           image="document.svg"
         />

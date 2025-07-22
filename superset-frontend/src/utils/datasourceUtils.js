@@ -23,5 +23,4 @@ export const getDatasourceAsSaveableDataset = source => ({
   sql: source?.sql || '',
   catalog: source?.catalog,
   schema: source?.schema,
-  templateParams: source?.templateParams,
 });

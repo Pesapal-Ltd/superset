@@ -18,15 +18,15 @@
  */
 import { FunctionComponent, useState, useEffect, ChangeEvent } from 'react';
 
-import { css, styled, t, useTheme } from '@superset-ui/core';
+import { styled, t } from '@superset-ui/core';
 import { useSingleViewResource } from 'src/views/CRUD/hooks';
 
-import { Icons } from '@superset-ui/core/components/Icons';
+import Icons from 'src/components/Icons';
+import { StyledIcon } from 'src/views/CRUD/utils';
+import Modal from 'src/components/Modal';
 import withToasts from 'src/components/MessageToasts/withToasts';
-import { Input, CssEditor, Modal } from '@superset-ui/core/components';
-import { Typography } from '@superset-ui/core/components/Typography';
+import { CssEditor } from 'src/components/AsyncAceEditor';
 
-import { OnlyKeyWithType } from 'src/utils/types';
 import { TemplateObject } from './types';
 
 interface CssTemplateModalProps {
@@ -37,45 +37,36 @@ interface CssTemplateModalProps {
   show: boolean;
 }
 
-type CssTemplateStringKeys = keyof Pick<
-  TemplateObject,
-  OnlyKeyWithType<TemplateObject, String>
->;
-
-const StyledCssTemplateTitle = styled.div(
-  ({ theme }) => css`
-    margin: ${theme.sizeUnit * 2}px auto ${theme.sizeUnit * 4}px auto;
-  `,
-);
-
-const StyledCssEditor = styled(CssEditor)`
-  ${({ theme }) => css`
-    border-radius: ${theme.borderRadius}px;
-    border: 1px solid ${theme.colorPrimaryBg};
-  `}
+const StyledCssTemplateTitle = styled.div`
+  margin: ${({ theme }) => theme.gridUnit * 2}px auto
+    ${({ theme }) => theme.gridUnit * 4}px auto;
 `;
 
-const TemplateContainer = styled.div(
-  ({ theme }) => css`
-    margin-bottom: ${theme.sizeUnit * 10}px;
+const StyledCssEditor = styled(CssEditor)`
+  border-radius: ${({ theme }) => theme.borderRadius}px;
+  border: 1px solid ${({ theme }) => theme.colors.secondary.light2};
+`;
 
-    .control-label {
-      margin-bottom: ${theme.sizeUnit * 2}px;
-    }
+const TemplateContainer = styled.div`
+  margin-bottom: ${({ theme }) => theme.gridUnit * 10}px;
 
-    .required {
-      margin-left: ${theme.sizeUnit / 2}px;
-      color: ${theme.colorErrorText};
-    }
+  .control-label {
+    margin-bottom: ${({ theme }) => theme.gridUnit * 2}px;
+  }
 
-    input[type='text'] {
-      padding: ${theme.sizeUnit * 1.5}px ${theme.sizeUnit * 2}px;
-      border: 1px solid ${theme.colorBorder};
-      border-radius: ${theme.borderRadius}px;
-      width: 50%;
-    }
-  `,
-);
+  .required {
+    margin-left: ${({ theme }) => theme.gridUnit / 2}px;
+    color: ${({ theme }) => theme.colors.error.base};
+  }
+
+  input[type='text'] {
+    padding: ${({ theme }) => theme.gridUnit * 1.5}px
+      ${({ theme }) => theme.gridUnit * 2}px;
+    border: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
+    border-radius: ${({ theme }) => theme.gridUnit}px;
+    width: 50%;
+  }
+`;
 
 const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
   addDangerToast,
@@ -84,7 +75,6 @@ const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
   show,
   cssTemplate = null,
 }) => {
-  const theme = useTheme();
   const [disableSave, setDisableSave] = useState<boolean>(true);
   const [currentCssTemplate, setCurrentCssTemplate] =
     useState<TemplateObject | null>(null);
@@ -105,8 +95,8 @@ const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
 
   // Functions
   const hide = () => {
+    setIsHidden(true);
     onHide();
-    setCurrentCssTemplate(null);
   };
 
   const onSave = () => {
@@ -156,7 +146,7 @@ const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
       css: currentCssTemplate ? currentCssTemplate.css : '',
     };
 
-    data[target.name as CssTemplateStringKeys] = target.value;
+    data[target.name] = target.value;
     setCurrentCssTemplate(data);
   };
 
@@ -202,7 +192,7 @@ const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
         css: '',
       });
     }
-  }, [cssTemplate, show]);
+  }, [cssTemplate]);
 
   useEffect(() => {
     if (resource) {
@@ -232,37 +222,27 @@ const CssTemplateModal: FunctionComponent<CssTemplateModalProps> = ({
       show={show}
       width="55%"
       title={
-        <Typography.Title level={4} data-test="css-template-modal-title">
+        <h4 data-test="css-template-modal-title">
           {isEditMode ? (
-            <Icons.EditOutlined
-              iconSize="l"
-              css={css`
-                margin: auto ${theme.sizeUnit * 2}px auto 0;
-              `}
-            />
+            <Icons.EditAlt css={StyledIcon} />
           ) : (
-            <Icons.PlusOutlined
-              iconSize="l"
-              css={css`
-                margin: auto ${theme.sizeUnit * 2}px auto 0;
-              `}
-            />
+            <Icons.PlusLarge css={StyledIcon} />
           )}
           {isEditMode
             ? t('Edit CSS template properties')
             : t('Add CSS template')}
-        </Typography.Title>
+        </h4>
       }
     >
       <StyledCssTemplateTitle>
-        <Typography.Title level={4}>{t('Basic information')}</Typography.Title>
+        <h4>{t('Basic information')}</h4>
       </StyledCssTemplateTitle>
       <TemplateContainer>
         <div className="control-label">
           {t('Name')}
           <span className="required">*</span>
         </div>
-        <Input
+        <input
           name="template_name"
           onChange={onTemplateNameChange}
           type="text"

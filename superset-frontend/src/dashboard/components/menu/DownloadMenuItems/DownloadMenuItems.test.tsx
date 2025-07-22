@@ -17,7 +17,6 @@
  * under the License.
  */
 import { render, screen } from 'spec/helpers/testing-library';
-import { Menu } from '@superset-ui/core/components/Menu';
 import DownloadMenuItems from '.';
 
 const createProps = () => ({
@@ -25,24 +24,21 @@ const createProps = () => ({
   imageMenuItemTitle: 'Download as Image',
   dashboardTitle: 'Test Dashboard',
   logEvent: jest.fn(),
-  dashboardId: 123,
-  title: 'Download',
-  submenuKey: 'download',
+  dashboardId: '123',
 });
 
 const renderComponent = () => {
-  render(
-    <Menu forceSubMenuRender>
-      <DownloadMenuItems {...createProps()} />
-    </Menu>,
-    {
-      useRedux: true,
-    },
-  );
+  render(<DownloadMenuItems {...createProps()} />, {
+    useRedux: true,
+  });
 };
 
 test('Should render menu items', () => {
   renderComponent();
-  expect(screen.getByText('Export to PDF')).toBeInTheDocument();
-  expect(screen.getByText('Download as Image')).toBeInTheDocument();
+  expect(
+    screen.getByRole('menuitem', { name: 'Export to PDF' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('menuitem', { name: 'Download as Image' }),
+  ).toBeInTheDocument();
 });

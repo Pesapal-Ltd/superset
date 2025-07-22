@@ -18,21 +18,20 @@
  */
 
 import { css, styled, t } from '@superset-ui/core';
-import dayjs from 'dayjs';
+import moment from 'moment';
 import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Tooltip } from '@superset-ui/core/components';
-import { ListView } from 'src/components';
+import ListView from 'src/components/ListView';
+import { Tooltip } from 'src/components/Tooltip';
 import SubMenu from 'src/features/home/SubMenu';
 import withToasts from 'src/components/MessageToasts/withToasts';
-import { fDuration } from '@superset-ui/core/utils/dates';
+import { fDuration } from 'src/utils/dates';
 import AlertStatusIcon from 'src/features/alerts/components/AlertStatusIcon';
 import {
   useListViewResource,
   useSingleViewResource,
 } from 'src/views/CRUD/hooks';
 import { AlertObject, LogObject } from 'src/features/alerts/types';
-import { AnnotationObject } from 'src/features/annotations/types';
 
 const PAGE_SIZE = 25;
 
@@ -43,9 +42,9 @@ const StyledHeader = styled.div`
 
     a,
     Link {
-      margin-left: ${theme.sizeUnit * 4}px;
-      font-size: ${theme.fontSizeSM};
-      font-weight: ${theme.fontWeightNormal};
+      margin-left: ${theme.gridUnit * 4}px;
+      font-size: ${theme.typography.sizes.s};
+      font-weight: ${theme.typography.weights.normal};
       text-decoration: underline;
     }
   `}
@@ -102,7 +101,6 @@ function ExecutionLog({
         Header: t('State'),
         size: 'xs',
         disableSortBy: true,
-        id: 'state',
       },
       {
         Cell: ({
@@ -114,7 +112,6 @@ function ExecutionLog({
         Header: t('Execution ID'),
         size: 'xs',
         disableSortBy: true,
-        id: 'uuid',
       },
       {
         Cell: ({
@@ -122,40 +119,32 @@ function ExecutionLog({
             original: { scheduled_dttm: scheduledDttm },
           },
         }: any) =>
-          dayjs(new Date(scheduledDttm)).format('YYYY-MM-DD hh:mm:ss a'),
+          moment(new Date(scheduledDttm)).format('YYYY-MM-DD hh:mm:ss a'),
         accessor: 'scheduled_dttm',
         Header: t('Scheduled at (UTC)'),
-        id: 'scheduled_dttm',
       },
       {
         Cell: ({
           row: {
             original: { start_dttm: startDttm },
           },
-        }: {
-          row: { original: AnnotationObject };
-        }) => dayjs(new Date(startDttm)).format('YYYY-MM-DD hh:mm:ss a'),
+        }: any) => moment(new Date(startDttm)).format('YYYY-MM-DD hh:mm:ss a'),
         Header: t('Start at (UTC)'),
         accessor: 'start_dttm',
-        id: 'start_dttm',
       },
       {
         Cell: ({
           row: {
             original: { start_dttm: startDttm, end_dttm: endDttm },
           },
-        }: {
-          row: { original: AnnotationObject };
-        }) =>
+        }: any) =>
           fDuration(new Date(startDttm).getTime(), new Date(endDttm).getTime()),
         Header: t('Duration'),
         disableSortBy: true,
-        id: 'duration',
       },
       {
         accessor: 'value',
         Header: t('Value'),
-        id: 'value',
       },
       {
         accessor: 'error_message',
@@ -169,7 +158,6 @@ function ExecutionLog({
             <span>{error_message}</span>
           </Tooltip>
         ),
-        id: 'error_message',
       },
     ],
     [isReportEnabled],

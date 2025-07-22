@@ -43,8 +43,11 @@ const openTableContextMenu = (
   cellContent: string,
   tableSelector = "[data-test-viz-type='table']",
 ) => {
-  cy.get(tableSelector).scrollIntoView();
-  cy.get(tableSelector).contains(cellContent).first().rightclick();
+  cy.get(tableSelector)
+    .scrollIntoView()
+    .contains(cellContent)
+    .first()
+    .rightclick();
 };
 
 const drillBy = (targetDrillByColumn: string, isLegacy = false) => {
@@ -55,21 +58,16 @@ const drillBy = (targetDrillByColumn: string, isLegacy = false) => {
   }
 
   cy.get('.ant-dropdown:not(.ant-dropdown-hidden)')
-    .should('be.visible')
-    .find("[role='menu'] [role='menuitem']")
-    .contains(/^Drill by$/)
-    .trigger('mouseover', { force: true });
-
+    .first()
+    .find("[role='menu'] [role='menuitem'] [title='Drill by']")
+    .trigger('mouseover');
   cy.get(
-    '.ant-dropdown-menu-submenu:not(.ant-dropdown-menu-submenu-hidden) [data-test="drill-by-submenu"]',
+    '.ant-dropdown-menu-submenu:not(.ant-dropdown-menu-hidden) [data-test="drill-by-submenu"]',
   )
-    .should('be.visible')
     .find('[role="menuitem"]')
-    .then($el => {
-      cy.wrap($el)
-        .contains(new RegExp(`^${targetDrillByColumn}$`))
-        .trigger('keydown', { keyCode: 13, which: 13, force: true });
-    });
+    .contains(new RegExp(`^${targetDrillByColumn}$`))
+    .first()
+    .click({ force: true });
 
   if (isLegacy) {
     return cy.wait('@legacyData');
@@ -96,16 +94,14 @@ const testEchart = (
 ) => {
   cy.get(`[data-test-viz-type='${vizType}'] canvas`).then($canvas => {
     // click 'boy'
-    cy.wrap($canvas).scrollIntoView();
-    cy.wrap($canvas).trigger(
-      'mouseover',
-      drillClickCoordinates[0][0],
-      drillClickCoordinates[0][1],
-    );
-    cy.wrap($canvas).rightclick(
-      drillClickCoordinates[0][0],
-      drillClickCoordinates[0][1],
-    );
+    cy.wrap($canvas)
+      .scrollIntoView()
+      .trigger(
+        'mouseover',
+        drillClickCoordinates[0][0],
+        drillClickCoordinates[0][1],
+      )
+      .rightclick(drillClickCoordinates[0][0], drillClickCoordinates[0][1]);
 
     drillBy('state').then(intercepted => {
       verifyExpectedFormData(intercepted, {
@@ -143,16 +139,14 @@ const testEchart = (
     // further drill
     cy.get(`[data-test="drill-by-chart"] canvas`).then($canvas => {
       // click 'other'
-      cy.wrap($canvas).scrollIntoView();
-      cy.wrap($canvas).trigger(
-        'mouseover',
-        drillClickCoordinates[1][0],
-        drillClickCoordinates[1][1],
-      );
-      cy.wrap($canvas).rightclick(
-        drillClickCoordinates[1][0],
-        drillClickCoordinates[1][1],
-      );
+      cy.wrap($canvas)
+        .scrollIntoView()
+        .trigger(
+          'mouseover',
+          drillClickCoordinates[1][0],
+          drillClickCoordinates[1][1],
+        )
+        .rightclick(drillClickCoordinates[1][0], drillClickCoordinates[1][1]);
 
       drillBy(furtherDrillDimension).then(intercepted => {
         verifyExpectedFormData(intercepted, {
@@ -510,29 +504,29 @@ describe('Drill by modal', () => {
 
     it('Line chart', () => {
       testEchart('echarts_timeseries_line', 'Line Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
     it('Area Chart', () => {
       testEchart('echarts_area', 'Area Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
     it('Scatter Chart', () => {
       testEchart('echarts_timeseries_scatter', 'Scatter Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
-    it('Bar Chart', () => {
-      testEchart('echarts_timeseries_bar', 'Bar Chart', [
-        [85, 94],
-        [490, 68],
+    it('Bar Chart V2', () => {
+      testEchart('echarts_timeseries_bar', 'Bar Chart V2', [
+        [70, 94],
+        [362, 68],
       ]);
     });
 
@@ -565,22 +559,22 @@ describe('Drill by modal', () => {
 
     it('Generic Chart', () => {
       testEchart('echarts_timeseries', 'Generic Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
     it('Smooth Line Chart', () => {
       testEchart('echarts_timeseries_smooth', 'Smooth Line Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
     it('Step Line Chart', () => {
       testEchart('echarts_timeseries_step', 'Step Line Chart', [
-        [85, 93],
-        [85, 93],
+        [70, 93],
+        [70, 93],
       ]);
     });
 
@@ -598,7 +592,7 @@ describe('Drill by modal', () => {
       ]);
     });
 
-    it.skip('Radar Chart', () => {
+    it('Radar Chart', () => {
       testEchart('radar', 'Radar Chart', [
         [182, 49],
         [423, 91],
@@ -615,9 +609,10 @@ describe('Drill by modal', () => {
     it('Mixed Chart', () => {
       cy.get('[data-test-viz-type="mixed_timeseries"] canvas').then($canvas => {
         // click 'boy'
-        cy.wrap($canvas).scrollIntoView();
-        cy.wrap($canvas).trigger('mouseover', 85, 93);
-        cy.wrap($canvas).rightclick(85, 93);
+        cy.wrap($canvas)
+          .scrollIntoView()
+          .trigger('mouseover', 70, 93)
+          .rightclick(70, 93);
 
         drillBy('name').then(intercepted => {
           const { queries } = intercepted.request.body;
@@ -649,9 +644,10 @@ describe('Drill by modal', () => {
         // further drill
         cy.get(`[data-test="drill-by-chart"] canvas`).then($canvas => {
           // click second query
-          cy.wrap($canvas).scrollIntoView();
-          cy.wrap($canvas).trigger('mouseover', 261, 114);
-          cy.wrap($canvas).rightclick(261, 114);
+          cy.wrap($canvas)
+            .scrollIntoView()
+            .trigger('mouseover', 246, 114)
+            .rightclick(246, 114);
 
           drillBy('ds').then(intercepted => {
             const { queries } = intercepted.request.body;

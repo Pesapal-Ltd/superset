@@ -25,9 +25,6 @@ import {
   getSequentialSchemeRegistry,
   getTimeFormatter,
   getValueFormatter,
-  rgbToHex,
-  addAlpha,
-  supersetTheme,
   tooltipHtml,
 } from '@superset-ui/core';
 import memoizeOne from 'memoize-one';
@@ -89,8 +86,6 @@ export default function transformProps(
     metric = '',
     normalizeAcross,
     normalized,
-    borderColor,
-    borderWidth = 0,
     showLegend,
     showPercentage,
     showValues,
@@ -150,10 +145,10 @@ export default function transformProps(
       data: data.map(row =>
         colnames.map(col => {
           const value = row[col];
-          if (value === null || value === undefined) {
+          if (!value) {
             return NULL_STRING;
           }
-          if (typeof value === 'boolean' || typeof value === 'bigint') {
+          if (typeof value === 'boolean') {
             return String(value);
           }
           return value;
@@ -161,24 +156,8 @@ export default function transformProps(
       ),
       label: {
         show: showValues,
-        formatter: (params: CallbackDataParams) => {
-          const paramsValue = params.value as (string | number)[];
-          return valueFormatter(paramsValue?.[2] as number | null | undefined);
-        },
-      },
-      itemStyle: {
-        borderColor: addAlpha(
-          rgbToHex(borderColor.r, borderColor.g, borderColor.b),
-          borderColor.a,
-        ),
-        borderWidth,
-      },
-      emphasis: {
-        itemStyle: {
-          borderColor: supersetTheme.colors.grayscale.light5,
-          shadowBlur: 10,
-          shadowColor: supersetTheme.colors.grayscale.dark2,
-        },
+        formatter: (params: CallbackDataParams) =>
+          valueFormatter(params.value[2]),
       },
     },
   ];
@@ -199,10 +178,9 @@ export default function transformProps(
           yAxisLabel,
           metricLabel,
         );
-        const paramsValue = params.value as (string | number)[];
-        const x = paramsValue?.[0];
-        const y = paramsValue?.[1];
-        const value = paramsValue?.[2] as number | null | undefined;
+        const x = params.value[0];
+        const y = params.value[1];
+        const value = params.value[2];
         const formattedX = xAxisFormatter(x);
         const formattedY = yAxisFormatter(y);
         const formattedValue = valueFormatter(value);

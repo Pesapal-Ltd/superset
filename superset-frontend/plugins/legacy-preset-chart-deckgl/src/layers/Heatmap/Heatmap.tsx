@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { HeatmapLayer } from '@deck.gl/aggregation-layers';
-import { Position } from '@deck.gl/core';
+import { HeatmapLayer, Position, Color } from 'deck.gl/typed';
 import { t, getSequentialSchemeRegistry, JsonObject } from '@superset-ui/core';
-import { commonLayerProps, getColorRange } from '../common';
+import { commonLayerProps } from '../common';
 import sandboxedEval from '../../utils/sandbox';
-import { GetLayerType, createDeckGLComponent } from '../../factory';
+import { hexToRGB } from '../../utils/colors';
+import { createDeckGLComponent, getLayerType } from '../../factory';
 import TooltipRow from '../../TooltipRow';
 
 function setTooltipContent(o: JsonObject) {
@@ -34,15 +34,12 @@ function setTooltipContent(o: JsonObject) {
     </div>
   );
 }
-export const getLayer: GetLayerType<HeatmapLayer> = ({
+export const getLayer: getLayerType<unknown> = (
   formData,
-  onContextMenu,
-  filterState,
-  setDataMask,
-  setTooltip,
   payload,
-  emitCrossFilters,
-}) => {
+  onAddFilter,
+  setTooltip,
+) => {
   const fd = formData;
   const {
     intensity = 1,
@@ -62,18 +59,13 @@ export const getLayer: GetLayerType<HeatmapLayer> = ({
   const colorScale = getSequentialSchemeRegistry()
     ?.get(colorScheme)
     ?.createLinearScale([0, 6]);
-
-  const colorSchemeType = fd.color_scheme_type;
-  const colorRange = getColorRange({
-    defaultBreakpointsColor: fd.deafult_breakpoint_color,
-    colorBreakpoints: fd.color_breakpoints,
-    fixedColor: fd.color_picker,
-    colorSchemeType,
-    colorScale,
-  })?.reverse();
+  const colorRange = colorScale
+    ?.range()
+    ?.map(color => hexToRGB(color))
+    ?.reverse() as Color[];
 
   return new HeatmapLayer({
-    id: `heatmap-layer-${fd.slice_id}` as const,
+    id: `heatmp-layer-${fd.slice_id}` as const,
     data,
     intensity,
     radiusPixels,
@@ -82,19 +74,11 @@ export const getLayer: GetLayerType<HeatmapLayer> = ({
     getPosition: (d: { position: Position; weight: number }) => d.position,
     getWeight: (d: { position: number[]; weight: number }) =>
       d.weight ? d.weight : 1,
-    ...commonLayerProps({
-      formData: fd,
-      setTooltip,
-      setTooltipContent,
-      setDataMask,
-      filterState,
-      onContextMenu,
-      emitCrossFilters,
-    }),
+    ...commonLayerProps(fd, setTooltip, setTooltipContent),
   });
 };
 
-export function getPoints(data: any[]) {
+function getPoints(data: any[]) {
   return data.map(d => d.position);
 }
 

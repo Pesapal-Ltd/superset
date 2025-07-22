@@ -24,13 +24,12 @@ import {
   logging,
   Behavior,
   t,
-  getChartMetadataRegistry,
-  VizType,
   isFeatureEnabled,
   FeatureFlag,
+  getChartMetadataRegistry,
 } from '@superset-ui/core';
 import { Logger, LOG_ACTIONS_RENDER_CHART } from 'src/logger/LogUtils';
-import { EmptyState } from '@superset-ui/core/components';
+import { EmptyStateBig, EmptyStateSmall } from 'src/components/EmptyState';
 import { ChartSource } from 'src/types/ChartSource';
 import ChartContextMenu from './ChartContextMenu/ChartContextMenu';
 
@@ -85,17 +84,13 @@ const defaultProps = {
 class ChartRenderer extends Component {
   constructor(props) {
     super(props);
-    const suppressContextMenu = getChartMetadataRegistry().get(
-      props.formData.viz_type ?? props.vizType,
-    )?.suppressContextMenu;
     this.state = {
       showContextMenu:
         props.source === ChartSource.Dashboard &&
-        !suppressContextMenu &&
-        isFeatureEnabled(FeatureFlag.DrillToDetail),
+        (isFeatureEnabled(FeatureFlag.DrillToDetail) ||
+          isFeatureEnabled(FeatureFlag.DashboardCrossFilters)),
       inContextMenu: false,
       legendState: undefined,
-      legendIndex: 0,
     };
     this.hasQueryResponseChange = false;
 
@@ -110,7 +105,6 @@ class ChartRenderer extends Component {
     this.handleContextMenuClosed = this.handleContextMenuClosed.bind(this);
     this.handleLegendStateChanged = this.handleLegendStateChanged.bind(this);
     this.onContextMenuFallback = this.onContextMenuFallback.bind(this);
-    this.handleLegendScroll = this.handleLegendScroll.bind(this);
 
     this.hooks = {
       onAddFilter: this.handleAddFilter,
@@ -125,7 +119,6 @@ class ChartRenderer extends Component {
       setDataMask: dataMask => {
         this.props.actions?.updateDataMask(this.props.chartId, dataMask);
       },
-      onLegendScroll: this.handleLegendScroll,
     };
 
     // TODO: queriesResponse comes from Redux store but it's being edited by
@@ -164,8 +157,6 @@ class ChartRenderer extends Component {
         nextProps.labelsColorMap !== this.props.labelsColorMap ||
         nextProps.formData.color_scheme !== this.props.formData.color_scheme ||
         nextProps.formData.stack !== this.props.formData.stack ||
-        nextProps.formData.subcategories !==
-          this.props.formData.subcategories ||
         nextProps.cacheBusterProp !== this.props.cacheBusterProp ||
         nextProps.emitCrossFilters !== this.props.emitCrossFilters
       );
@@ -251,10 +242,6 @@ class ChartRenderer extends Component {
     }
   }
 
-  handleLegendScroll(legendIndex) {
-    this.setState({ legendIndex });
-  }
-
   render() {
     const { chartAlert, chartStatus, chartId, emitCrossFilters } = this.props;
 
@@ -289,7 +276,7 @@ class ChartRenderer extends Component {
     // to each one of them.
     const snakeCaseVizType = snakeCase(vizType);
     const chartClassName =
-      vizType === VizType.Table
+      vizType === 'table'
         ? `superset-chart-${snakeCaseVizType}`
         : snakeCaseVizType;
 
@@ -316,8 +303,7 @@ class ChartRenderer extends Component {
     const noResultImage = 'chart.svg';
     if (width > BIG_NO_RESULT_MIN_WIDTH && height > BIG_NO_RESULT_MIN_HEIGHT) {
       noResultsComponent = (
-        <EmptyState
-          size="large"
+        <EmptyStateBig
           title={noResultTitle}
           description={noResultDescription}
           image={noResultImage}
@@ -325,7 +311,7 @@ class ChartRenderer extends Component {
       );
     } else {
       noResultsComponent = (
-        <EmptyState title={noResultTitle} image={noResultImage} size="small" />
+        <EmptyStateSmall title={noResultTitle} image={noResultImage} />
       );
     }
 
@@ -336,10 +322,6 @@ class ChartRenderer extends Component {
       ?.behaviors.find(behavior => behavior === Behavior.DrillToDetail)
       ? { inContextMenu: this.state.inContextMenu }
       : {};
-    // By pass no result component when server pagination is enabled & the table has a backend search query
-    const bypassNoResult = !(
-      formData?.server_pagination && (ownState?.searchText?.length || 0) > 0
-    );
 
     return (
       <>
@@ -380,8 +362,6 @@ class ChartRenderer extends Component {
             postTransformProps={postTransformProps}
             emitCrossFilters={emitCrossFilters}
             legendState={this.state.legendState}
-            enableNoResults={bypassNoResult}
-            legendIndex={this.state.legendIndex}
             {...drillToDetailProps}
           />
         </div>

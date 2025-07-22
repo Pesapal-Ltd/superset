@@ -24,13 +24,7 @@ import {
   Dataset,
   getStandardizedControls,
 } from '@superset-ui/chart-controls';
-import {
-  headerFontSize,
-  subtitleFontSize,
-  subtitleControl,
-  showMetricNameControl,
-  metricNameFontSizeWithVisibility,
-} from '../sharedControls';
+import { headerFontSize, subheaderFontSize } from '../sharedControls';
 
 export default {
   controlPanelSections: [
@@ -40,14 +34,31 @@ export default {
       controlSetRows: [['metric'], ['adhoc_filters']],
     },
     {
+      label: t('Display settings'),
+      expanded: true,
+      tabOverride: 'data',
+      controlSetRows: [
+        [
+          {
+            name: 'subheader',
+            config: {
+              type: 'TextControl',
+              label: t('Subheader'),
+              renderTrigger: true,
+              description: t(
+                'Description text that shows up below your Big Number',
+              ),
+            },
+          },
+        ],
+      ],
+    },
+    {
       label: t('Chart Options'),
       expanded: true,
       controlSetRows: [
         [headerFontSize],
-        [subtitleControl],
-        [subtitleFontSize],
-        [showMetricNameControl],
-        [metricNameFontSizeWithVisibility],
+        [subheaderFontSize],
         ['y_axis_format'],
         ['currency_format'],
         [
@@ -94,22 +105,19 @@ export default {
                   'verbose_map',
                 )
                   ? (explore?.datasource as Dataset)?.verbose_map
-                  : (explore?.datasource?.columns ?? {});
+                  : explore?.datasource?.columns ?? {};
                 const { colnames, coltypes } =
                   chart?.queriesResponse?.[0] ?? {};
                 const numericColumns =
                   Array.isArray(colnames) && Array.isArray(coltypes)
                     ? colnames
                         .filter(
-                          (_: string, index: number) =>
+                          (colname: string, index: number) =>
                             coltypes[index] === GenericDataType.Numeric,
                         )
-                        .map((colname: string | number) => ({
+                        .map(colname => ({
                           value: colname,
-                          label:
-                            (Array.isArray(verboseMap)
-                              ? verboseMap[colname as number]
-                              : verboseMap[colname as string]) ?? colname,
+                          label: verboseMap[colname] ?? colname,
                         }))
                     : [];
                 return {

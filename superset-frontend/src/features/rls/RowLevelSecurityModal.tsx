@@ -17,19 +17,22 @@
  * under the License.
  */
 
-import { css, styled, SupersetClient, useTheme, t } from '@superset-ui/core';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Icons } from '@superset-ui/core/components/Icons';
 import {
-  Modal,
-  Select,
-  AsyncSelect,
-  InfoTooltip,
-  LabeledErrorBoundInput,
-  Input,
-} from '@superset-ui/core/components';
-import { Typography } from '@superset-ui/core/components/Typography';
+  css,
+  styled,
+  SupersetClient,
+  SupersetTheme,
+  t,
+} from '@superset-ui/core';
+import Modal from 'src/components/Modal';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Icons from 'src/components/Icons';
+import Select from 'src/components/Select/Select';
+import { TextArea } from 'src/components/Input';
+import AsyncSelect from 'src/components/Select/AsyncSelect';
 import rison from 'rison';
+import { LabeledErrorBoundInput } from 'src/components/Form';
+import InfoTooltip from 'src/components/InfoTooltip';
 import { useSingleViewResource } from 'src/views/CRUD/hooks';
 import { FILTER_OPTIONS } from './constants';
 import { FilterType, RLSObject, RoleObject, TableObject } from './types';
@@ -51,58 +54,60 @@ const StyledModal = styled(Modal)`
   }
 `;
 
+const StyledIcon = (theme: SupersetTheme) => css`
+  margin: auto ${theme.gridUnit * 2}px auto 0;
+  color: ${theme.colors.grayscale.base};
+`;
+
 const StyledSectionContainer = styled.div`
-  ${({ theme }) => css`
-    display: flex;
-    flex-direction: column;
-    padding: ${theme.sizeUnit * 3}px ${theme.sizeUnit * 4}px
-      ${theme.sizeUnit * 2}px;
+  display: flex;
+  flex-direction: column;
+  padding: ${({ theme }) =>
+    `${theme.gridUnit * 3}px ${theme.gridUnit * 4}px ${theme.gridUnit * 2}px`};
 
-    label,
-    .control-label {
-      display: flex;
-      font-size: ${theme.fontSizeSM}px;
-      color: ${theme.colorTextLabel};
-      align-items: center;
-    }
+  label,
+  .control-label {
+    display: inline-block;
+    font-size: ${({ theme }) => theme.typography.sizes.s}px;
+    color: ${({ theme }) => theme.colors.grayscale.base};
+    vertical-align: middle;
+  }
 
-    .info-solid-small {
-      vertical-align: middle;
-      padding-bottom: ${theme.sizeUnit / 2}px;
-    }
-  `}
+  .info-solid-small {
+    vertical-align: middle;
+    padding-bottom: ${({ theme }) => theme.gridUnit / 2}px;
+  }
 `;
+
 const StyledInputContainer = styled.div`
-  ${({ theme }) => css`
+  display: flex;
+  flex-direction: column;
+  margin: ${({ theme }) => theme.gridUnit}px;
+  margin-bottom: ${({ theme }) => theme.gridUnit * 4}px;
+
+  .input-container {
     display: flex;
-    flex-direction: column;
-    margin: ${theme.sizeUnit}px;
-    margin-bottom: ${theme.sizeUnit * 4}px;
+    align-items: center;
 
-    .input-container {
-      display: flex;
-      align-items: center;
-
-      > div {
-        width: 100%;
-      }
+    > div {
+      width: 100%;
     }
+  }
 
-    input,
-    textarea {
-      flex: 1 1 auto;
-    }
+  input,
+  textarea {
+    flex: 1 1 auto;
+  }
 
-    .required {
-      margin-left: ${theme.sizeUnit / 2}px;
-      color: ${theme.colorErrorText};
-    }
-  `}
+  .required {
+    margin-left: ${({ theme }) => theme.gridUnit / 2}px;
+    color: ${({ theme }) => theme.colors.error.base};
+  }
 `;
 
-const StyledTextArea = styled(Input.TextArea)`
+const StyledTextArea = styled(TextArea)`
   resize: none;
-  margin-top: ${({ theme }) => theme.sizeUnit}px;
+  margin-top: ${({ theme }) => theme.gridUnit}px;
 `;
 
 export interface RowLevelSecurityModalProps {
@@ -114,7 +119,7 @@ export interface RowLevelSecurityModalProps {
   show: boolean;
 }
 
-const DEFAULT_RULE = {
+const DEAFULT_RULE = {
   name: '',
   filter_type: FilterType.Regular,
   tables: [],
@@ -125,11 +130,10 @@ const DEFAULT_RULE = {
 };
 
 function RowLevelSecurityModal(props: RowLevelSecurityModalProps) {
-  const theme = useTheme();
   const { rule, addDangerToast, addSuccessToast, onHide, show } = props;
 
   const [currentRule, setCurrentRule] = useState<RLSObject>({
-    ...DEFAULT_RULE,
+    ...DEAFULT_RULE,
   });
   const [disableSave, setDisableSave] = useState<boolean>(true);
 
@@ -200,7 +204,7 @@ function RowLevelSecurityModal(props: RowLevelSecurityModalProps) {
   // initialize
   useEffect(() => {
     if (!isEditMode) {
-      setCurrentRule({ ...DEFAULT_RULE });
+      setCurrentRule({ ...DEAFULT_RULE });
     } else if (rule?.id !== null && !loading && !fetchError) {
       fetchResource(rule.id as number);
     }
@@ -245,7 +249,7 @@ function RowLevelSecurityModal(props: RowLevelSecurityModalProps) {
 
   const hide = () => {
     clearError();
-    setCurrentRule({ ...DEFAULT_RULE });
+    setCurrentRule({ ...DEAFULT_RULE });
     onHide();
   };
 
@@ -336,23 +340,14 @@ function RowLevelSecurityModal(props: RowLevelSecurityModalProps) {
       width="30%"
       maxWidth="1450px"
       title={
-        <Typography.Title level={4} data-test="rls-modal-title">
+        <h4 data-test="rls-modal-title">
           {isEditMode ? (
-            <Icons.EditOutlined
-              css={css`
-                margin: auto ${theme.sizeUnit * 2}px auto 0;
-              `}
-            />
+            <Icons.EditAlt css={StyledIcon} />
           ) : (
-            <Icons.PlusOutlined
-              iconSize="l"
-              css={css`
-                margin: auto ${theme.sizeUnit * 2}px auto 0;
-              `}
-            />
+            <Icons.PlusLarge css={StyledIcon} />
           )}
           {isEditMode ? t('Edit Rule') : t('Add Rule')}
-        </Typography.Title>
+        </h4>
       }
     >
       <StyledSectionContainer>
@@ -456,23 +451,25 @@ function RowLevelSecurityModal(props: RowLevelSecurityModalProps) {
             />
           </StyledInputContainer>
           <StyledInputContainer>
-            <LabeledErrorBoundInput
-              id="clause"
-              name="clause"
-              value={currentRule ? currentRule.clause : ''}
-              required
-              validationMethods={{
-                onChange: ({ target }: { target: HTMLInputElement }) =>
-                  onTextChange(target),
-              }}
-              css={noMargins}
-              label={t('Clause')}
-              hasTooltip
-              tooltipText={t(
-                'This is the condition that will be added to the WHERE clause. For example, to only return rows for a particular client, you might define a regular filter with the clause `client_id = 9`. To display no rows unless a user belongs to a RLS filter role, a base filter can be created with the clause `1 = 0` (always false).',
-              )}
-              data-test="clause-test"
-            />
+            <div className="control-label">
+              <LabeledErrorBoundInput
+                id="clause"
+                name="clause"
+                value={currentRule ? currentRule.clause : ''}
+                required
+                validationMethods={{
+                  onChange: ({ target }: { target: HTMLInputElement }) =>
+                    onTextChange(target),
+                }}
+                css={noMargins}
+                label={t('Clause')}
+                hasTooltip
+                tooltipText={t(
+                  'This is the condition that will be added to the WHERE clause. For example, to only return rows for a particular client, you might define a regular filter with the clause `client_id = 9`. To display no rows unless a user belongs to a RLS filter role, a base filter can be created with the clause `1 = 0` (always false).',
+                )}
+                data-test="clause-test"
+              />
+            </div>
           </StyledInputContainer>
           <StyledInputContainer>
             <div className="control-label">{t('Description')}</div>

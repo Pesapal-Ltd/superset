@@ -17,7 +17,6 @@
  * under the License.
  */
 import { useCallback, useEffect } from 'react';
-import { ClientErrorObject } from '@superset-ui/core';
 import useEffectEvent from 'src/hooks/useEffectEvent';
 import { api, JsonResponse } from './queryApi';
 
@@ -31,7 +30,7 @@ export type FetchCatalogsQueryParams = {
   dbId?: string | number;
   forceRefresh: boolean;
   onSuccess?: (data: CatalogOption[], isRefetched: boolean) => void;
-  onError?: (error: ClientErrorObject) => void;
+  onError?: () => void;
 };
 
 type Params = Omit<FetchCatalogsQueryParams, 'forceRefresh'>;
@@ -78,12 +77,6 @@ export function useCatalogs(options: Params) {
     },
   );
 
-  useEffect(() => {
-    if (result.isError) {
-      onError?.(result.error as ClientErrorObject);
-    }
-  }, [result.isError, result.error, onError]);
-
   const fetchData = useEffectEvent(
     (dbId: FetchCatalogsQueryParams['dbId'], forceRefresh = false) => {
       if (dbId && (!result.currentData || forceRefresh)) {
@@ -92,7 +85,7 @@ export function useCatalogs(options: Params) {
             onSuccess?.(data || EMPTY_CATALOGS, forceRefresh);
           }
           if (isError) {
-            onError?.(result.error as ClientErrorObject);
+            onError?.();
           }
         });
       }

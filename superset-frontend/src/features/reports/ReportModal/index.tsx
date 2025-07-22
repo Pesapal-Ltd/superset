@@ -25,27 +25,19 @@ import {
   ChangeEvent,
 } from 'react';
 
-import {
-  t,
-  SupersetTheme,
-  getClientErrorObject,
-  VizType,
-} from '@superset-ui/core';
+import { t, SupersetTheme, getClientErrorObject } from '@superset-ui/core';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   addReport,
   editReport,
 } from 'src/features/reports/ReportModal/actions';
-import {
-  Alert,
-  Input,
-  LabeledErrorBoundInput,
-  type CronError,
-} from '@superset-ui/core/components';
-import TimezoneSelector from '@superset-ui/core/components/TimezoneSelector';
-import { Icons } from '@superset-ui/core/components/Icons';
-import { Typography } from '@superset-ui/core/components/Typography';
-import { Radio, RadioChangeEvent } from '@superset-ui/core/components/Radio';
+import Alert from 'src/components/Alert';
+import TimezoneSelector from 'src/components/TimezoneSelector';
+import LabeledErrorBoundInput from 'src/components/Form/LabeledErrorBoundInput';
+import Icons from 'src/components/Icons';
+import { CronError } from 'src/components/CronPicker';
+import { RadioChangeEvent } from 'src/components';
+import { Input } from 'src/components/Input';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import { ChartState } from 'src/explore/types';
 import {
@@ -71,6 +63,8 @@ import {
   TimezoneHeaderStyle,
   SectionHeaderStyle,
   StyledMessageContentTitle,
+  StyledRadio,
+  StyledRadioGroup,
 } from './styles';
 
 interface ReportProps {
@@ -90,9 +84,9 @@ interface ReportProps {
 }
 
 const TEXT_BASED_VISUALIZATION_TYPES = [
-  VizType.PivotTable,
+  'pivot_table_v2',
   'table',
-  VizType.PairedTTest,
+  'paired_ttest',
 ];
 
 const INITIAL_STATE = {
@@ -228,7 +222,7 @@ function ReportModal({
 
   const wrappedTitle = (
     <StyledIconWrapper>
-      <Icons.CalendarOutlined />
+      <Icons.Calendar />
       <span className="text">
         {isEditMode ? t('Edit email report') : t('Schedule a new email report')}
       </span>
@@ -255,35 +249,27 @@ function ReportModal({
   const renderMessageContentSection = (
     <>
       <StyledMessageContentTitle>
-        <Typography.Title level={4}>{t('Message content')}</Typography.Title>
+        <h4>{t('Message content')}</h4>
       </StyledMessageContentTitle>
       <div className="inline-container">
-        <Radio.GroupWrapper
-          spaceConfig={{
-            direction: 'vertical',
-            size: 'middle',
-            align: 'start',
-            wrap: false,
-          }}
+        <StyledRadioGroup
           onChange={(event: RadioChangeEvent) => {
             setCurrentReport({ report_format: event.target.value });
           }}
           value={currentReport.report_format || defaultNotificationFormat}
-          options={[
-            {
-              label: t('Text embedded in email'),
-              value: NotificationFormats.Text,
-            },
-            {
-              label: t('Image (PNG) embedded in email'),
-              value: NotificationFormats.PNG,
-            },
-            {
-              label: t('Formatted CSV attached in email'),
-              value: NotificationFormats.CSV,
-            },
-          ]}
-        />
+        >
+          {isTextBasedChart && (
+            <StyledRadio value={NotificationFormats.Text}>
+              {t('Text embedded in email')}
+            </StyledRadio>
+          )}
+          <StyledRadio value={NotificationFormats.PNG}>
+            {t('Image (PNG) embedded in email')}
+          </StyledRadio>
+          <StyledRadio value={NotificationFormats.CSV}>
+            {t('Formatted CSV attached in email')}
+          </StyledRadio>
+        </StyledRadioGroup>
       </div>
     </>
   );
@@ -351,12 +337,9 @@ function ReportModal({
 
       <StyledBottomSection>
         <StyledScheduleTitle>
-          <Typography.Title
-            level={5}
-            css={(theme: SupersetTheme) => SectionHeaderStyle(theme)}
-          >
+          <h4 css={(theme: SupersetTheme) => SectionHeaderStyle(theme)}>
             {t('Schedule')}
-          </Typography.Title>
+          </h4>
           <p>{t('The report will be sent to your email at')}</p>
         </StyledScheduleTitle>
 

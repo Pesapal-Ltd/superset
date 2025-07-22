@@ -37,7 +37,7 @@ export default {
   decorators: [withResizableChartDemo],
 };
 
-export const Gauge = ({ width, height }: { width: number; height: number }) => (
+export const Gauge = ({ width, height }) => (
   <SuperChart
     chartType="echarts-gauge"
     width={width}

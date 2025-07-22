@@ -53,7 +53,6 @@ export default function handleDrop(props, monitor, Component) {
       type: draggingItem.type,
       meta: draggingItem.meta,
     },
-    position: dropPosition,
   };
 
   const shouldAppendToChildren =

@@ -21,7 +21,6 @@ import {
   QueryFormColumn,
   QueryFormData,
   QueryFormMetric,
-  RgbaColor,
 } from '@superset-ui/core';
 import { BaseChartProps, BaseTransformedProps } from '../types';
 
@@ -34,13 +33,11 @@ export interface HeatmapFormData extends QueryFormData {
   metric: QueryFormMetric;
   normalizeAcross: 'heatmap' | 'x' | 'y';
   normalized?: boolean;
-  borderColor: RgbaColor;
-  borderWidth: number;
   showLegend?: boolean;
   showPercentage?: boolean;
   showValues?: boolean;
-  sortXAxis?: string;
-  sortYAxis?: string;
+  sortXAxis: string;
+  sortYAxis: string;
   timeFormat?: string;
   xAxis: QueryFormColumn;
   xscaleInterval: number;

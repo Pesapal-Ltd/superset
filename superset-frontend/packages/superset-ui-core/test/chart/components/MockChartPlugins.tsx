@@ -51,8 +51,8 @@ export const TestComponent = ({
       style={{
         width,
         height,
-        backgroundColor: theme.colorPrimaryBg,
-        color: theme.colorTextSecondary,
+        backgroundColor: theme.colors.primary.light5,
+        color: theme.colors.grayscale.light3,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -66,7 +66,7 @@ export const TestComponent = ({
         {[width, height].join('x')}
       </div>
       <div className="formData" style={{ padding: 10 }}>
-        <code style={{ color: theme.colorTextSecondary }}>
+        <code style={{ color: theme.colors.primary.light2 }}>
           {JSON.stringify(formData)}
         </code>
       </div>

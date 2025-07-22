@@ -17,12 +17,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  GenericDataType,
-  QueryColumn,
-  t,
-  validateNonEmpty,
-} from '@superset-ui/core';
+import { QueryColumn, t, validateNonEmpty } from '@superset-ui/core';
 import {
   ExtraControlProps,
   SharedControlConfig,
@@ -57,19 +52,6 @@ type Control = {
  * feature flags are set and when they're checked.
  */
 
-function filterOptions(
-  options: (ColumnMeta | QueryColumn)[],
-  allowedDataTypes?: GenericDataType[],
-) {
-  if (!allowedDataTypes) {
-    return options;
-  }
-  return options.filter(
-    o =>
-      o.type_generic !== undefined && allowedDataTypes.includes(o.type_generic),
-  );
-}
-
 export const dndGroupByControl: SharedControlConfig<
   'DndColumnSelect' | 'SelectControl',
   ColumnMeta
@@ -99,20 +81,14 @@ export const dndGroupByControl: SharedControlConfig<
     const newState: ExtraControlProps = {};
     const { datasource } = state;
     if (datasource?.columns[0]?.hasOwnProperty('groupby')) {
-      const options = filterOptions(
-        (datasource as Dataset).columns.filter(c => c.groupby),
-        controlState?.allowedDataTypes,
-      );
+      const options = (datasource as Dataset).columns.filter(c => c.groupby);
       if (controlState?.includeTime) {
         options.unshift(DATASET_TIME_COLUMN_OPTION);
       }
       newState.options = options;
       newState.savedMetrics = (datasource as Dataset).metrics || [];
     } else {
-      const options = filterOptions(
-        (datasource?.columns as QueryColumn[]) || [],
-        controlState?.allowedDataTypes,
-      );
+      const options = (datasource?.columns as QueryColumn[]) || [];
       if (controlState?.includeTime) {
         options.unshift(QUERY_TIME_COLUMN_OPTION);
       }
@@ -201,19 +177,6 @@ export const dndAdhocMetricControl: typeof dndAdhocMetricsControl = {
   ),
 };
 
-export const dndTooltipColumnsControl: typeof dndColumnsControl = {
-  ...dndColumnsControl,
-  label: t('Tooltip (columns)'),
-  description: t('Columns to show in the tooltip.'),
-};
-
-export const dndTooltipMetricsControl: typeof dndAdhocMetricsControl = {
-  ...dndAdhocMetricsControl,
-  label: t('Tooltip (metrics)'),
-  description: t('Metrics to show in the tooltip.'),
-  validators: [],
-};
-
 export const dndAdhocMetricControl2: typeof dndAdhocMetricControl = {
   ...dndAdhocMetricControl,
   label: t('Right Axis Metric'),
@@ -225,12 +188,11 @@ export const dndSortByControl: SharedControlConfig<
   'DndMetricSelect' | 'MetricsControl'
 > = {
   type: 'DndMetricSelect',
-  label: t('Sort query by'),
+  label: t('Sort by'),
   default: null,
   description: t(
-    'Orders the query result that generates the source data for this chart. ' +
-      'If a series or row limit is reached, this determines what data are truncated. ' +
-      'If undefined, defaults to the first metric (where appropriate).',
+    'This metric is used to define row selection criteria (how the rows are sorted) if a series or row limit is present. ' +
+      'If not defined, it reverts to the first metric (where appropriate).',
   ),
   mapStateToProps: ({ datasource }) => ({
     columns: datasource?.columns || [],

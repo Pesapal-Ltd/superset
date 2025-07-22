@@ -1,5 +1,5 @@
 import { JsonObject } from '@superset-ui/core';
-import { InputProps } from '@superset-ui/core/components';
+import { InputProps } from 'antd/lib/input';
 import { ChangeEvent, EventHandler, FormEvent } from 'react';
 
 /**
@@ -40,30 +40,6 @@ export type SSHTunnelObject = {
   private_key_password?: string;
 };
 
-export type DatabaseParameters = {
-  access_token?: string;
-  database_name?: string;
-  host?: string;
-  port?: number;
-  database?: string;
-  default_catalog?: string;
-  default_schema?: string;
-  http_path_field?: string;
-  username?: string;
-  password?: string;
-  encryption?: boolean;
-  credentials_info?: string;
-  service_account_info?: string;
-  query?: Record<string, string>;
-  catalog?: Record<string, string | undefined>;
-  properties?: Record<string, any>;
-  warehouse?: string;
-  role?: string;
-  account?: string;
-  ssh?: boolean;
-  project_id?: string;
-};
-
 export type DatabaseObject = {
   // Connection + general
   backend?: string;
@@ -81,7 +57,28 @@ export type DatabaseObject = {
   paramProperties?: Record<string, any>;
   sqlalchemy_uri?: string;
   sqlalchemy_uri_placeholder?: string;
-  parameters?: DatabaseParameters;
+  parameters?: {
+    access_token?: string;
+    database_name?: string;
+    host?: string;
+    port?: number;
+    database?: string;
+    default_catalog?: string;
+    default_schema?: string;
+    http_path_field?: string;
+    username?: string;
+    password?: string;
+    encryption?: boolean;
+    credentials_info?: string;
+    service_account_info?: string;
+    query?: Record<string, string>;
+    catalog?: Record<string, string | undefined>;
+    properties?: Record<string, any>;
+    warehouse?: string;
+    role?: string;
+    account?: string;
+    ssh?: boolean;
+  };
 
   // Performance
   cache_timeout?: string;
@@ -116,7 +113,6 @@ export type DatabaseObject = {
     supports_file_upload?: boolean;
     disable_ssh_tunneling?: boolean;
     supports_dynamic_catalog?: boolean;
-    supports_oauth2?: boolean;
   };
 
   // SSH Tunnel information
@@ -235,7 +231,6 @@ export enum ConfigurationMethod {
 
 export enum Engines {
   GSheet = 'gsheets',
-  BigQuery = 'bigquery',
   Snowflake = 'snowflake',
 }
 
@@ -265,7 +260,7 @@ export interface ExtraJson {
 }
 
 export type CustomTextType = {
-  value?: string | boolean | number | object;
+  value?: string | boolean | number;
   type?: string | null;
   name?: string;
   checked?: boolean;
@@ -306,7 +301,6 @@ export interface FieldPropTypes {
     onRemoveTableCatalog: (idx: number) => void;
   } & {
     onExtraInputChange: (value: any) => void;
-    onEncryptedExtraInputChange: (value: any) => void;
     onSSHTunnelParametersChange: CustomEventHandlerType;
   };
   validationErrors: JsonObject | null;
@@ -321,7 +315,6 @@ export interface FieldPropTypes {
   sslForced?: boolean;
   defaultDBName?: string;
   editNewDb?: boolean;
-  isValidating: boolean;
 }
 
 type ChangeMethodsType = FieldPropTypes['changeMethods'];
@@ -337,36 +330,3 @@ export type SwitchProps = {
   changeMethods: SwitchPropsChangeMethodsType;
   clearValidationErrors: () => void;
 };
-
-export interface DatabaseConnectionFormProps {
-  isEditMode?: boolean;
-  sslForced: boolean;
-  editNewDb?: boolean;
-  dbModel: DatabaseForm;
-  db: Partial<DatabaseObject> | null;
-  isValidating: boolean;
-  onParametersChange: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onChange: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onQueryChange: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onParametersUploadFileChange?: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onExtraInputChange: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onEncryptedExtraInputChange: (
-    event: FormEvent<InputProps> | { target: HTMLInputElement },
-  ) => void;
-  onAddTableCatalog: () => void;
-  onRemoveTableCatalog: (idx: number) => void;
-  validationErrors: JsonObject | null;
-  getValidation: () => void;
-  clearValidationErrors: () => void;
-  getPlaceholder?: (field: string) => string | undefined;
-}

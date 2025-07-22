@@ -22,8 +22,8 @@ export const Row = styled.div`
   ${({ theme }) => css`
     display: flex;
     align-items: center;
-    margin: ${theme.sizeUnit}px 0;
-    font-size: ${theme.fontSizeSM}px;
+    margin: ${theme.gridUnit}px 0;
+    font-size: ${theme.typography.sizes.s}px;
 
     &:first-of-type {
       margin-top: 0;
@@ -42,15 +42,16 @@ export const Row = styled.div`
 export const RowLabel = styled.span`
   ${({ theme }) => css`
     color: ${theme.colors.grayscale.base};
-    padding-right: ${theme.sizeUnit * 4}px;
+    padding-right: ${theme.gridUnit * 4}px;
     margin-right: auto;
+    text-transform: uppercase;
     white-space: nowrap;
   `};
 `;
 
 export const RowValue = styled.div`
   ${({ theme }) => css`
-    color: ${theme.colorText};
+    color: ${theme.colors.grayscale.dark1};
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -71,8 +72,19 @@ export const DependencyItem = styled.span`
 
 export const RowTruncationCount = styled.span`
   ${({ theme }) => css`
-    color: ${theme.colorPrimary};
+    color: ${theme.colors.primary.base};
   `}
+`;
+
+export const TooltipList = styled.ul`
+  ${({ theme }) => css`
+    padding-left: ${theme.gridUnit * 3}px;
+    margin-bottom: 0;
+  `};
+`;
+
+export const TooltipSectionLabel = styled.span`
+  font-weight: ${({ theme }) => theme.typography.weights.bold};
 `;
 
 export const TooltipTrigger = styled.div`

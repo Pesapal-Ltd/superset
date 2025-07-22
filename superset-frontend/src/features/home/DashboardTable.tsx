@@ -17,7 +17,8 @@
  * under the License.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { SupersetClient, t, useTheme } from '@superset-ui/core';
+import { SupersetClient, t } from '@superset-ui/core';
+import { filter } from 'lodash';
 import { useFavoriteStatus, useListViewResource } from 'src/views/CRUD/hooks';
 import { Dashboard, DashboardTableProps, TableTab } from 'src/views/CRUD/types';
 import handleResourceExport from 'src/utils/export';
@@ -36,11 +37,10 @@ import {
   handleDashboardDelete,
 } from 'src/views/CRUD/utils';
 import withToasts from 'src/components/MessageToasts/withToasts';
-import { DeleteModal, Loading } from '@superset-ui/core/components';
+import Loading from 'src/components/Loading';
+import DeleteModal from 'src/components/DeleteModal';
 import PropertiesModal from 'src/dashboard/components/PropertiesModal';
 import DashboardCard from 'src/features/dashboards/DashboardCard';
-import { Icons } from '@superset-ui/core/components/Icons';
-import { navigateTo } from 'src/utils/navigationUtils';
 import EmptyState from './EmptyState';
 import SubMenu from './SubMenu';
 import { WelcomeTable } from './types';
@@ -55,14 +55,16 @@ function DashboardTable({
   otherTabFilters,
   otherTabTitle,
 }: DashboardTableProps) {
-  const theme = useTheme();
   const history = useHistory();
   const defaultTab = getItem(
     LocalStorageKeys.HomepageDashboardFilter,
     TableTab.Other,
   );
 
-  const filteredOtherTabData = otherTabData.filter(obj => !('viz_type' in obj));
+  const filteredOtherTabData = filter(
+    otherTabData,
+    obj => !('viz_type' in obj),
+  );
 
   const {
     state: { loading, resourceCollection: dashboards },
@@ -183,22 +185,18 @@ function DashboardTable({
     <>
       <SubMenu
         activeChild={activeTab}
-        backgroundColor="transparent"
         tabs={menuTabs}
         buttons={[
           {
             name: (
               <>
-                <Icons.PlusOutlined
-                  iconSize="m"
-                  iconColor={theme.colorPrimary}
-                />
+                <i className="fa fa-plus" />
                 {t('Dashboard')}
               </>
             ),
-            buttonStyle: 'secondary',
+            buttonStyle: 'tertiary',
             onClick: () => {
-              navigateTo('/dashboard/new', { assign: true });
+              window.location.assign('/dashboard/new');
             },
           },
           {

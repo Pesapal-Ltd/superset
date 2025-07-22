@@ -17,7 +17,6 @@
  * under the License.
  */
 import { t } from '../translation';
-import { sanitizeHtml } from './html';
 
 const TRUNCATION_STYLE = `
   max-width: 300px;
@@ -33,7 +32,7 @@ export function tooltipHtml(
   const titleRow = title
     ? `<span style="font-weight: 700;${TRUNCATION_STYLE}">${title}</span>`
     : '';
-  return sanitizeHtml(`
+  return `
     <div>
       ${titleRow}
       <table>
@@ -54,5 +53,5 @@ export function tooltipHtml(
             })
             .join('')}
       </table>
-    </div>`);
+    </div>`;
 }

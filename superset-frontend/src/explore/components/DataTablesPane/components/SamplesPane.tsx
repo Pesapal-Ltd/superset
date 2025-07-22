@@ -18,13 +18,9 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import { ensureIsArray, GenericDataType, styled, t } from '@superset-ui/core';
-import {
-  TableView,
-  TableSize,
-  EmptyState,
-  Loading,
-  EmptyWrapperType,
-} from '@superset-ui/core/components';
+import Loading from 'src/components/Loading';
+import { EmptyStateMedium } from 'src/components/EmptyState';
+import TableView, { EmptyWrapperType } from 'src/components/TableView';
 import {
   useFilteredTableData,
   useTableColumns,
@@ -34,7 +30,7 @@ import { TableControls } from './DataTableControls';
 import { SamplesPaneProps } from '../types';
 
 const Error = styled.pre`
-  margin-top: ${({ theme }) => `${theme.sizeUnit * 4}px`};
+  margin-top: ${({ theme }) => `${theme.gridUnit * 4}px`};
 `;
 
 const cache = new WeakSet();
@@ -128,7 +124,7 @@ export const SamplesPane = ({
 
   if (data.length === 0) {
     const title = t('No samples were returned for this dataset');
-    return <EmptyState image="document.svg" title={title} />;
+    return <EmptyStateMedium image="document.svg" title={title} />;
   }
 
   return (
@@ -152,7 +148,6 @@ export const SamplesPane = ({
         className="table-condensed"
         isPaginationSticky
         showRowCount={false}
-        size={TableSize.Small}
         small
       />
     </>

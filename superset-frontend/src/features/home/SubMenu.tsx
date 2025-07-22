@@ -19,49 +19,37 @@
 import { ReactNode, useState, useEffect, FunctionComponent } from 'react';
 
 import { Link, useHistory } from 'react-router-dom';
-import { styled, SupersetTheme, css, t, useTheme } from '@superset-ui/core';
+import { styled, SupersetTheme, css, t } from '@superset-ui/core';
 import cx from 'classnames';
+import { Tooltip } from 'src/components/Tooltip';
 import { debounce } from 'lodash';
-import { Menu, MenuMode, MainNav } from '@superset-ui/core/components/Menu';
-import {
-  Button,
-  Tooltip,
-  Row,
-  type OnClickHandler,
-} from '@superset-ui/core/components';
-import { Icons } from '@superset-ui/core/components/Icons';
-import { IconType } from '@superset-ui/core/components/Icons/types';
+import { Row } from 'src/components';
+import { Menu, MenuMode, MainNav as DropdownMenu } from 'src/components/Menu';
+import Button, { OnClickHandler } from 'src/components/Button';
+import Icons from 'src/components/Icons';
 import { MenuObjectProps } from 'src/types/bootstrapTypes';
-import { Typography } from '@superset-ui/core/components/Typography';
 
-const StyledHeader = styled.div<{ backgroundColor?: string }>`
-  background-color: ${({ theme, backgroundColor }) =>
-    backgroundColor || theme.colorBgContainer};
-  align-items: center;
-  position: relative;
-  padding: ${({ theme }) => theme.sizeUnit * 2}px
-    ${({ theme }) => theme.sizeUnit * 5}px;
-  margin-bottom: ${({ theme }) => theme.sizeUnit * 4}px;
+const StyledHeader = styled.div`
+  margin-bottom: ${({ theme }) => theme.gridUnit * 4}px;
   .header {
-    font-weight: ${({ theme }) => theme.fontWeightStrong};
-    margin-right: ${({ theme }) => theme.sizeUnit * 3}px;
+    font-weight: ${({ theme }) => theme.typography.weights.bold};
+    margin-right: ${({ theme }) => theme.gridUnit * 3}px;
     text-align: left;
     font-size: 18px;
+    padding: ${({ theme }) => theme.gridUnit * 3}px;
     display: inline-block;
-    line-height: ${({ theme }) => theme.sizeUnit * 9}px;
+    line-height: ${({ theme }) => theme.gridUnit * 9}px;
   }
   .nav-right {
     display: flex;
     align-items: center;
-    margin-right: ${({ theme }) => theme.sizeUnit * 3}px;
+    padding: ${({ theme }) => theme.gridUnit * 3.5}px 0;
+    margin-right: ${({ theme }) => theme.gridUnit * 3}px;
     float: right;
     position: absolute;
     right: 0;
     ul.ant-menu-root {
       padding: 0px;
-    }
-    .ant-row {
-      align-items: center;
     }
     li[role='menuitem'] {
       border: 0;
@@ -80,36 +68,96 @@ const StyledHeader = styled.div<{ backgroundColor?: string }>`
     padding-left: 10px;
   }
   .menu {
-    align-items: center;
+    background-color: ${({ theme }) => theme.colors.grayscale.light5};
+    .ant-menu-horizontal {
+      line-height: inherit;
+      .ant-menu-item {
+        border-bottom: none;
+        &:hover {
+          border-bottom: none;
+          text-decoration: none;
+        }
+      }
+    }
+    .ant-menu {
+      padding: ${({ theme }) => theme.gridUnit * 4}px 0px;
+    }
   }
 
-  .menu > .ant-menu {
-    padding-left: ${({ theme }) => theme.sizeUnit * 5}px;
-    line-height: ${({ theme }) => theme.sizeUnit * 5}px;
+  .ant-menu-horizontal:not(.ant-menu-dark) > .ant-menu-item {
+    margin: 0 ${({ theme }) => theme.gridUnit + 1}px;
+  }
 
-    .ant-menu-item {
-      border-radius: ${({ theme }) => theme.borderRadius}px;
-      font-size: ${({ theme }) => theme.fontSizeSM}px;
-      padding: ${({ theme }) => theme.sizeUnit}px
-        ${({ theme }) => theme.sizeUnit * 4}px;
-      margin-right: ${({ theme }) => theme.sizeUnit}px;
+  .menu .ant-menu-item {
+    li,
+    div {
+      a,
+      div {
+        font-size: ${({ theme }) => theme.typography.sizes.s}px;
+        color: ${({ theme }) => theme.colors.secondary.dark1};
+
+        a {
+          margin: 0;
+          padding: ${({ theme }) => theme.gridUnit * 2}px
+            ${({ theme }) => theme.gridUnit * 4}px;
+          line-height: ${({ theme }) => theme.gridUnit * 5}px;
+
+          &:hover {
+            text-decoration: none;
+          }
+        }
+      }
+
+      &.no-router a {
+        padding: ${({ theme }) => theme.gridUnit * 2}px
+          ${({ theme }) => theme.gridUnit * 4}px;
+      }
+
+      &.active a {
+        background: ${({ theme }) => theme.colors.secondary.light4};
+        border-radius: ${({ theme }) => theme.borderRadius}px;
+      }
     }
-    .ant-menu-item:hover,
-    .ant-menu-item:has(> span > .active) {
-      background-color: ${({ theme }) => theme.colorPrimaryBgHover};
-      color: ${({ theme }) => theme.colorText};
+
+    li.active > a,
+    li.active > div,
+    div.active > div,
+    li > a:hover,
+    li > a:focus,
+    li > div:hover,
+    div > div:hover,
+    div > a:hover {
+      background: ${({ theme }) => theme.colors.secondary.light4};
+      border-bottom: none;
+      border-radius: ${({ theme }) => theme.borderRadius}px;
+      margin-bottom: ${({ theme }) => theme.gridUnit * 2}px;
+      text-decoration: none;
     }
   }
 
   .btn-link {
     padding: 10px 0;
   }
+  .ant-menu-horizontal {
+    border: none;
+  }
   @media (max-width: 767px) {
     .header,
     .nav-right {
       position: relative;
-      margin-left: ${({ theme }) => theme.sizeUnit * 2}px;
+      margin-left: ${({ theme }) => theme.gridUnit * 2}px;
     }
+  }
+  .ant-menu-submenu {
+    span[role='img'] {
+      position: absolute;
+      right: ${({ theme }) => -theme.gridUnit + -2}px;
+      top: ${({ theme }) => theme.gridUnit + 1}px !important;
+    }
+  }
+  .dropdown-menu-links > div.ant-menu-submenu-title,
+  .ant-menu-submenu-open.ant-menu-submenu-active > div.ant-menu-submenu-title {
+    color: ${({ theme }) => theme.colors.primary.dark1};
   }
 `;
 
@@ -133,17 +181,20 @@ type MenuChild = {
   usesRouter?: boolean;
   onClick?: () => void;
   'data-test'?: string;
-  id?: string;
-  'aria-controls'?: string;
 };
 
 export interface ButtonProps {
   name: ReactNode;
   onClick?: OnClickHandler;
   'data-test'?: string;
-  buttonStyle: 'primary' | 'secondary' | 'dashed' | 'link' | 'tertiary';
-  loading?: boolean;
-  icon?: IconType;
+  buttonStyle:
+    | 'primary'
+    | 'secondary'
+    | 'dashed'
+    | 'link'
+    | 'warning'
+    | 'success'
+    | 'tertiary';
 }
 
 export interface SubMenuProps {
@@ -157,15 +208,13 @@ export interface SubMenuProps {
   usesRouter?: boolean;
   color?: string;
   dropDownLinks?: Array<MenuObjectProps>;
-  backgroundColor?: string;
 }
 
-const { SubMenu } = MainNav;
+const { SubMenu } = DropdownMenu;
 
 const SubMenuComponent: FunctionComponent<SubMenuProps> = props => {
   const [showMenu, setMenu] = useState<MenuMode>('horizontal');
   const [navRightStyle, setNavRightStyle] = useState('nav-right');
-  const theme = useTheme();
 
   let hasHistory = true;
   // If no parent <Router> component exists, useHistory throws an error
@@ -203,71 +252,57 @@ const SubMenuComponent: FunctionComponent<SubMenuProps> = props => {
   }, [props.buttons]);
 
   return (
-    <StyledHeader backgroundColor={props.backgroundColor}>
+    <StyledHeader>
       <Row className="menu" role="navigation">
         {props.name && <div className="header">{props.name}</div>}
-        <Menu
-          mode={showMenu}
-          disabledOverflow
-          role="tablist"
-          items={props.tabs?.map(tab => {
+        <Menu mode={showMenu} style={{ backgroundColor: 'transparent' }}>
+          {props.tabs?.map(tab => {
             if ((props.usesRouter || hasHistory) && !!tab.usesRouter) {
-              return {
-                key: tab.label,
-                label: (
-                  <Link
-                    to={tab.url || ''}
+              return (
+                <Menu.Item key={tab.label}>
+                  <div
                     role="tab"
-                    id={tab.id || tab.name}
                     data-test={tab['data-test']}
-                    aria-selected={tab.name === props.activeChild}
-                    aria-controls={tab['aria-controls'] || ''}
                     className={tab.name === props.activeChild ? 'active' : ''}
                   >
-                    {tab.label}
-                  </Link>
-                ),
-              };
+                    <div>
+                      <Link to={tab.url || ''}>{tab.label}</Link>
+                    </div>
+                  </div>
+                </Menu.Item>
+              );
             }
-            return {
-              key: tab.label,
-              label: (
+
+            return (
+              <Menu.Item key={tab.label}>
                 <div
                   className={cx('no-router', {
                     active: tab.name === props.activeChild,
                   })}
                   role="tab"
-                  aria-selected={tab.name === props.activeChild}
                 >
-                  <Typography.Link href={tab.url} onClick={tab.onClick}>
+                  <a href={tab.url} onClick={tab.onClick}>
                     {tab.label}
-                  </Typography.Link>
+                  </a>
                 </div>
-              ),
-            };
+              </Menu.Item>
+            );
           })}
-        />
+        </Menu>
         <div className={navRightStyle}>
-          <Menu mode="horizontal" triggerSubMenuAction="click" disabledOverflow>
+          <Menu mode="horizontal" triggerSubMenuAction="click">
             {props.dropDownLinks?.map((link, i) => (
               <SubMenu
-                css={css`
-                  [data-icon='caret-down'] {
-                    color: ${theme.colorIcon};
-                    font-size: ${theme.fontSizeXS}px;
-                    margin-left: ${theme.sizeUnit}px;
-                  }
-                `}
                 key={i}
                 title={link.label}
-                icon={<Icons.CaretDownOutlined />}
+                icon={<Icons.TriangleDown />}
                 popupOffset={[10, 20]}
                 className="dropdown-menu-links"
               >
                 {link.childs?.map(item => {
                   if (typeof item === 'object') {
                     return item.disable ? (
-                      <MainNav.Item
+                      <DropdownMenu.Item
                         key={item.label}
                         css={styledDisabled}
                         disabled
@@ -280,13 +315,13 @@ const SubMenuComponent: FunctionComponent<SubMenuProps> = props => {
                         >
                           {item.label}
                         </Tooltip>
-                      </MainNav.Item>
+                      </DropdownMenu.Item>
                     ) : (
-                      <MainNav.Item key={item.label}>
-                        <Typography.Link href={item.url} onClick={item.onClick}>
+                      <DropdownMenu.Item key={item.label}>
+                        <a href={item.url} onClick={item.onClick}>
                           {item.label}
-                        </Typography.Link>
-                      </MainNav.Item>
+                        </a>
+                      </DropdownMenu.Item>
                     );
                   }
                   return null;
@@ -298,10 +333,8 @@ const SubMenuComponent: FunctionComponent<SubMenuProps> = props => {
             <Button
               key={i}
               buttonStyle={btn.buttonStyle}
-              icon={btn.icon}
               onClick={btn.onClick}
               data-test={btn['data-test']}
-              loading={btn.loading ?? false}
             >
               {btn.name}
             </Button>

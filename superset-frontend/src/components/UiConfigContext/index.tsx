@@ -26,9 +26,6 @@ interface UiConfigType {
   hideTab: boolean;
   hideNav: boolean;
   hideChartControls: boolean;
-  // superset-embedded-sdk specific
-  emitDataMasks: boolean; // emit data masks to the parent window
-  showRowLimitWarning: boolean; // show the row limit warning
 }
 interface EmbeddedUiConfigProviderProps {
   children: JSX.Element;
@@ -39,8 +36,6 @@ export const UiConfigContext = createContext<UiConfigType>({
   hideTab: false,
   hideNav: false,
   hideChartControls: false,
-  emitDataMasks: false,
-  showRowLimitWarning: false,
 });
 
 export const useUiConfig = () => useContext(UiConfigContext);
@@ -54,8 +49,6 @@ export const EmbeddedUiConfigProvider: FC<EmbeddedUiConfigProviderProps> = ({
     hideTab: (config & 2) !== 0,
     hideNav: (config & 4) !== 0,
     hideChartControls: (config & 8) !== 0,
-    emitDataMasks: (config & 16) !== 0,
-    showRowLimitWarning: (config & 32) !== 0,
   });
 
   return (

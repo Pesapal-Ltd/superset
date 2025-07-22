@@ -17,14 +17,20 @@
  * under the License.
  */
 
-import '@testing-library/jest-dom';
-import { render, screen } from '@superset-ui/core/spec';
+import { ReactElement } from 'react';
 import mockConsole, { RestoreConsole } from 'jest-mock-console';
 import { triggerResizeObserver } from 'resize-observer-polyfill';
-import { ErrorBoundary } from 'react-error-boundary';
+import ErrorBoundary from 'react-error-boundary';
 
-import { promiseTimeout, SuperChart } from '@superset-ui/core';
+import {
+  promiseTimeout,
+  SuperChart,
+  supersetTheme,
+  ThemeProvider,
+} from '@superset-ui/core';
+import { mount as enzymeMount } from 'enzyme';
 import { WrapperProps } from '../../../src/chart/components/SuperChart';
+import NoResultsComponent from '../../../src/chart/components/NoResultsComponent';
 
 import {
   ChartKeys,
@@ -38,22 +44,29 @@ const DEFAULT_QUERIES_DATA = [
   { data: ['foo2', 'bar2'] },
 ];
 
-// Fix for expect outside test block - move expectDimension into a test utility
-// Replace expectDimension function with a non-expect version
-function getDimensionText(container: HTMLElement) {
-  const dimensionEl = container.querySelector('.dimension');
-  return dimensionEl?.textContent || '';
+function expectDimension(
+  renderedWrapper: Cheerio,
+  width: number,
+  height: number,
+) {
+  expect(renderedWrapper.find('.dimension').text()).toEqual(
+    [width, height].join('x'),
+  );
 }
 
+const mount = (component: ReactElement) =>
+  enzymeMount(component, {
+    wrappingComponent: ThemeProvider,
+    wrappingComponentProps: { theme: supersetTheme },
+  });
+
 describe('SuperChart', () => {
-  jest.setTimeout(5000);
-
-  let restoreConsole: RestoreConsole;
-
   const plugins = [
     new DiligentChartPlugin().configure({ key: ChartKeys.DILIGENT }),
     new BuggyChartPlugin().configure({ key: ChartKeys.BUGGY }),
   ];
+
+  let restoreConsole: RestoreConsole;
 
   beforeAll(() => {
     plugins.forEach(p => {
@@ -61,9 +74,14 @@ describe('SuperChart', () => {
     });
   });
 
+  afterAll(() => {
+    plugins.forEach(p => {
+      p.unregister();
+    });
+  });
+
   beforeEach(() => {
     restoreConsole = mockConsole();
-    triggerResizeObserver([]); // Reset any pending resize observers
   });
 
   afterEach(() => {
@@ -86,16 +104,14 @@ describe('SuperChart', () => {
 
     afterEach(() => {
       window.removeEventListener('error', onError);
-    });
-
-    it('should have correct number of errors', () => {
+      // eslint-disable-next-line jest/no-standalone-expect
       expect(actualErrors).toBe(expectedErrors);
       expectedErrors = 0;
     });
 
     it('renders default FallbackComponent', async () => {
       expectedErrors = 1;
-      render(
+      const wrapper = mount(
         <SuperChart
           chartType={ChartKeys.BUGGY}
           queriesData={[DEFAULT_QUERY_DATA]}
@@ -103,19 +119,16 @@ describe('SuperChart', () => {
           height="200"
         />,
       );
-
-      expect(
-        await screen.findByText('Oops! An error occurred!'),
-      ).toBeInTheDocument();
+      await new Promise(resolve => setImmediate(resolve));
+      wrapper.update();
+      expect(wrapper.text()).toContain('Oops! An error occurred!');
     });
-
-    it('renders custom FallbackComponent', async () => {
+    it('renders custom FallbackComponent', () => {
       expectedErrors = 1;
       const CustomFallbackComponent = jest.fn(() => (
         <div>Custom Fallback!</div>
       ));
-
-      render(
+      const wrapper = mount(
         <SuperChart
           chartType={ChartKeys.BUGGY}
           queriesData={[DEFAULT_QUERY_DATA]}
@@ -125,13 +138,15 @@ describe('SuperChart', () => {
         />,
       );
 
-      expect(await screen.findByText('Custom Fallback!')).toBeInTheDocument();
-      expect(CustomFallbackComponent).toHaveBeenCalledTimes(1);
+      return promiseTimeout(() => {
+        expect(wrapper.render().find('div.test-component')).toHaveLength(0);
+        expect(CustomFallbackComponent).toHaveBeenCalledTimes(1);
+      });
     });
-    it('call onErrorBoundary', async () => {
+    it('call onErrorBoundary', () => {
       expectedErrors = 1;
       const handleError = jest.fn();
-      render(
+      mount(
         <SuperChart
           chartType={ChartKeys.BUGGY}
           queriesData={[DEFAULT_QUERY_DATA]}
@@ -141,20 +156,16 @@ describe('SuperChart', () => {
         />,
       );
 
-      await screen.findByText('Oops! An error occurred!');
-      expect(handleError).toHaveBeenCalledTimes(1);
+      return promiseTimeout(() => {
+        expect(handleError).toHaveBeenCalledTimes(1);
+      });
     });
-
-    // Update the test cases
-    it('does not include ErrorBoundary if told so', async () => {
+    it('does not include ErrorBoundary if told so', () => {
       expectedErrors = 1;
       const inactiveErrorHandler = jest.fn();
       const activeErrorHandler = jest.fn();
-      render(
-        <ErrorBoundary
-          fallbackRender={() => <div>Error!</div>}
-          onError={activeErrorHandler}
-        >
+      mount(
+        <ErrorBoundary onError={activeErrorHandler}>
           <SuperChart
             disableErrorBoundary
             chartType={ChartKeys.BUGGY}
@@ -166,23 +177,15 @@ describe('SuperChart', () => {
         </ErrorBoundary>,
       );
 
-      await screen.findByText('Error!');
-      expect(activeErrorHandler).toHaveBeenCalledTimes(1);
-      expect(inactiveErrorHandler).not.toHaveBeenCalled();
+      return promiseTimeout(() => {
+        expect(activeErrorHandler).toHaveBeenCalledTimes(1);
+        expect(inactiveErrorHandler).toHaveBeenCalledTimes(0);
+      });
     });
   });
 
-  // Helper function to find elements by class name
-  const findByClassName = (container: HTMLElement, className: string) =>
-    container.querySelector(`.${className}`);
-
-  // Update test cases
-  // Update timeout for all async tests
-  jest.setTimeout(10000);
-
-  // Update the props test to wait for component to render
-  it('passes the props to renderer correctly', async () => {
-    const { container } = render(
+  it('passes the props to renderer correctly', () => {
+    const wrapper = mount(
       <SuperChart
         chartType={ChartKeys.DILIGENT}
         queriesData={[DEFAULT_QUERY_DATA]}
@@ -192,123 +195,15 @@ describe('SuperChart', () => {
       />,
     );
 
-    await promiseTimeout(() => {
-      const testComponent = findByClassName(container, 'test-component');
-      expect(testComponent).not.toBeNull();
-      expect(testComponent).toBeInTheDocument();
-      expect(getDimensionText(container)).toBe('101x118');
+    return promiseTimeout(() => {
+      const renderedWrapper = wrapper.render();
+      expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+      expectDimension(renderedWrapper, 101, 118);
     });
   });
 
-  // Helper function to create a sized wrapper
-  const createSizedWrapper = () => {
-    const wrapper = document.createElement('div');
-    wrapper.style.width = '300px';
-    wrapper.style.height = '300px';
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'block';
-    return wrapper;
-  };
-
-  // Update dimension tests to wait for resize observer
-  // First, increase the timeout for all tests
-  jest.setTimeout(20000);
-
-  // Update the waitForDimensions helper to include a retry mechanism
-  // Update waitForDimensions to avoid await in loop
-  const waitForDimensions = async (
-    container: HTMLElement,
-    expectedWidth: number,
-    expectedHeight: number,
-  ) => {
-    const maxAttempts = 5;
-    const interval = 100;
-
-    return new Promise<void>((resolve, reject) => {
-      let attempts = 0;
-
-      const checkDimension = () => {
-        const testComponent = container.querySelector('.test-component');
-        const dimensionEl = container.querySelector('.dimension');
-
-        if (!testComponent || !dimensionEl) {
-          if (attempts >= maxAttempts) {
-            reject(new Error('Elements not found'));
-            return;
-          }
-          attempts += 1;
-          setTimeout(checkDimension, interval);
-          return;
-        }
-
-        if (dimensionEl.textContent !== `${expectedWidth}x${expectedHeight}`) {
-          if (attempts >= maxAttempts) {
-            reject(new Error('Dimension mismatch'));
-            return;
-          }
-          attempts += 1;
-          setTimeout(checkDimension, interval);
-          return;
-        }
-
-        resolve();
-      };
-
-      checkDimension();
-    });
-  };
-
-  // Update the resize observer trigger to ensure it's called after component mount
-  it.skip('works when width and height are percent', async () => {
-    const { container } = render(
-      <SuperChart
-        chartType={ChartKeys.DILIGENT}
-        queriesData={[DEFAULT_QUERY_DATA]}
-        debounceTime={1}
-        width="100%"
-        height="100%"
-      />,
-    );
-
-    // Wait for initial render
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    triggerResizeObserver([
-      {
-        contentRect: {
-          width: 300,
-          height: 300,
-          top: 0,
-          left: 0,
-          right: 300,
-          bottom: 300,
-          x: 0,
-          y: 0,
-          toJSON() {
-            return {
-              width: this.width,
-              height: this.height,
-              top: this.top,
-              left: this.left,
-              right: this.right,
-              bottom: this.bottom,
-              x: this.x,
-              y: this.y,
-            };
-          },
-        },
-        borderBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-        contentBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-        devicePixelContentBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-        target: document.createElement('div'),
-      },
-    ]);
-
-    await waitForDimensions(container, 300, 300);
-  });
-
-  it('passes the props with multiple queries to renderer correctly', async () => {
-    const { container } = render(
+  it('passes the props with multiple queries to renderer correctly', () => {
+    const wrapper = mount(
       <SuperChart
         chartType={ChartKeys.DILIGENT}
         queriesData={DEFAULT_QUERIES_DATA}
@@ -318,25 +213,42 @@ describe('SuperChart', () => {
       />,
     );
 
-    await promiseTimeout(() => {
-      const testComponent = container.querySelector('.test-component');
-      expect(testComponent).not.toBeNull();
-      expect(testComponent).toBeInTheDocument();
-      expect(getDimensionText(container)).toBe('101x118');
+    return promiseTimeout(() => {
+      const renderedWrapper = wrapper.render();
+      expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+      expectDimension(renderedWrapper, 101, 118);
+    });
+  });
+
+  it('passes the props with multiple queries and single query to renderer correctly (backward compatibility)', () => {
+    const wrapper = mount(
+      <SuperChart
+        chartType={ChartKeys.DILIGENT}
+        queriesData={DEFAULT_QUERIES_DATA}
+        width={101}
+        height={118}
+        formData={{ abc: 1 }}
+      />,
+    );
+
+    return promiseTimeout(() => {
+      const renderedWrapper = wrapper.render();
+      expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+      expectDimension(renderedWrapper, 101, 118);
     });
   });
 
   describe('supports NoResultsComponent', () => {
     it('renders NoResultsComponent when queriesData is missing', () => {
-      render(
+      const wrapper = mount(
         <SuperChart chartType={ChartKeys.DILIGENT} width="200" height="200" />,
       );
 
-      expect(screen.getByText('No Results')).toBeInTheDocument();
+      expect(wrapper.find(NoResultsComponent)).toHaveLength(1);
     });
 
     it('renders NoResultsComponent when queriesData data is null', () => {
-      render(
+      const wrapper = mount(
         <SuperChart
           chartType={ChartKeys.DILIGENT}
           queriesData={[{ data: null }]}
@@ -345,12 +257,116 @@ describe('SuperChart', () => {
         />,
       );
 
-      expect(screen.getByText('No Results')).toBeInTheDocument();
+      expect(wrapper.find(NoResultsComponent)).toHaveLength(1);
     });
   });
 
   describe('supports dynamic width and/or height', () => {
-    // Add MyWrapper component definition
+    it('works with width and height that are numbers', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          width={100}
+          height={100}
+        />,
+      );
+
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 100, 100);
+      });
+    });
+    it('works when width and height are percent', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          debounceTime={1}
+          width="100%"
+          height="100%"
+        />,
+      );
+      triggerResizeObserver();
+
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 300, 300);
+      }, 100);
+    });
+    it('works when only width is percent', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          debounceTime={1}
+          width="50%"
+          height="125"
+        />,
+      );
+      // @ts-ignore
+      triggerResizeObserver([{ contentRect: { height: 125, width: 150 } }]);
+
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        const boundingBox = renderedWrapper
+          .find('div.test-component')
+          .parent()
+          .parent()
+          .parent();
+        expect(boundingBox.css('width')).toEqual('50%');
+        expect(boundingBox.css('height')).toEqual('125px');
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 150, 125);
+      }, 100);
+    });
+    it('works when only height is percent', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          debounceTime={1}
+          width="50"
+          height="25%"
+        />,
+      );
+      // @ts-ignore
+      triggerResizeObserver([{ contentRect: { height: 75, width: 50 } }]);
+
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        const boundingBox = renderedWrapper
+          .find('div.test-component')
+          .parent()
+          .parent()
+          .parent();
+        expect(boundingBox.css('width')).toEqual('50px');
+        expect(boundingBox.css('height')).toEqual('25%');
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 50, 75);
+      }, 100);
+    });
+    it('works when width and height are not specified', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          debounceTime={1}
+        />,
+      );
+      triggerResizeObserver();
+
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 300, 400);
+      }, 100);
+    });
+  });
+
+  describe('supports Wrapper', () => {
     function MyWrapper({ width, height, children }: WrapperProps) {
       return (
         <div>
@@ -362,81 +378,50 @@ describe('SuperChart', () => {
       );
     }
 
-    it('works with width and height that are numbers', async () => {
-      const { container } = render(
+    it('works with width and height that are numbers', () => {
+      const wrapper = mount(
         <SuperChart
           chartType={ChartKeys.DILIGENT}
           queriesData={[DEFAULT_QUERY_DATA]}
           width={100}
           height={100}
+          Wrapper={MyWrapper}
         />,
       );
 
-      await promiseTimeout(() => {
-        const testComponent = container.querySelector('.test-component');
-        expect(testComponent).not.toBeNull();
-        expect(testComponent).toBeInTheDocument();
-        expect(getDimensionText(container)).toBe('100x100');
-      });
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        expect(renderedWrapper.find('div.wrapper-insert')).toHaveLength(1);
+        expect(renderedWrapper.find('div.wrapper-insert').text()).toEqual(
+          '100x100',
+        );
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 100, 100);
+      }, 100);
     });
 
-    it.skip('works when width and height are percent', async () => {
-      const wrapper = createSizedWrapper();
-      document.body.appendChild(wrapper);
-
-      const { container } = render(
-        <div style={{ width: '100%', height: '100%', position: 'absolute' }}>
-          <SuperChart
-            chartType={ChartKeys.DILIGENT}
-            queriesData={[DEFAULT_QUERY_DATA]}
-            debounceTime={1}
-            width="100%"
-            height="100%"
-            Wrapper={MyWrapper}
-          />
-        </div>,
+    it('works when width and height are percent', () => {
+      const wrapper = mount(
+        <SuperChart
+          chartType={ChartKeys.DILIGENT}
+          queriesData={[DEFAULT_QUERY_DATA]}
+          debounceTime={1}
+          width="100%"
+          height="100%"
+          Wrapper={MyWrapper}
+        />,
       );
+      triggerResizeObserver();
 
-      wrapper.appendChild(container);
-
-      // Wait for initial render
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Trigger resize
-      triggerResizeObserver([
-        {
-          contentRect: {
-            width: 300,
-            height: 300,
-            top: 0,
-            left: 0,
-            right: 300,
-            bottom: 300,
-            x: 0,
-            y: 0,
-            toJSON() {
-              return this;
-            },
-          },
-          borderBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-          contentBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-          devicePixelContentBoxSize: [{ blockSize: 300, inlineSize: 300 }],
-          target: wrapper,
-        },
-      ]);
-
-      // Wait for resize to be processed
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Check dimensions
-      const wrapperInsert = container.querySelector('.wrapper-insert');
-      expect(wrapperInsert).not.toBeNull();
-      expect(wrapperInsert).toBeInTheDocument();
-      expect(wrapperInsert).toHaveTextContent('300x300');
-
-      await waitForDimensions(container, 300, 300);
-
-      document.body.removeChild(wrapper);
-    }, 30000);
+      return promiseTimeout(() => {
+        const renderedWrapper = wrapper.render();
+        expect(renderedWrapper.find('div.wrapper-insert')).toHaveLength(1);
+        expect(renderedWrapper.find('div.wrapper-insert').text()).toEqual(
+          '300x300',
+        );
+        expect(renderedWrapper.find('div.test-component')).toHaveLength(1);
+        expectDimension(renderedWrapper, 300, 300);
+      }, 100);
+    });
   });
 });

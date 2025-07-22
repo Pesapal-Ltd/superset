@@ -16,12 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
-import { Menu } from '@superset-ui/core/components/Menu';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
+import { Menu } from 'src/components/Menu';
 import SaveDatasetActionButton from 'src/SqlLab/components/SaveDatasetActionButton';
 
 const overlayMenu = (
-  <Menu items={[{ label: 'Save dataset', key: 'save-dataset' }]} />
+  <Menu>
+    <Menu.Item>Save dataset</Menu.Item>
+  </Menu>
 );
 
 describe('SaveDatasetActionButton', () => {
@@ -34,7 +37,7 @@ describe('SaveDatasetActionButton', () => {
     );
 
     const saveBtn = screen.getByRole('button', { name: /save/i });
-    const caretBtn = screen.getByRole('button', { name: /down/i });
+    const caretBtn = screen.getByRole('button', { name: /caret-down/i });
 
     expect(
       await screen.findByRole('button', { name: /save/i }),
@@ -51,9 +54,9 @@ describe('SaveDatasetActionButton', () => {
       />,
     );
 
-    const caretBtn = screen.getByRole('button', { name: /down/i });
+    const caretBtn = screen.getByRole('button', { name: /caret-down/i });
     expect(
-      await screen.findByRole('button', { name: /down/i }),
+      await screen.findByRole('button', { name: /caret-down/i }),
     ).toBeInTheDocument();
     userEvent.click(caretBtn);
 

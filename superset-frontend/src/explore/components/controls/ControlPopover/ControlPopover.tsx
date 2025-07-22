@@ -19,73 +19,51 @@
 // eslint-disable-next-line no-restricted-syntax -- whole React import is required for `ControlPopover.test.tsx` Jest test passing.
 import React, { FC, useCallback, useRef, useEffect, useState } from 'react';
 
-import {
-  Popover,
+import Popover, {
   PopoverProps as BasePopoverProps,
-} from '@superset-ui/core/components';
-
-import { TooltipPlacement } from '@superset-ui/core/components/Tooltip/types';
+  TooltipPlacement,
+} from 'src/components/Popover';
 
 const sectionContainerId = 'controlSections';
 export const getSectionContainerElement = () =>
   document.getElementById(sectionContainerId)?.lastElementChild as HTMLElement;
 
-const getElementVisibilityRatio = (node?: HTMLElement) => {
+const getElementYVisibilityRatioOnContainer = (node: HTMLElement) => {
   const containerHeight = window?.innerHeight;
-  const containerWidth = window?.innerWidth;
-
-  const rect = node?.getBoundingClientRect();
-  if (!containerHeight || !containerWidth || !rect?.top) {
-    return { yRatio: 0, xRatio: 0 };
+  const nodePositionInViewport = node?.getBoundingClientRect()?.top;
+  if (!containerHeight || !nodePositionInViewport) {
+    return 0;
   }
 
-  const yRatio = rect.top / containerHeight;
-  const xRatio = rect.left / containerWidth;
-  return { yRatio, xRatio };
+  return nodePositionInViewport / containerHeight;
 };
 
 export type PopoverProps = BasePopoverProps & {
-  getVisibilityRatio?: typeof getElementVisibilityRatio;
+  getVisibilityRatio?: typeof getElementYVisibilityRatioOnContainer;
 };
 
 const ControlPopover: FC<PopoverProps> = ({
   getPopupContainer,
-  getVisibilityRatio = getElementVisibilityRatio,
-  open: visibleProp,
+  getVisibilityRatio = getElementYVisibilityRatioOnContainer,
+  visible: visibleProp,
   destroyTooltipOnHide = false,
-  placement: initialPlacement = 'right',
   ...props
 }) => {
   const triggerElementRef = useRef<HTMLElement>();
 
   const [visible, setVisible] = useState(
-    visibleProp === undefined ? props.defaultOpen : visibleProp,
+    visibleProp === undefined ? props.defaultVisible : visibleProp,
   );
-  const [placement, setPlacement] =
-    React.useState<TooltipPlacement>(initialPlacement);
+  const [placement, setPlacement] = React.useState<TooltipPlacement>('right');
 
   const calculatePlacement = useCallback(() => {
-    if (!triggerElementRef.current) return;
-
-    const { yRatio, xRatio } = getVisibilityRatio(triggerElementRef.current);
-
-    const horizontalPlacement =
-      xRatio < 0.35 ? 'right' : xRatio > 0.65 ? 'left' : '';
-
-    const verticalPlacement = (() => {
-      if (yRatio < 0.35) return horizontalPlacement ? 'top' : 'bottom';
-      if (yRatio > 0.65) return horizontalPlacement ? 'bottom' : 'top';
-      return '';
-    })();
-
-    const newPlacement =
-      ((horizontalPlacement
-        ? horizontalPlacement +
-          verticalPlacement.charAt(0).toUpperCase() +
-          verticalPlacement.slice(1)
-        : verticalPlacement) as TooltipPlacement) || 'left';
-    if (newPlacement !== placement) {
-      setPlacement(newPlacement);
+    const visibilityRatio = getVisibilityRatio(triggerElementRef.current!);
+    if (visibilityRatio < 0.35 && placement !== 'rightTop') {
+      setPlacement('rightTop');
+    } else if (visibilityRatio > 0.65 && placement !== 'rightBottom') {
+      setPlacement('rightBottom');
+    } else {
+      setPlacement('right');
     }
   }, [getVisibilityRatio]);
 
@@ -119,7 +97,7 @@ const ControlPopover: FC<PopoverProps> = ({
       }
 
       setVisible(!!visible);
-      props.onOpenChange?.(!!visible);
+      props.onVisibleChange?.(!!visible);
     },
     [props, changeContainerScrollStatus],
   );
@@ -128,7 +106,7 @@ const ControlPopover: FC<PopoverProps> = ({
     (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setVisible(false);
-        props.onOpenChange?.(false);
+        props.onVisibleChange?.(false);
       }
     },
     [props],
@@ -165,10 +143,10 @@ const ControlPopover: FC<PopoverProps> = ({
   return (
     <Popover
       {...props}
-      open={visible}
-      arrow={{ pointAtCenter: true }}
+      visible={visible}
+      arrowPointAtCenter
       placement={placement}
-      onOpenChange={handleOnVisibleChange}
+      onVisibleChange={handleOnVisibleChange}
       getPopupContainer={handleGetPopupContainer}
       destroyTooltipOnHide={destroyTooltipOnHide}
     />

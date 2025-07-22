@@ -23,12 +23,8 @@ import {
   OutPortal,
 } from 'react-reverse-portal';
 import { styled, SupersetTheme, truncationCSS } from '@superset-ui/core';
-import {
-  FormItem as StyledFormItem,
-  Form,
-  Icons,
-  Tooltip,
-} from '@superset-ui/core/components';
+import { FormItem as StyledFormItem, Form } from 'src/components/Form';
+import { Tooltip } from 'src/components/Tooltip';
 import { FilterBarOrientation } from 'src/dashboard/types';
 import { checkIsMissingRequiredValue } from '../utils';
 import FilterValue from './FilterValue';
@@ -38,20 +34,21 @@ import { FilterControlProps } from './types';
 import { FilterCardPlacement } from '../../FilterCard/types';
 import { useIsFilterInScope } from '../../state';
 
-const FilterStyledIcon = styled.div`
+const StyledIcon = styled.div`
   position: absolute;
   right: 0;
 `;
 
 const VerticalFilterControlTitle = styled.h4`
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
-  color: ${({ theme }) => theme.colorText};
+  font-size: ${({ theme }) => theme.typography.sizes.s}px;
+  color: ${({ theme }) => theme.colors.grayscale.dark1};
+  margin: 0;
   overflow-wrap: anywhere;
 `;
 
 const HorizontalFilterControlTitle = styled(VerticalFilterControlTitle)`
-  font-weight: ${({ theme }) => theme.fontWeightNormal};
-  color: ${({ theme }) => theme.colorText};
+  font-weight: ${({ theme }) => theme.typography.weights.normal};
+  color: ${({ theme }) => theme.colors.grayscale.base};
   ${truncationCSS};
 `;
 
@@ -66,6 +63,7 @@ const VerticalFilterControlTitleBox = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.gridUnit}px;
 `;
 
 const HorizontalFilterControlTitleBox = styled(VerticalFilterControlTitleBox)`
@@ -78,38 +76,25 @@ const HorizontalOverflowFilterControlTitleBox = styled(
   width: 100%;
 `;
 
-const AllFilterControlContainer = styled(Form)`
-  // TODO this is a hack related to having form items inside others which is not
-  // normal antd-expected usage
-  .ant-form-item .ant-form-item {
-    margin-bottom: 0 !important;
-  }
-`;
-
-const VerticalFilterControlContainer = styled(AllFilterControlContainer)`
+const VerticalFilterControlContainer = styled(Form)`
   width: 100%;
-
-  .ant-form-item {
-    margin-bottom: ${({ theme }) => theme.sizeUnit * 2}px;
-  }
-
   && .ant-form-item-label > label {
     text-transform: none;
     width: 100%;
-    padding-right: ${({ theme }) => theme.sizeUnit * 11}px;
+    padding-right: ${({ theme }) => theme.gridUnit * 11}px;
   }
   .ant-form-item-tooltip {
-    margin-bottom: ${({ theme }) => theme.sizeUnit}px;
+    margin-bottom: ${({ theme }) => theme.gridUnit}px;
   }
 `;
 
-const HorizontalFilterControlContainer = styled(AllFilterControlContainer)`
+const HorizontalFilterControlContainer = styled(Form)`
   && .ant-form-item-label > label {
     margin-bottom: 0;
     text-transform: none;
   }
   .ant-form-item-tooltip {
-    margin-bottom: ${({ theme }) => theme.sizeUnit}px;
+    margin-bottom: ${({ theme }) => theme.gridUnit}px;
   }
 `;
 
@@ -124,9 +109,7 @@ const HorizontalOverflowFilterControlContainer = styled(
   }
 `;
 
-const VerticalFormItem = styled(StyledFormItem)<{
-  inverseSelection: boolean;
-}>`
+const VerticalFormItem = styled(StyledFormItem)`
   .ant-form-item-label {
     overflow: visible;
     label.ant-form-item-required:not(.ant-form-item-required-mark-optional) {
@@ -135,38 +118,18 @@ const VerticalFormItem = styled(StyledFormItem)<{
       }
     }
   }
-
-  .select-container {
-    ${({ inverseSelection }) =>
-      inverseSelection &&
-      `
-      width: 140px;
-    `}
-  }
-
-  .select-bulk-actions {
-    ${({ inverseSelection }) =>
-      inverseSelection &&
-      `
-      flex-direction: column;
-    `}
-  }
 `;
 
-const HorizontalFormItem = styled(StyledFormItem)<{
-  inverseSelection: boolean;
-}>`
+const HorizontalFormItem = styled(StyledFormItem)`
   && {
     margin-bottom: 0;
     align-items: center;
   }
 
   .ant-form-item-label {
-    display: flex;
-    align-items: center;
     overflow: visible;
     padding-bottom: 0;
-    margin-right: ${({ theme }) => theme.sizeUnit * 2}px;
+    margin-right: ${({ theme }) => theme.gridUnit * 2}px;
     label.ant-form-item-required:not(.ant-form-item-required-mark-optional) {
       &::after {
         display: none;
@@ -179,19 +142,7 @@ const HorizontalFormItem = styled(StyledFormItem)<{
   }
 
   .ant-form-item-control {
-    min-width: ${({ inverseSelection }) => (inverseSelection ? 252 : 164)}px;
-  }
-
-  .select-container {
-    ${({ inverseSelection }) =>
-      inverseSelection &&
-      `
-      width: 164px;
-    `}
-  }
-
-  .select-bulk-actions {
-    flex-direction: column;
+    width: ${({ theme }) => theme.gridUnit * 41}px;
   }
 `;
 
@@ -200,52 +151,42 @@ const HorizontalOverflowFormItem = VerticalFormItem;
 const useFilterControlDisplay = (
   orientation: FilterBarOrientation,
   overflow: boolean,
-  inverseSelection: boolean,
 ) =>
   useMemo(() => {
     if (orientation === FilterBarOrientation.Horizontal) {
       if (overflow) {
         return {
           FilterControlContainer: HorizontalOverflowFilterControlContainer,
-          FormItem: (props: any) => (
-            <HorizontalOverflowFormItem
-              {...props}
-              inverseSelection={inverseSelection}
-            />
-          ),
+          FormItem: HorizontalOverflowFormItem,
           FilterControlTitleBox: HorizontalOverflowFilterControlTitleBox,
           FilterControlTitle: HorizontalOverflowFilterControlTitle,
         };
       }
       return {
         FilterControlContainer: HorizontalFilterControlContainer,
-        FormItem: (props: any) => (
-          <HorizontalFormItem {...props} inverseSelection={inverseSelection} />
-        ),
+        FormItem: HorizontalFormItem,
         FilterControlTitleBox: HorizontalFilterControlTitleBox,
         FilterControlTitle: HorizontalFilterControlTitle,
       };
     }
     return {
       FilterControlContainer: VerticalFilterControlContainer,
-      FormItem: (props: any) => (
-        <VerticalFormItem {...props} inverseSelection={inverseSelection} />
-      ),
+      FormItem: VerticalFormItem,
       FilterControlTitleBox: VerticalFilterControlTitleBox,
       FilterControlTitle: VerticalFilterControlTitle,
     };
-  }, [orientation, overflow, inverseSelection]);
+  }, [orientation, overflow]);
 
 const ToolTipContainer = styled.div`
-  font-size: ${({ theme }) => theme.fontSize}px;
+  font-size: ${({ theme }) => theme.typography.sizes.m}px;
   display: flex;
 `;
 
 const RequiredFieldIndicator = () => (
   <span
     css={(theme: SupersetTheme) => ({
-      color: theme.colorError,
-      fontSize: `${theme.fontSizeSM}px`,
+      color: theme.colors.error.base,
+      fontSize: `${theme.typography.sizes.s}px`,
       paddingLeft: '1px',
     })}
   >
@@ -266,12 +207,13 @@ const DescriptionToolTip = ({ description }: { description: string }) => (
         textOverflow: 'ellipsis',
         whiteSpace: 'normal',
       }}
+      getPopupContainer={trigger => trigger.parentElement as HTMLElement}
     >
-      <Icons.InfoCircleOutlined
-        className="text-muted"
-        role="button"
+      <i
+        className="fa fa-info-circle text-muted"
         css={(theme: SupersetTheme) => ({
-          paddingLeft: `${theme.sizeUnit}px`,
+          paddingLeft: `${theme.gridUnit}px`,
+          cursor: 'pointer',
         })}
       />
     </Tooltip>
@@ -288,8 +230,6 @@ const FilterControl = ({
   parentRef,
   orientation = FilterBarOrientation.Vertical,
   overflow = false,
-  clearAllTrigger,
-  onClearAllComplete,
 }: FilterControlProps) => {
   const portalNode = useMemo(() => createHtmlPortalNode(), []);
   const [isFilterActive, setIsFilterActive] = useState(false);
@@ -302,29 +242,25 @@ const FilterControl = ({
     checkIsMissingRequiredValue(filter, filter.dataMask?.filterState);
   const validateStatus = isMissingRequiredValue ? 'error' : undefined;
   const isRequired = !!filter.controlValues?.enableEmptyFilter;
-  const inverseSelection = !!filter.controlValues?.inverseSelection;
 
   const {
     FilterControlContainer,
     FormItem,
     FilterControlTitleBox,
     FilterControlTitle,
-  } = useFilterControlDisplay(orientation, overflow, inverseSelection);
+  } = useFilterControlDisplay(orientation, overflow);
 
   const label = useMemo(
     () => (
       <FilterControlTitleBox>
-        <FilterControlTitle
-          id={`filter-name-${filter.id}`}
-          data-test="filter-control-name"
-        >
+        <FilterControlTitle data-test="filter-control-name">
           {name}
         </FilterControlTitle>
         {isRequired && <RequiredFieldIndicator />}
         {filter.description?.trim() && (
           <DescriptionToolTip description={filter.description} />
         )}
-        <FilterStyledIcon data-test="filter-icon">{icon}</FilterStyledIcon>
+        <StyledIcon data-test="filter-icon">{icon}</StyledIcon>
       </FilterControlTitleBox>
     ),
     [
@@ -362,8 +298,6 @@ const FilterControl = ({
           orientation={orientation}
           overflow={overflow}
           validateStatus={validateStatus}
-          clearAllTrigger={clearAllTrigger}
-          onClearAllComplete={onClearAllComplete}
         />
       </InPortal>
       <FilterControlContainer
@@ -381,7 +315,7 @@ const FilterControl = ({
           <div>
             <FormItem
               label={label}
-              htmlFor={filter.id}
+              aria-label={name}
               required={filter?.controlValues?.enableEmptyFilter}
               validateStatus={validateStatus}
             >

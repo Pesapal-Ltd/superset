@@ -18,20 +18,14 @@
  */
 
 import sinon from 'sinon';
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-  within,
-} from 'spec/helpers/testing-library';
+import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import fetchMock from 'fetch-mock';
 import * as chartAction from 'src/components/Chart/chartAction';
 import * as saveModalActions from 'src/explore/actions/saveModalActions';
 import * as downloadAsImage from 'src/utils/downloadAsImage';
 import * as exploreUtils from 'src/explore/exploreUtils';
-import { FeatureFlag, VizType } from '@superset-ui/core';
-import { useUnsavedChangesPrompt } from 'src/hooks/useUnsavedChangesPrompt';
+import { FeatureFlag } from '@superset-ui/core';
 import ExploreHeader from '.';
 
 const chartEndpoint = 'glob:*api/v1/chart/*';
@@ -42,15 +36,11 @@ window.featureFlags = {
   [FeatureFlag.EmbeddableCharts]: true,
 };
 
-jest.mock('src/hooks/useUnsavedChangesPrompt', () => ({
-  useUnsavedChangesPrompt: jest.fn(),
-}));
-
 const createProps = (additionalProps = {}) => ({
   chart: {
     id: 1,
     latestQueryFormData: {
-      viz_type: VizType.Histogram,
+      viz_type: 'histogram',
       datasource: '49__table',
       slice_id: 318,
       url_params: {},
@@ -90,7 +80,7 @@ const createProps = (additionalProps = {}) => ({
       slice_id: 318,
       time_range: 'No filter',
       url_params: {},
-      viz_type: VizType.Histogram,
+      viz_type: 'histogram',
       x_axis_label: 'age',
       y_axis_label: 'count',
     },
@@ -137,255 +127,96 @@ fetchMock.post(
     sendAsJson: false,
   },
 );
-describe('ExploreChartHeader', () => {
-  jest.setTimeout(15000); // ✅ Applies to all tests in this suite
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+test('Cancelling changes to the properties should reset previous properties', async () => {
+  const props = createProps();
+  render(<ExploreHeader {...props} />, { useRedux: true });
+  const newChartName = 'New chart name';
+  const prevChartName = props.slice_name;
+  expect(
+    await screen.findByText(/add the name of the chart/i),
+  ).toBeInTheDocument();
 
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: false,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave: jest.fn(),
-    });
-  });
+  userEvent.click(screen.getByLabelText('Menu actions trigger'));
+  userEvent.click(screen.getByText('Edit chart properties'));
 
-  test('Cancelling changes to the properties should reset previous properties', async () => {
-    const props = createProps();
-    render(<ExploreHeader {...props} />, { useRedux: true });
-    const newChartName = 'New chart name';
-    const prevChartName = props.slice_name;
-    expect(
-      await screen.findByText(/add the name of the chart/i),
-    ).toBeInTheDocument();
+  const nameInput = await screen.findByRole('textbox', { name: 'Name' });
 
-    userEvent.click(screen.getByLabelText('Menu actions trigger'));
-    userEvent.click(screen.getByText('Edit chart properties'));
+  userEvent.clear(nameInput);
+  userEvent.type(nameInput, newChartName);
 
-    const nameInput = await screen.findByRole('textbox', { name: 'Name' });
+  expect(screen.getByDisplayValue(newChartName)).toBeInTheDocument();
 
-    userEvent.clear(nameInput);
-    userEvent.type(nameInput, newChartName);
+  userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.getByDisplayValue(newChartName)).toBeInTheDocument();
+  userEvent.click(screen.getByLabelText('Menu actions trigger'));
+  userEvent.click(screen.getByText('Edit chart properties'));
 
-    userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(await screen.findByDisplayValue(prevChartName)).toBeInTheDocument();
+});
 
-    userEvent.click(screen.getByLabelText('Menu actions trigger'));
-    userEvent.click(screen.getByText('Edit chart properties'));
+test('renders the metadata bar when saved', async () => {
+  const props = createProps({ showTitlePanelItems: true });
+  render(<ExploreHeader {...props} />, { useRedux: true });
+  expect(await screen.findByText('Added to 1 dashboard')).toBeInTheDocument();
+  expect(await screen.findByText('Simple description')).toBeInTheDocument();
+  expect(await screen.findByText('John Doe')).toBeInTheDocument();
+  expect(await screen.findByText('2 days ago')).toBeInTheDocument();
+});
 
-    expect(await screen.findByDisplayValue(prevChartName)).toBeInTheDocument();
-  });
+test('Changes "Added to X dashboards" to plural when more than 1 dashboard', async () => {
+  const props = createProps({ showTitlePanelItems: true });
+  render(
+    <ExploreHeader
+      {...props}
+      metadata={{
+        ...props.metadata,
+        dashboards: [
+          { id: 1, dashboard_title: 'Test' },
+          { id: 2, dashboard_title: 'Test2' },
+        ],
+      }}
+    />,
+    { useRedux: true },
+  );
+  expect(await screen.findByText('Added to 2 dashboards')).toBeInTheDocument();
+});
 
-  test('renders the metadata bar when saved', async () => {
-    const props = createProps({ showTitlePanelItems: true });
-    render(<ExploreHeader {...props} />, { useRedux: true });
-    expect(await screen.findByText('Added to 1 dashboard')).toBeInTheDocument();
-    expect(await screen.findByText('Simple description')).toBeInTheDocument();
-    expect(await screen.findByText('John Doe')).toBeInTheDocument();
-    expect(await screen.findByText('2 days ago')).toBeInTheDocument();
-  });
+test('does not render the metadata bar when not saved', async () => {
+  const props = createProps({ showTitlePanelItems: true, slice: null });
+  render(<ExploreHeader {...props} />, { useRedux: true });
+  await waitFor(() =>
+    expect(screen.queryByText('Added to 1 dashboard')).not.toBeInTheDocument(),
+  );
+});
 
-  test('Changes "Added to X dashboards" to plural when more than 1 dashboard', async () => {
-    const props = createProps({ showTitlePanelItems: true });
-    render(
-      <ExploreHeader
-        {...props}
-        metadata={{
-          ...props.metadata,
-          dashboards: [
-            { id: 1, dashboard_title: 'Test' },
-            { id: 2, dashboard_title: 'Test2' },
-          ],
-        }}
-      />,
-      { useRedux: true },
-    );
-    expect(
-      await screen.findByText('Added to 2 dashboards'),
-    ).toBeInTheDocument();
-  });
+test('Save chart', async () => {
+  const setSaveChartModalVisibility = jest.spyOn(
+    saveModalActions,
+    'setSaveChartModalVisibility',
+  );
+  const props = createProps();
+  render(<ExploreHeader {...props} />, { useRedux: true });
+  expect(await screen.findByText('Save')).toBeInTheDocument();
+  userEvent.click(screen.getByText('Save'));
+  expect(setSaveChartModalVisibility).toHaveBeenCalledWith(true);
+  setSaveChartModalVisibility.mockClear();
+});
 
-  test('does not render the metadata bar when not saved', async () => {
-    const props = createProps({ showTitlePanelItems: true, slice: null });
-    render(<ExploreHeader {...props} />, { useRedux: true });
-    await waitFor(() =>
-      expect(
-        screen.queryByText('Added to 1 dashboard'),
-      ).not.toBeInTheDocument(),
-    );
-  });
-
-  test('Save chart', async () => {
-    const setSaveChartModalVisibilitySpy = jest.spyOn(
-      saveModalActions,
-      'setSaveChartModalVisibility',
-    );
-
-    const setSaveChartModalVisibilityMock =
-      setSaveChartModalVisibilitySpy as jest.Mock;
-
-    const triggerManualSave = jest.fn(() => {
-      setSaveChartModalVisibilityMock(true);
-    });
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: false,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave,
-    });
-
-    const props = createProps();
-    render(<ExploreHeader {...props} />, { useRedux: true });
-
-    const saveButton: HTMLElement = await screen.findByRole('button', {
-      name: /save/i,
-    });
-
-    userEvent.click(saveButton);
-
-    expect(triggerManualSave).toHaveBeenCalled();
-    expect(setSaveChartModalVisibilityMock).toHaveBeenCalledWith(true);
-
-    setSaveChartModalVisibilityMock.mockClear();
-  });
-
-  test('Save disabled', async () => {
-    const triggerManualSave = jest.fn();
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: false,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave,
-    });
-
-    const props = createProps();
-    render(<ExploreHeader {...props} saveDisabled />, { useRedux: true });
-
-    const saveButton: HTMLElement = await screen.findByRole('button', {
-      name: /save/i,
-    });
-
-    expect(saveButton).toBeDisabled();
-
-    userEvent.click(saveButton);
-
-    expect(triggerManualSave).not.toHaveBeenCalled();
-  });
-
-  test('should render UnsavedChangesModal when showModal is true', async () => {
-    const props = createProps();
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: true,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave: jest.fn(),
-    });
-
-    render(<ExploreHeader {...props} />, { useRedux: true });
-
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    expect(
-      await screen.findByText('Save changes to your chart?'),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("If you don't save, changes will be lost."),
-    ).toBeInTheDocument();
-  });
-
-  test('should call handleSaveAndCloseModal when clicking Save in UnsavedChangesModal', async () => {
-    const handleSaveAndCloseModal = jest.fn();
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: true,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal,
-      triggerManualSave: jest.fn(),
-    });
-
-    const props = createProps();
-    render(<ExploreHeader {...props} />, { useRedux: true });
-
-    const modal: HTMLElement = await screen.findByRole('dialog');
-    const saveButton: HTMLElement = within(modal).getByRole('button', {
-      name: /save/i,
-    });
-
-    userEvent.click(saveButton);
-
-    expect(handleSaveAndCloseModal).toHaveBeenCalled();
-  });
-
-  test('should call handleConfirmNavigation when clicking Discard in UnsavedChangesModal', async () => {
-    const handleConfirmNavigation = jest.fn();
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: true,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation,
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave: jest.fn(),
-    });
-
-    const props = createProps();
-    render(<ExploreHeader {...props} />, { useRedux: true });
-
-    const modal: HTMLElement = await screen.findByRole('dialog');
-    const discardButton: HTMLElement = within(modal).getByRole('button', {
-      name: /discard/i,
-    });
-
-    userEvent.click(discardButton);
-
-    expect(handleConfirmNavigation).toHaveBeenCalled();
-  });
-
-  test('should call setShowModal(false) when clicking close button in UnsavedChangesModal', async () => {
-    const setShowModal = jest.fn();
-
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: true,
-      setShowModal,
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave: jest.fn(),
-    });
-
-    const props = createProps();
-    render(<ExploreHeader {...props} />, { useRedux: true });
-
-    const closeButton: HTMLElement = await screen.findByRole('button', {
-      name: /close/i,
-    });
-
-    userEvent.click(closeButton);
-
-    expect(setShowModal).toHaveBeenCalledWith(false);
-  });
+test('Save disabled', async () => {
+  const setSaveChartModalVisibility = jest.spyOn(
+    saveModalActions,
+    'setSaveChartModalVisibility',
+  );
+  const props = createProps();
+  render(<ExploreHeader {...props} saveDisabled />, { useRedux: true });
+  expect(await screen.findByText('Save')).toBeInTheDocument();
+  userEvent.click(screen.getByText('Save'));
+  expect(setSaveChartModalVisibility).not.toHaveBeenCalled();
+  setSaveChartModalVisibility.mockClear();
 });
 
 describe('Additional actions tests', () => {
-  jest.setTimeout(15000); // ✅ Applies to all tests in this suite
-
-  beforeEach(() => {
-    (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-      showModal: false,
-      setShowModal: jest.fn(),
-      handleConfirmNavigation: jest.fn(),
-      handleSaveAndCloseModal: jest.fn(),
-      triggerManualSave: jest.fn(),
-    });
-  });
-
   test('Should render a button', async () => {
     const props = createProps();
     render(<ExploreHeader {...props} />, { useRedux: true });
@@ -463,14 +294,12 @@ describe('Additional actions tests', () => {
     render(<ExploreHeader {...props} />, {
       useRedux: true,
     });
-    expect(props.actions.redirectSQLLab).toHaveBeenCalledTimes(0);
+    expect(props.actions.redirectSQLLab).toBeCalledTimes(0);
     userEvent.click(screen.getByLabelText('Menu actions trigger'));
     userEvent.click(
       screen.getByRole('menuitem', { name: 'Edit chart properties' }),
     );
-    expect(
-      await screen.findByText('Edit chart properties'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Edit Chart Properties')).toBeVisible();
   });
 
   test('Should call getChartDataRequest when click on "View query"', async () => {
@@ -480,14 +309,14 @@ describe('Additional actions tests', () => {
       useRedux: true,
     });
 
-    expect(getChartDataRequest).toHaveBeenCalledTimes(0);
+    expect(getChartDataRequest).toBeCalledTimes(0);
     userEvent.click(screen.getByLabelText('Menu actions trigger'));
-    expect(getChartDataRequest).toHaveBeenCalledTimes(0);
+    expect(getChartDataRequest).toBeCalledTimes(0);
 
     const menuItem = screen.getByText('View query').parentElement!;
     userEvent.click(menuItem);
 
-    await waitFor(() => expect(getChartDataRequest).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(getChartDataRequest).toBeCalledTimes(1));
   });
 
   test('Should call onOpenInEditor when click on "Run in SQL Lab"', async () => {
@@ -497,12 +326,12 @@ describe('Additional actions tests', () => {
     });
     expect(await screen.findByText('Save')).toBeInTheDocument();
 
-    expect(props.actions.redirectSQLLab).toHaveBeenCalledTimes(0);
+    expect(props.actions.redirectSQLLab).toBeCalledTimes(0);
     userEvent.click(screen.getByLabelText('Menu actions trigger'));
-    expect(props.actions.redirectSQLLab).toHaveBeenCalledTimes(0);
+    expect(props.actions.redirectSQLLab).toBeCalledTimes(0);
 
     userEvent.click(screen.getByRole('menuitem', { name: 'Run in SQL Lab' }));
-    expect(props.actions.redirectSQLLab).toHaveBeenCalledTimes(1);
+    expect(props.actions.redirectSQLLab).toBeCalledTimes(1);
   });
 
   describe('Download', () => {
@@ -512,21 +341,10 @@ describe('Additional actions tests', () => {
     beforeEach(() => {
       spyDownloadAsImage = sinon.spy(downloadAsImage, 'default');
       spyExportChart = sinon.spy(exploreUtils, 'exportChart');
-
-      (useUnsavedChangesPrompt as jest.Mock).mockReturnValue({
-        showModal: false,
-        setShowModal: jest.fn(),
-        handleConfirmNavigation: jest.fn(),
-        handleSaveAndCloseModal: jest.fn(),
-        triggerManualSave: jest.fn(),
-      });
     });
-
-    afterEach(async () => {
+    afterEach(() => {
       spyDownloadAsImage.restore();
       spyExportChart.restore();
-      // Wait for any pending effects to complete
-      await new Promise(resolve => setTimeout(resolve, 0));
     });
 
     test('Should call downloadAsImage when click on "Download as image"', async () => {
@@ -536,22 +354,16 @@ describe('Additional actions tests', () => {
         useRedux: true,
       });
 
-      await waitFor(() => {
-        expect(
-          screen.getByLabelText('Menu actions trigger'),
-        ).toBeInTheDocument();
-      });
-
+      expect(spy).toBeCalledTimes(0);
       userEvent.click(screen.getByLabelText('Menu actions trigger'));
-      userEvent.hover(screen.getByText('Download'));
+      expect(spy).toBeCalledTimes(0);
 
+      userEvent.hover(screen.getByText('Download'));
       const downloadAsImageElement =
         await screen.findByText('Download as image');
       userEvent.click(downloadAsImageElement);
 
-      await waitFor(() => {
-        expect(spy).toHaveBeenCalledTimes(1);
-      });
+      expect(spy).toBeCalledTimes(1);
     });
 
     test('Should not export to CSV if canDownload=false', async () => {
@@ -611,7 +423,7 @@ describe('Additional actions tests', () => {
 
     test('Should not export to pivoted CSV if canDownloadCSV=false and viz_type=pivot_table_v2', async () => {
       const props = createProps();
-      props.chart.latestQueryFormData.viz_type = VizType.PivotTable;
+      props.chart.latestQueryFormData.viz_type = 'pivot_table_v2';
       render(<ExploreHeader {...props} />, {
         useRedux: true,
       });
@@ -628,7 +440,7 @@ describe('Additional actions tests', () => {
     test('Should export to pivoted CSV if canDownloadCSV=true and viz_type=pivot_table_v2', async () => {
       const props = createProps();
       props.canDownload = true;
-      props.chart.latestQueryFormData.viz_type = VizType.PivotTable;
+      props.chart.latestQueryFormData.viz_type = 'pivot_table_v2';
       render(<ExploreHeader {...props} />, {
         useRedux: true,
       });

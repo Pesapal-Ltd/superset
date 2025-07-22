@@ -1,3 +1,17 @@
+import {
+  ColorSchemeConfig,
+  FeatureFlagMap,
+  JsonObject,
+  LanguagePack,
+  Locale,
+  SequentialSchemeConfig,
+} from '@superset-ui/core';
+import { FormatLocaleDefinition } from 'd3-format';
+import { TimeLocaleDefinition } from 'd3-time-format';
+import { isPlainObject } from 'lodash';
+import { Languages } from 'src/features/home/LanguagePicker';
+import { FlashMessage } from '../components/FlashProvider';
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -16,24 +30,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  ColorSchemeConfig,
-  FeatureFlagMap,
-  JsonObject,
-  LanguagePack,
-  Locale,
-  SequentialSchemeConfig,
-} from '@superset-ui/core';
-import { FormatLocaleDefinition } from 'd3-format';
-import { TimeLocaleDefinition } from 'd3-time-format';
-import { isPlainObject } from 'lodash';
-import { Languages } from 'src/features/home/LanguagePicker';
-import type { FlashMessage } from 'src/components';
-import type {
-  AnyThemeConfig,
-  SerializableThemeConfig,
-} from '@superset-ui/core/theme/types';
-
 export type User = {
   createdOn?: string;
   email?: string;
@@ -43,7 +39,6 @@ export type User = {
   lastName: string;
   userId?: number; // optional because guest user doesn't have a user id
   username: string;
-  loginCount?: number;
 };
 
 export type UserRoles = Record<string, [string, string][]>;
@@ -121,7 +116,7 @@ export interface NavBarProps {
 export interface MenuObjectChildProps {
   label: string;
   name?: string;
-  icon?: React.ReactNode;
+  icon?: string;
   index?: number;
   url?: string;
   onClick?: () => void;
@@ -147,21 +142,7 @@ export interface MenuData {
   };
 }
 
-export interface SerializableThemeSettings {
-  enforced?: boolean;
-  allowSwitching?: boolean;
-  allowOSPreference?: boolean;
-}
-
-export interface BootstrapThemeDataConfig {
-  default: SerializableThemeConfig | {};
-  dark: SerializableThemeConfig | {};
-  settings: SerializableThemeSettings | {};
-}
-
 export interface CommonBootstrapData {
-  application_root: string;
-  static_assets_prefix: string;
   flash_messages: FlashMessage[];
   conf: JsonObject;
   locale: Locale;
@@ -169,7 +150,7 @@ export interface CommonBootstrapData {
   language_pack: LanguagePack;
   extra_categorical_color_schemes: ColorSchemeConfig[];
   extra_sequential_color_schemes: SequentialSchemeConfig[];
-  theme: BootstrapThemeDataConfig;
+  theme_overrides: JsonObject;
   menu_data: MenuData;
   d3_format: Partial<FormatLocaleDefinition>;
   d3_time_format: Partial<TimeLocaleDefinition>;
@@ -183,13 +164,6 @@ export interface BootstrapData {
     dashboard_id: string;
   };
   requested_query?: JsonObject;
-}
-
-export interface BootstrapThemeData {
-  bootstrapDefaultTheme: AnyThemeConfig | null;
-  bootstrapDarkTheme: AnyThemeConfig | null;
-  bootstrapThemeSettings: SerializableThemeSettings | null;
-  hasBootstrapThemes: boolean;
 }
 
 export function isUser(user: any): user is User {

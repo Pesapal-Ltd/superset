@@ -24,7 +24,6 @@ import {
   DatasourceType,
   QueryFormData,
   SimpleAdhocFilter,
-  VizType,
 } from '@superset-ui/core';
 import {
   createDashboard,
@@ -420,7 +419,7 @@ const getDashboardSlicesReturnValue = [21, 22, 23];
  * Tests getSliceDashboards action
  */
 
-const getSliceDashboardsEndpoint = `glob:*/api/v1/chart/${sliceId}?q=(select_columns:!(dashboards.id))`;
+const getSliceDashboardsEndpoint = `glob:*/api/v1/chart/${sliceId}?q=(columns:!(dashboards.id))`;
 test('getSliceDashboards with slice handles success', async () => {
   fetchMock.reset();
   fetchMock.get(getSliceDashboardsEndpoint, dashboardSlicesResponsePayload);
@@ -471,14 +470,14 @@ describe('getSlicePayload', () => {
   const sliceName = 'Test Slice';
   const formDataWithNativeFilters = {
     datasource: `${datasourceId}__${datasourceType}`,
-    viz_type: VizType.Pie,
+    viz_type: 'pie',
     adhoc_filters: [],
   };
   const dashboards = [5];
   const owners = [0];
   const formDataFromSlice: QueryFormData = {
     datasource: `${datasourceId}__${datasourceType}`,
-    viz_type: VizType.Pie,
+    viz_type: 'pie',
     adhoc_filters: [
       {
         clause: 'WHERE',
@@ -603,7 +602,7 @@ describe('getSlicePayload', () => {
 
     const formDataWithAdhocFiltersWithExtra: QueryFormData = {
       ...formDataWithNativeFilters,
-      viz_type: VizType.MixedTimeseries,
+      viz_type: 'mixed_timeseries',
       adhoc_filters: [
         {
           clause: 'WHERE',
@@ -650,7 +649,7 @@ describe('getSlicePayload', () => {
 
     const formDataWithAdhocFiltersWithExtra: QueryFormData = {
       ...formDataWithNativeFilters,
-      viz_type: VizType.MixedTimeseries,
+      viz_type: 'mixed_timeseries',
       adhoc_filters: [
         {
           clause: 'WHERE',
@@ -688,41 +687,5 @@ describe('getSlicePayload', () => {
     );
 
     expect(hasTemporalRange).toBe(true);
-  });
-
-  test('should reset isExtra flag to false for temporal filter when saving as a new chart', () => {
-    const formDataWithTemporalFilterWithExtra: QueryFormData = {
-      ...formDataWithNativeFilters,
-      adhoc_filters: [
-        {
-          clause: 'WHERE',
-          subject: 'year',
-          operator: 'TEMPORAL_RANGE',
-          comparator: '2004 : ',
-          expressionType: 'SIMPLE',
-          isExtra: true,
-        },
-      ],
-    };
-
-    const result = getSlicePayload(
-      sliceName,
-      formDataWithTemporalFilterWithExtra,
-      dashboards,
-      owners as [],
-      {} as QueryFormData,
-    );
-
-    const savedFilters = JSON.parse(result.params as string).adhoc_filters;
-
-    expect(savedFilters).toHaveLength(1);
-    expect(savedFilters[0]).toMatchObject({
-      clause: 'WHERE',
-      subject: 'year',
-      operator: 'TEMPORAL_RANGE',
-      comparator: 'No filter',
-      expressionType: 'SIMPLE',
-      isExtra: false,
-    });
   });
 });

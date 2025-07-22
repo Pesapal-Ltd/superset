@@ -19,24 +19,22 @@
 import { ChangeEvent, useState, useEffect, FC } from 'react';
 
 import rison from 'rison';
-import {
-  AsyncSelect,
-  Button,
-  Divider,
-  FormLabel,
-  Input,
-  Modal,
-} from '@superset-ui/core/components';
+import Modal from 'src/components/Modal';
+import AsyncSelect from 'src/components/Select/AsyncSelect';
+import { FormLabel } from 'src/components/Form';
 import { t, styled, SupersetClient } from '@superset-ui/core';
+import { Input } from 'antd';
+import { Divider } from 'src/components';
+import Button from 'src/components/Button';
 import { Tag } from 'src/views/CRUD/types';
 import { fetchObjectsByTagIds } from 'src/features/tags/tags';
 
 const StyledModalBody = styled.div`
   .ant-select-dropdown {
-    max-height: ${({ theme }) => theme.sizeUnit * 40}px;
+    max-height: ${({ theme }) => theme.gridUnit * 40}px;
   }
   .tag-input {
-    margin-bottom: ${({ theme }) => theme.sizeUnit * 3}px;
+    margin-bottom: ${({ theme }) => theme.gridUnit * 3}px;
   }
 `;
 
@@ -163,7 +161,7 @@ const TagModal: FC<TagModalProps> = ({
     const { result, count } = json;
 
     return {
-      data: result.map((item: Record<string, any> & { id: number }) => ({
+      data: result.map((item: { id: number }) => ({
         value: item.id,
         label: item[filterColumn],
       })),
@@ -234,7 +232,7 @@ const TagModal: FC<TagModalProps> = ({
           objects_to_tag: [...dashboards, ...charts, ...savedQueries],
         },
       })
-        .then(() => {
+        .then(({ json = {} }) => {
           refreshData();
           clearTagForm();
           addSuccessToast(t('Tag updated'));
@@ -252,7 +250,7 @@ const TagModal: FC<TagModalProps> = ({
           objects_to_tag: [...dashboards, ...charts, ...savedQueries],
         },
       })
-        .then(() => {
+        .then(({ json = {} }) => {
           refreshData();
           clearTagForm();
           addSuccessToast(t('Tag created'));

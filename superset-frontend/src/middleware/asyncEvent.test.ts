@@ -18,15 +18,9 @@
  */
 import fetchMock from 'fetch-mock';
 import WS from 'jest-websocket-mock';
-import { parseErrorJson, isFeatureEnabled } from '@superset-ui/core';
+import sinon from 'sinon';
+import * as uiCore from '@superset-ui/core';
 import * as asyncEvent from 'src/middleware/asyncEvent';
-
-jest.mock('@superset-ui/core', () => ({
-  ...jest.requireActual('@superset-ui/core'),
-  isFeatureEnabled: jest.fn(),
-}));
-
-const mockedIsFeatureEnabled = isFeatureEnabled as jest.Mock;
 
 describe('asyncEvent middleware', () => {
   const asyncPendingEvent = {
@@ -86,19 +80,19 @@ describe('asyncEvent middleware', () => {
 
   const EVENTS_ENDPOINT = 'glob:*/api/v1/async_event/*';
   const CACHED_DATA_ENDPOINT = 'glob:*/api/v1/chart/data/*';
+  let featureEnabledStub: any;
 
   beforeEach(async () => {
-    mockedIsFeatureEnabled.mockImplementation(
-      featureFlag => featureFlag === 'GLOBAL_ASYNC_QUERIES',
-    );
+    featureEnabledStub = sinon.stub(uiCore, 'isFeatureEnabled');
+    featureEnabledStub.withArgs('GLOBAL_ASYNC_QUERIES').returns(true);
   });
 
   afterEach(() => {
     fetchMock.reset();
-    mockedIsFeatureEnabled.mockRestore();
+    featureEnabledStub.restore();
   });
 
-  afterAll(() => fetchMock.reset());
+  afterAll(fetchMock.reset);
 
   describe('polling transport', () => {
     const config = {
@@ -120,9 +114,9 @@ describe('asyncEvent middleware', () => {
     });
 
     it('resolves with chart data on event done status', async () => {
-      const actualResolved =
-        await asyncEvent.waitForAsyncData(asyncPendingEvent);
-      expect(actualResolved).toEqual([chartData]);
+      await expect(
+        asyncEvent.waitForAsyncData(asyncPendingEvent),
+      ).resolves.toEqual([chartData]);
 
       expect(fetchMock.calls(EVENTS_ENDPOINT)).toHaveLength(1);
       expect(fetchMock.calls(CACHED_DATA_ENDPOINT)).toHaveLength(1);
@@ -134,15 +128,10 @@ describe('asyncEvent middleware', () => {
         status: 200,
         body: { result: [asyncErrorEvent] },
       });
-      const errorResponse = parseErrorJson(asyncErrorEvent);
-      let error: any = null;
-      try {
-        await asyncEvent.waitForAsyncData(asyncPendingEvent);
-      } catch (err) {
-        error = err;
-      } finally {
-        expect(error).toEqual(errorResponse);
-      }
+      const errorResponse = await uiCore.parseErrorJson(asyncErrorEvent);
+      await expect(
+        asyncEvent.waitForAsyncData(asyncPendingEvent),
+      ).rejects.toEqual(errorResponse);
 
       expect(fetchMock.calls(EVENTS_ENDPOINT)).toHaveLength(1);
       expect(fetchMock.calls(CACHED_DATA_ENDPOINT)).toHaveLength(0);
@@ -158,14 +147,10 @@ describe('asyncEvent middleware', () => {
         status: 400,
       });
 
-      let error = '';
-      try {
-        await asyncEvent.waitForAsyncData(asyncPendingEvent);
-      } catch (err) {
-        [{ error }] = err;
-      } finally {
-        expect(error).toEqual('Bad request');
-      }
+      const errorResponse = [{ error: 'Bad Request' }];
+      await expect(
+        asyncEvent.waitForAsyncData(asyncPendingEvent),
+      ).rejects.toEqual(errorResponse);
 
       expect(fetchMock.calls(EVENTS_ENDPOINT)).toHaveLength(1);
       expect(fetchMock.calls(CACHED_DATA_ENDPOINT)).toHaveLength(1);
@@ -218,7 +203,7 @@ describe('asyncEvent middleware', () => {
 
       wsServer.send(JSON.stringify(asyncErrorEvent));
 
-      const errorResponse = parseErrorJson(asyncErrorEvent);
+      const errorResponse = await uiCore.parseErrorJson(asyncErrorEvent);
 
       await expect(promise).rejects.toEqual(errorResponse);
 
@@ -238,14 +223,9 @@ describe('asyncEvent middleware', () => {
 
       wsServer.send(JSON.stringify(asyncDoneEvent));
 
-      let error = '';
-      try {
-        await promise;
-      } catch (err) {
-        [{ error }] = err;
-      } finally {
-        expect(error).toEqual('Bad request');
-      }
+      const errorResponse = [{ error: 'Bad Request' }];
+
+      await expect(promise).rejects.toEqual(errorResponse);
 
       expect(fetchMock.calls(CACHED_DATA_ENDPOINT)).toHaveLength(1);
       expect(fetchMock.calls(EVENTS_ENDPOINT)).toHaveLength(0);

@@ -17,7 +17,7 @@
  * under the License.
  */
 import { useCallback, useState } from 'react';
-import { Popover } from '@superset-ui/core/components';
+import Popover from 'src/components/Popover';
 import { FormattingPopoverContent } from './FormattingPopoverContent';
 import { ConditionalFormattingConfig, FormattingPopoverProps } from './types';
 
@@ -51,8 +51,8 @@ export const FormattingPopover = ({
           extraColorChoices={extraColorChoices}
         />
       }
-      open={visible}
-      onOpenChange={setVisible}
+      visible={visible}
+      onVisibleChange={setVisible}
       trigger={['click']}
       overlayStyle={{ width: '450px' }}
       {...props}

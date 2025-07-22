@@ -22,28 +22,23 @@ import { Dispatch } from 'redux';
 import rison from 'rison';
 import { connect } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import {
-  InfoTooltip,
-  Alert,
-  Button,
-  AsyncSelect,
-  Form,
-  FormItem,
-  Modal,
-  Input,
-  Loading,
-  Divider,
-} from '@superset-ui/core/components';
+import { InfoTooltipWithTrigger } from '@superset-ui/chart-controls';
 import {
   css,
   DatasourceType,
   isDefined,
-  logging,
   styled,
   SupersetClient,
   t,
 } from '@superset-ui/core';
-import { Radio } from '@superset-ui/core/components/Radio';
+import { Input } from 'src/components/Input';
+import { Form, FormItem } from 'src/components/Form';
+import Alert from 'src/components/Alert';
+import Modal from 'src/components/Modal';
+import { Radio } from 'src/components/Radio';
+import Button from 'src/components/Button';
+import { AsyncSelect } from 'src/components';
+import Loading from 'src/components/Loading';
 import { canUserEditDashboard } from 'src/dashboard/util/permissionUtils';
 import { setSaveChartModalVisibility } from 'src/explore/actions/saveModalActions';
 import { SaveActionType } from 'src/explore/types';
@@ -82,8 +77,8 @@ export const StyledModal = styled(Modal)`
   }
   i {
     position: absolute;
-    top: -${({ theme }) => theme.sizeUnit * 5.25}px;
-    left: ${({ theme }) => theme.sizeUnit * 26.75}px;
+    top: -${({ theme }) => theme.gridUnit * 5.25}px;
+    left: ${({ theme }) => theme.gridUnit * 26.75}px;
   }
 `;
 
@@ -137,8 +132,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
           });
         }
       } catch (error) {
-        logging.warn(error);
-        this.props.addDangerToast(
+        this.props.actions.addDangerToast(
           t('An error occurred while loading dashboard information.'),
         );
       }
@@ -358,7 +352,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
             {t('Save as...')}
           </Radio>
         </FormItem>
-        <Divider />
+        <hr />
         <FormItem label={t('Chart name')} required>
           <Input
             name="new_slice_name"
@@ -371,7 +365,7 @@ class SaveModal extends Component<SaveModalProps, SaveModalState> {
         </FormItem>
         {this.props.datasource?.type === 'query' && (
           <FormItem label={t('Dataset Name')} required>
-            <InfoTooltip
+            <InfoTooltipWithTrigger
               tooltip={t('A reusable dataset will be saved with your chart.')}
               placement="right"
             />

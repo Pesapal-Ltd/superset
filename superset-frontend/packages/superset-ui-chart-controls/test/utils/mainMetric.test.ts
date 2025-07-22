@@ -24,24 +24,15 @@ describe('mainMetric', () => {
     expect(mainMetric(null)).toBeUndefined();
   });
   it('prefers the "count" metric when first', () => {
-    const metrics = [
-      { metric_name: 'count', uuid: '1' },
-      { metric_name: 'foo', uuid: '2' },
-    ];
+    const metrics = [{ metric_name: 'count' }, { metric_name: 'foo' }];
     expect(mainMetric(metrics)).toBe('count');
   });
   it('prefers the "count" metric when not first', () => {
-    const metrics = [
-      { metric_name: 'foo', uuid: '1' },
-      { metric_name: 'count', uuid: '2' },
-    ];
+    const metrics = [{ metric_name: 'foo' }, { metric_name: 'count' }];
     expect(mainMetric(metrics)).toBe('count');
   });
   it('selects the first metric when "count" is not an option', () => {
-    const metrics = [
-      { metric_name: 'foo', uuid: '2' },
-      { metric_name: 'not_count', uuid: '2' },
-    ];
+    const metrics = [{ metric_name: 'foo' }, { metric_name: 'not_count' }];
     expect(mainMetric(metrics)).toBe('foo');
   });
 });

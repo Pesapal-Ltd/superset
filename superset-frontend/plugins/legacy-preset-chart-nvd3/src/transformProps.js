@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { VizType } from '@superset-ui/core';
 import isTruthy from './utils/isTruthy';
 import {
   tokenizeToNumericArray,
@@ -66,6 +65,7 @@ export default function transformProps(chartProps) {
     lineInterpolation,
     maxBubbleSize,
     metric,
+    metrics = [],
     orderBars,
     pieLabelType,
     reduceXTicks,
@@ -90,7 +90,6 @@ export default function transformProps(chartProps) {
     yAxisBounds,
     yAxis2Bounds,
     yAxisLabel,
-    yAxisFormat,
     yAxisShowminmax,
     yAxis2Showminmax,
     yLogScale,
@@ -105,6 +104,7 @@ export default function transformProps(chartProps) {
     numberFormat,
     rangeLabels,
     ranges,
+    yAxisFormat,
   } = formData;
 
   const rawData = queriesData[0].data || [];
@@ -118,9 +118,15 @@ export default function transformProps(chartProps) {
       }))
     : rawData;
 
-  if (vizType === VizType.Pie) {
+  if (vizType === 'pie') {
     numberFormat = numberFormat || grabD3Format(datasource, metric);
-  } else if (vizType === VizType.Bullet) {
+  } else if (
+    ['line', 'dist_bar', 'bar', 'area'].includes(chartProps.formData.vizType)
+  ) {
+    yAxisFormat =
+      yAxisFormat ||
+      grabD3Format(datasource, metrics.length > 0 ? metrics[0] : undefined);
+  } else if (vizType === 'bullet') {
     ranges = tokenizeToNumericArray(ranges) || [0, data.measures * 1.1];
     rangeLabels = tokenizeToStringArray(rangeLabels);
     markerLabels = tokenizeToStringArray(markerLabels);

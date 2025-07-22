@@ -16,34 +16,60 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+import type Owner from 'src/types/Owner';
 import {
   getCategoricalSchemeRegistry,
+  styled,
   isFeatureEnabled,
   FeatureFlag,
+  SupersetTheme,
 } from '@superset-ui/core';
 import getOwnerName from 'src/utils/getOwnerName';
-import { Avatar, AvatarGroup, Tooltip } from '@superset-ui/core/components';
-import { ensureAppRoot } from 'src/utils/pathUtils';
+import { Tooltip } from 'src/components/Tooltip';
+import { Avatar } from 'src/components';
 import { getRandomColor } from './utils';
-import type { FacePileProps } from './types';
+
+interface FacePileProps {
+  users: Owner[];
+  maxCount?: number;
+}
 
 const colorList = getCategoricalSchemeRegistry().get()?.colors ?? [];
 
-export function FacePile({ users, maxCount = 4 }: FacePileProps) {
+const customAvatarStyler = (theme: SupersetTheme) => {
+  const size = theme.gridUnit * 8;
+  return `
+  width: ${size}px;
+  height: ${size}px;
+  line-height: ${size}px;
+  font-size: ${theme.typography.sizes.s}px;`;
+};
+
+const StyledAvatar = styled(Avatar)`
+  ${({ theme }) => customAvatarStyler(theme)}
+`;
+
+// to apply styling to the maxCount avatar
+const StyledGroup = styled(Avatar.Group)`
+  .ant-avatar {
+    ${({ theme }) => customAvatarStyler(theme)}
+  }
+`;
+
+export default function FacePile({ users, maxCount = 4 }: FacePileProps) {
   return (
-    <AvatarGroup max={{ count: maxCount }}>
+    <StyledGroup maxCount={maxCount}>
       {users.map(user => {
         const { first_name, last_name, id } = user;
         const name = getOwnerName(user);
         const uniqueKey = `${id}-${first_name}-${last_name}`;
         const color = getRandomColor(uniqueKey, colorList);
         const avatarUrl = isFeatureEnabled(FeatureFlag.SlackEnableAvatars)
-          ? ensureAppRoot(`/api/v1/user/${id}/avatar.png`)
+          ? `/api/v1/user/${id}/avatar.png`
           : undefined;
         return (
           <Tooltip key={name} title={name} placement="top">
-            <Avatar
+            <StyledAvatar
               key={name}
               style={{
                 backgroundColor: color,
@@ -53,12 +79,10 @@ export function FacePile({ users, maxCount = 4 }: FacePileProps) {
             >
               {first_name?.[0]?.toLocaleUpperCase()}
               {last_name?.[0]?.toLocaleUpperCase()}
-            </Avatar>
+            </StyledAvatar>
           </Tooltip>
         );
       })}
-    </AvatarGroup>
+    </StyledGroup>
   );
 }
-
-export type { FacePileProps };

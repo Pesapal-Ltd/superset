@@ -16,26 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t, SupersetClient } from '@superset-ui/core';
+import { t, styled, SupersetClient } from '@superset-ui/core';
 import { useMemo, useState } from 'react';
-import { ConfirmStatusChange, Tooltip } from '@superset-ui/core/components';
-import {
-  ModifiedInfo,
-  ListView,
-  ListViewFilterOperator as FilterOperator,
-  type ListViewProps,
-  type ListViewFilters,
-  type ListViewFetchDataConfig as FetchDataConfig,
-} from 'src/components';
-import { Icons } from '@superset-ui/core/components/Icons';
+import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
+import Icons from 'src/components/Icons';
+import ListView, {
+  FetchDataConfig,
+  FilterOperator,
+  ListViewProps,
+  Filters,
+} from 'src/components/ListView';
 import withToasts from 'src/components/MessageToasts/withToasts';
+import { Tooltip } from 'src/components/Tooltip';
 import SubMenu, { SubMenuProps } from 'src/features/home/SubMenu';
 import rison from 'rison';
 import { useListViewResource } from 'src/views/CRUD/hooks';
 import RowLevelSecurityModal from 'src/features/rls/RowLevelSecurityModal';
 import { RLSObject } from 'src/features/rls/types';
 import { createErrorHandler, createFetchRelated } from 'src/views/CRUD/utils';
+import { ModifiedInfo } from 'src/components/AuditInfo';
 import { QueryObjectColumns } from 'src/views/CRUD/types';
+
+const Actions = styled.div`
+  color: ${({ theme }) => theme.colors.grayscale.base};
+`;
 
 interface RLSProps {
   addDangerToast: (msg: string) => void;
@@ -126,24 +130,20 @@ function RowLevelSecurityList(props: RLSProps) {
       {
         accessor: 'name',
         Header: t('Name'),
-        id: 'name',
       },
       {
         accessor: 'filter_type',
         Header: t('Filter Type'),
         size: 'xl',
-        id: 'filter_type',
       },
       {
         accessor: 'group_key',
         Header: t('Group Key'),
         size: 'xl',
-        id: 'group_key',
       },
       {
         accessor: 'clause',
         Header: t('Clause'),
-        id: 'clause',
       },
       {
         Cell: ({
@@ -157,7 +157,6 @@ function RowLevelSecurityList(props: RLSProps) {
         Header: t('Last modified'),
         accessor: 'changed_on_delta_humanized',
         size: 'xl',
-        id: 'changed_on_delta_humanized',
       },
       {
         Cell: ({ row: { original } }: any) => {
@@ -170,7 +169,7 @@ function RowLevelSecurityList(props: RLSProps) {
             );
           const handleEdit = () => handleRuleEdit(original);
           return (
-            <div className="actions">
+            <Actions className="actions">
               {canWrite && (
                 <ConfirmStatusChange
                   title={t('Please confirm')}
@@ -194,10 +193,7 @@ function RowLevelSecurityList(props: RLSProps) {
                         className="action-button"
                         onClick={confirmDelete}
                       >
-                        <Icons.DeleteOutlined
-                          data-test="rls-list-trash-icon"
-                          iconSize="l"
-                        />
+                        <Icons.Trash data-test="rls-list-trash-icon" />
                       </span>
                     </Tooltip>
                   )}
@@ -215,11 +211,11 @@ function RowLevelSecurityList(props: RLSProps) {
                     className="action-button"
                     onClick={handleEdit}
                   >
-                    <Icons.EditOutlined data-test="edit-alt" iconSize="l" />
+                    <Icons.EditAlt data-test="edit-alt" />
                   </span>
                 </Tooltip>
               )}
-            </div>
+            </Actions>
           );
         },
         Header: t('Actions'),
@@ -230,7 +226,6 @@ function RowLevelSecurityList(props: RLSProps) {
       {
         accessor: QueryObjectColumns.ChangedBy,
         hidden: true,
-        id: QueryObjectColumns.ChangedBy,
       },
     ],
     [
@@ -251,13 +246,12 @@ function RowLevelSecurityList(props: RLSProps) {
     buttonAction: () => handleRuleEdit(null),
     buttonText: canEdit ? (
       <>
-        <Icons.PlusOutlined iconSize="m" data-test="add-rule-empty" />
-        {t('Rule')}
+        <i className="fa fa-plus" data-test="add-rule-empty" /> {'Rule'}{' '}
       </>
     ) : null,
   };
 
-  const filters: ListViewFilters = useMemo(
+  const filters: Filters = useMemo(
     () => [
       {
         Header: t('Name'),
@@ -318,8 +312,7 @@ function RowLevelSecurityList(props: RLSProps) {
     subMenuButtons.push({
       name: (
         <>
-          <Icons.PlusOutlined iconSize="m" data-test="add-rule" />
-          {t('Rule')}
+          <i className="fa fa-plus" data-test="add-rule" /> {t('Rule')}
         </>
       ),
       buttonStyle: 'primary',

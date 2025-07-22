@@ -25,17 +25,6 @@ import { addDangerToast } from 'src/components/MessageToasts/actions';
 import { updateFormDataByDatasource } from './exploreActions';
 import { ExplorePageState } from '../types';
 
-interface SaveDatasetRequest {
-  data: {
-    schema?: string;
-    sql?: string;
-    dbId?: number;
-    templateParams?: string;
-    datasourceName: string;
-    columns: unknown[];
-  };
-}
-
 export const SET_DATASOURCE = 'SET_DATASOURCE';
 export interface SetDatasource {
   type: string;
@@ -62,7 +51,7 @@ export function saveDataset({
   templateParams,
   datasourceName,
   columns,
-}: Omit<SaveDatasetRequest['data'], 'dbId'> & { database: { id: number } }) {
+}: Omit<SqlLabPostRequest['data'], 'dbId'> & { database: { id: number } }) {
   return async function (dispatch: ThunkDispatch<any, undefined, AnyAction>) {
     // Create a dataset object
     try {

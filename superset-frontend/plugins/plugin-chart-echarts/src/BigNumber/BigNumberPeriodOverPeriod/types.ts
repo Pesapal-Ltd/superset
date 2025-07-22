@@ -18,34 +18,27 @@
  */
 import {
   QueryFormData,
+  supersetTheme,
   TimeseriesDataRecord,
   Metric,
   SimpleAdhocFilter,
 } from '@superset-ui/core';
 
-export type FontSizeOptions = 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
-
 export interface PopKPIStylesProps {
   height: number;
   width: number;
-  headerFontSize: FontSizeOptions;
-  subheaderFontSize: FontSizeOptions;
+  headerFontSize: keyof typeof supersetTheme.typography.sizes;
+  subheaderFontSize: keyof typeof supersetTheme.typography.sizes;
   boldText: boolean;
   comparisonColorEnabled: boolean;
 }
-
-export type TableColumnConfig = {
-  visible?: boolean;
-  customColumnName?: string;
-  displayTypeIcon?: boolean;
-};
 
 interface PopKPICustomizeProps {
   headerText: string;
 }
 
 export interface PopKPIComparisonValueStyleProps {
-  subheaderFontSize?: FontSizeOptions;
+  subheaderFontSize?: keyof typeof supersetTheme.typography.sizes;
 }
 
 export interface PopKPIComparisonSymbolStyleProps {
@@ -62,12 +55,8 @@ export type PopKPIProps = PopKPIStylesProps &
     data: TimeseriesDataRecord[];
     metrics: Metric[];
     metricName: string;
-    metricNameFontSize?: number;
-    showMetricName: boolean;
     bigNumber: string;
     prevNumber: string;
-    subtitle?: string;
-    subtitleFontSize: number;
     valueDifference: string;
     percentDifferenceFormattedString: string;
     compType: string;
@@ -77,7 +66,6 @@ export type PopKPIProps = PopKPIStylesProps &
     startDateOffset?: string;
     shift: string;
     dashboardTimeRange?: string;
-    columnConfig?: Record<string, TableColumnConfig>;
   };
 
 export enum ColorSchemeEnum {

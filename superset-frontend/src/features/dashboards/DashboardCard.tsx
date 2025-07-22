@@ -22,21 +22,18 @@ import {
   isFeatureEnabled,
   FeatureFlag,
   t,
+  useTheme,
   SupersetClient,
 } from '@superset-ui/core';
 import { CardStyles } from 'src/views/CRUD/utils';
-import {
-  Dropdown,
-  Button,
-  FaveStar,
-  PublishedLabel,
-  ListViewCard,
-} from '@superset-ui/core/components';
-import { MenuItem } from '@superset-ui/core/components/Menu';
-import { Icons } from '@superset-ui/core/components/Icons';
+import { AntdDropdown } from 'src/components';
+import { Menu } from 'src/components/Menu';
+import ListViewCard from 'src/components/ListViewCard';
+import Icons from 'src/components/Icons';
+import Label from 'src/components/Label';
+import FacePile from 'src/components/FacePile';
+import FaveStar from 'src/components/FaveStar';
 import { Dashboard } from 'src/views/CRUD/types';
-import { assetUrl } from 'src/utils/assetUrl';
-import { FacePile } from 'src/components';
 
 interface DashboardCardProps {
   isChart?: boolean;
@@ -69,6 +66,9 @@ function DashboardCard({
   const canEdit = hasPerm('can_write');
   const canDelete = hasPerm('can_write');
   const canExport = hasPerm('can_export');
+
+  const theme = useTheme();
+
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [fetchingThumbnail, setFetchingThumbnail] = useState<boolean>(false);
 
@@ -91,65 +91,55 @@ function DashboardCard({
       SupersetClient.get({
         endpoint: `/api/v1/dashboard/${dashboard.id}`,
       }).then(({ json = {} }) => {
-        setThumbnailUrl(json.result?.thumbnail_url || '');
+        setThumbnailUrl(json.thumbnail_url || '');
         setFetchingThumbnail(false);
       });
     }
   }, [dashboard, thumbnailUrl]);
 
-  const menuItems: MenuItem[] = [];
-
-  if (canEdit && openDashboardEditModal) {
-    menuItems.push({
-      key: 'edit',
-      label: (
-        <div
-          role="button"
-          tabIndex={0}
-          className="action-button"
-          onClick={() => openDashboardEditModal(dashboard)}
-          data-test="dashboard-card-option-edit-button"
-        >
-          <Icons.EditOutlined iconSize="l" data-test="edit-alt" /> {t('Edit')}
-        </div>
-      ),
-    });
-  }
-
-  if (canExport) {
-    menuItems.push({
-      key: 'export',
-      label: (
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => handleBulkDashboardExport([dashboard])}
-          className="action-button"
-          data-test="dashboard-card-option-export-button"
-        >
-          <Icons.UploadOutlined iconSize="l" /> {t('Export')}
-        </div>
-      ),
-    });
-  }
-
-  if (canDelete) {
-    menuItems.push({
-      key: 'delete',
-      label: (
-        <div
-          role="button"
-          tabIndex={0}
-          className="action-button"
-          onClick={() => onDelete(dashboard)}
-          data-test="dashboard-card-option-delete-button"
-        >
-          <Icons.DeleteOutlined iconSize="l" /> {t('Delete')}
-        </div>
-      ),
-    });
-  }
-
+  const menu = (
+    <Menu>
+      {canEdit && openDashboardEditModal && (
+        <Menu.Item>
+          <div
+            role="button"
+            tabIndex={0}
+            className="action-button"
+            onClick={() => openDashboardEditModal?.(dashboard)}
+            data-test="dashboard-card-option-edit-button"
+          >
+            <Icons.EditAlt iconSize="l" data-test="edit-alt" /> {t('Edit')}
+          </div>
+        </Menu.Item>
+      )}
+      {canExport && (
+        <Menu.Item>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => handleBulkDashboardExport([dashboard])}
+            className="action-button"
+            data-test="dashboard-card-option-export-button"
+          >
+            <Icons.Share iconSize="l" /> {t('Export')}
+          </div>
+        </Menu.Item>
+      )}
+      {canDelete && (
+        <Menu.Item>
+          <div
+            role="button"
+            tabIndex={0}
+            className="action-button"
+            onClick={() => onDelete(dashboard)}
+            data-test="dashboard-card-option-delete-button"
+          >
+            <Icons.Trash iconSize="l" /> {t('Delete')}
+          </div>
+        </Menu.Item>
+      )}
+    </Menu>
+  );
   return (
     <CardStyles
       onClick={() => {
@@ -163,7 +153,9 @@ function DashboardCard({
         title={dashboard.dashboard_title}
         certifiedBy={dashboard.certified_by}
         certificationDetails={dashboard.certification_details}
-        titleRight={<PublishedLabel isPublished={dashboard.published} />}
+        titleRight={
+          <Label>{dashboard.published ? t('published') : t('draft')}</Label>
+        }
         cover={
           !isFeatureEnabled(FeatureFlag.Thumbnails) || !showThumbnails ? (
             <></>
@@ -171,10 +163,8 @@ function DashboardCard({
         }
         url={bulkSelectEnabled ? undefined : dashboard.url}
         linkComponent={Link}
-        imgURL={thumbnailUrl}
-        imgFallbackURL={assetUrl(
-          '/static/assets/images/dashboard-card-fallback.svg',
-        )}
+        imgURL={dashboard.thumbnail_url}
+        imgFallbackURL="/static/assets/images/dashboard-card-fallback.svg"
         description={t('Modified %s', dashboard.changed_on_delta_humanized)}
         coverLeft={<FacePile users={dashboard.owners || []} />}
         actions={
@@ -191,11 +181,9 @@ function DashboardCard({
                 isStarred={favoriteStatus}
               />
             )}
-            <Dropdown menu={{ items: menuItems }} trigger={['hover', 'click']}>
-              <Button buttonSize="xsmall" buttonStyle="link">
-                <Icons.MoreOutlined iconSize="xl" />
-              </Button>
-            </Dropdown>
+            <AntdDropdown overlay={menu}>
+              <Icons.MoreVert iconColor={theme.colors.grayscale.base} />
+            </AntdDropdown>
           </ListViewCard.Actions>
         }
       />

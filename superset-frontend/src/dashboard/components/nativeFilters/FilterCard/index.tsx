@@ -18,7 +18,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Popover } from '@superset-ui/core/components';
+import Popover from 'src/components/Popover';
 import { FilterCardContent } from './FilterCardContent';
 import { FilterCardProps } from './types';
 
@@ -30,6 +30,7 @@ export const FilterCard = ({
   placement,
 }: FilterCardProps) => {
   const [internalIsVisible, setInternalIsVisible] = useState(false);
+
   const hidePopover = () => {
     setInternalIsVisible(false);
   };
@@ -42,18 +43,15 @@ export const FilterCard = ({
   return (
     <Popover
       placement={placement}
-      overlayStyle={{
-        width: '240px',
-      }}
+      overlayClassName="filter-card-popover"
       mouseEnterDelay={0.2}
       mouseLeaveDelay={0.2}
-      onOpenChange={visible => {
+      onVisibleChange={visible => {
         setInternalIsVisible(externalIsVisible && visible);
       }}
-      open={externalIsVisible && internalIsVisible}
+      visible={externalIsVisible && internalIsVisible}
       content={<FilterCardContent filter={filter} hidePopover={hidePopover} />}
       getPopupContainer={getPopupContainer ?? (() => document.body)}
-      arrow={false}
     >
       {children}
     </Popover>

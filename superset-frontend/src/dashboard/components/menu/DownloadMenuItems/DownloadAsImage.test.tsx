@@ -16,14 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import userEvent from '@testing-library/user-event';
 import { SyntheticEvent } from 'react';
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-} from 'spec/helpers/testing-library';
-import { Menu } from '@superset-ui/core/components/Menu';
+import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import { Menu } from 'src/components/Menu';
 import downloadAsImage from 'src/utils/downloadAsImage';
 import DownloadAsImage from './DownloadAsImage';
 
@@ -31,7 +27,7 @@ const mockAddDangerToast = jest.fn();
 
 jest.mock('src/utils/downloadAsImage', () => ({
   __esModule: true,
-  default: jest.fn(() => (_e: SyntheticEvent) => console.log(_e)),
+  default: jest.fn(() => (_e: SyntheticEvent) => {}),
 }));
 
 jest.mock('src/components/MessageToasts/withToasts', () => ({
@@ -60,20 +56,20 @@ const renderComponent = () => {
 test('Should call download image on click', async () => {
   renderComponent();
   await waitFor(() => {
-    expect(downloadAsImage).toHaveBeenCalledTimes(0);
-    expect(mockAddDangerToast).toHaveBeenCalledTimes(0);
+    expect(downloadAsImage).toBeCalledTimes(0);
+    expect(mockAddDangerToast).toBeCalledTimes(0);
   });
 
-  userEvent.click(screen.getByRole('menuitem', { name: 'Download as Image' }));
+  userEvent.click(screen.getByRole('button', { name: 'Download as Image' }));
 
   await waitFor(() => {
-    expect(downloadAsImage).toHaveBeenCalledTimes(1);
-    expect(mockAddDangerToast).toHaveBeenCalledTimes(0);
+    expect(downloadAsImage).toBeCalledTimes(1);
+    expect(mockAddDangerToast).toBeCalledTimes(0);
   });
 });
 
-test('Component is rendered with role="menuitem"', async () => {
+test('Component is rendered with role="button"', async () => {
   renderComponent();
-  const button = screen.getByRole('menuitem', { name: 'Download as Image' });
+  const button = screen.getByRole('button', { name: 'Download as Image' });
   expect(button).toBeInTheDocument();
 });

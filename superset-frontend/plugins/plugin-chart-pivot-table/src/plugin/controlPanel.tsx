@@ -17,13 +17,6 @@
  * under the License.
  */
 import {
-  ControlPanelConfig,
-  D3_TIME_FORMAT_OPTIONS,
-  Dataset,
-  getStandardizedControls,
-  sharedControls,
-} from '@superset-ui/chart-controls';
-import {
   ensureIsArray,
   isAdhocColumn,
   isPhysicalColumn,
@@ -32,6 +25,13 @@ import {
   t,
   validateNonEmpty,
 } from '@superset-ui/core';
+import {
+  ControlPanelConfig,
+  D3_TIME_FORMAT_OPTIONS,
+  sharedControls,
+  Dataset,
+  getStandardizedControls,
+} from '@superset-ui/chart-controls';
 import { MetricsLayoutEnum } from '../types';
 
 const config: ControlPanelConfig = {
@@ -411,16 +411,11 @@ const config: ControlPanelConfig = {
                   'verbose_map',
                 )
                   ? (explore?.datasource as Dataset)?.verbose_map
-                  : (explore?.datasource?.columns ?? {});
+                  : explore?.datasource?.columns ?? {};
                 const chartStatus = chart?.chartStatus;
                 const metricColumn = values.map(value => {
                   if (typeof value === 'string') {
-                    return {
-                      value,
-                      label: Array.isArray(verboseMap)
-                        ? value
-                        : verboseMap[value],
-                    };
+                    return { value, label: verboseMap[value] ?? value };
                   }
                   return { value: value.label, label: value.label };
                 });
@@ -430,20 +425,6 @@ const config: ControlPanelConfig = {
                   verboseMap,
                 };
               },
-            },
-          },
-        ],
-        [
-          {
-            name: 'allow_render_html',
-            config: {
-              type: 'CheckboxControl',
-              label: t('Render columns in HTML format'),
-              renderTrigger: true,
-              default: true,
-              description: t(
-                'Renders table cells as HTML when applicable. For example, HTML <a> tags will be rendered as hyperlinks.',
-              ),
             },
           },
         ],

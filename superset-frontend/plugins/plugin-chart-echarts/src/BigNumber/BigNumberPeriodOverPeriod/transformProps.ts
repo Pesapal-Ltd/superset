@@ -16,9 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import { Metric } from '@superset-ui/chart-controls';
+import moment from 'moment';
 import {
   ChartProps,
   getMetricLabel,
@@ -26,20 +24,15 @@ import {
   getNumberFormatter,
   SimpleAdhocFilter,
   ensureIsArray,
+  getTimeOffset,
+  parseDttmToDate,
 } from '@superset-ui/core';
-import {
-  getComparisonFontSize,
-  getHeaderFontSize,
-  getMetricNameFontSize,
-} from './utils';
-
-import { getOriginalLabel } from '../utils';
-
-dayjs.extend(utc);
+import { isEmpty } from 'lodash';
+import { getComparisonFontSize, getHeaderFontSize } from './utils';
 
 export const parseMetricValue = (metricValue: number | string | null) => {
   if (typeof metricValue === 'string') {
-    const dateObject = dayjs.utc(metricValue, undefined, true);
+    const dateObject = moment.utc(metricValue, moment.ISO_8601, true);
     if (dateObject.isValid()) {
       return dateObject.valueOf();
     }
@@ -90,46 +83,53 @@ export default function transformProps(chartProps: ChartProps) {
     headerFontSize,
     headerText,
     metric,
-    metricNameFontSize,
     yAxisFormat,
     currencyFormat,
     subheaderFontSize,
     comparisonColorScheme,
     comparisonColorEnabled,
     percentDifferenceFormat,
-    subtitle = '',
-    subtitleFontSize,
-    columnConfig = {},
   } = formData;
   const { data: dataA = [] } = queriesData[0];
   const data = dataA;
   const metricName = metric ? getMetricLabel(metric) : '';
-  const metrics = chartProps.datasource?.metrics || [];
-  const originalLabel = getOriginalLabel(metric, metrics);
-  const showMetricName = chartProps.rawFormData?.show_metric_name ?? false;
   const timeComparison = ensureIsArray(chartProps.rawFormData?.time_compare)[0];
   const startDateOffset = chartProps.rawFormData?.start_date_offset;
   const currentTimeRangeFilter = chartProps.rawFormData?.adhoc_filters?.filter(
     (adhoc_filter: SimpleAdhocFilter) =>
       adhoc_filter.operator === 'TEMPORAL_RANGE',
   )?.[0];
+  // In case the viz is using all version of controls, we try to load them
+  const previousCustomTimeRangeFilters: any =
+    chartProps.rawFormData?.adhoc_custom?.filter(
+      (filter: SimpleAdhocFilter) => filter.operator === 'TEMPORAL_RANGE',
+    ) || [];
 
-  let metricEntry: Metric | undefined;
-  if (chartProps.datasource?.metrics) {
-    metricEntry = chartProps.datasource.metrics.find(
-      metricItem => metricItem.metric_name === metric,
-    );
+  let previousCustomStartDate = '';
+  if (
+    !isEmpty(previousCustomTimeRangeFilters) &&
+    previousCustomTimeRangeFilters[0]?.comparator !== 'No Filter'
+  ) {
+    previousCustomStartDate =
+      previousCustomTimeRangeFilters[0]?.comparator.split(' : ')[0];
   }
-
   const isCustomOrInherit =
     timeComparison === 'custom' || timeComparison === 'inherit';
   let dataOffset: string[] = [];
   if (isCustomOrInherit) {
-    if (timeComparison && timeComparison === 'custom') {
-      dataOffset = [startDateOffset];
-    } else {
-      dataOffset = ensureIsArray(timeComparison) || [];
-    }
+    dataOffset = getTimeOffset({
+      timeRangeFilter: {
+        ...currentTimeRangeFilter,
+        comparator:
+          formData?.extraFormData?.time_range ??
+          (currentTimeRangeFilter as any)?.comparator,
+      },
+      shifts: ensureIsArray(timeComparison),
+      startDate:
+        previousCustomStartDate && !startDateOffset
+          ? parseDttmToDate(previousCustomStartDate)?.toUTCString()
+          : startDateOffset,
+    });
   }
 
   const { value1, value2 } = data.reduce(
@@ -161,7 +161,7 @@ export default function transformProps(chartProps: ChartProps) {
     metric,
     currencyFormats,
     columnFormats,
-    metricEntry?.d3format || yAxisFormat,
+    yAxisFormat,
     currencyFormat,
   );
 
@@ -186,8 +186,7 @@ export default function transformProps(chartProps: ChartProps) {
     percentDifferenceNum = (bigNumber - prevNumber) / Math.abs(prevNumber);
   }
 
-  const compType =
-    compTitles[formData.timeComparison as keyof typeof compTitles];
+  const compType = compTitles[formData.timeComparison];
   bigNumber = numberFormatter(bigNumber);
   prevNumber = numberFormatter(prevNumber);
   valueDifference = numberFormatter(valueDifference);
@@ -197,16 +196,12 @@ export default function transformProps(chartProps: ChartProps) {
     width,
     height,
     data,
-    metricName: originalLabel,
+    metricName,
     bigNumber,
     prevNumber,
     valueDifference,
     percentDifferenceFormattedString: percentDifference,
     boldText,
-    subtitle,
-    subtitleFontSize,
-    showMetricName,
-    metricNameFontSize: getMetricNameFontSize(metricNameFontSize),
     headerFontSize: getHeaderFontSize(headerFontSize),
     subheaderFontSize: getComparisonFontSize(subheaderFontSize),
     headerText,
@@ -218,6 +213,5 @@ export default function transformProps(chartProps: ChartProps) {
     startDateOffset,
     shift: timeComparison,
     dashboardTimeRange: formData?.extraFormData?.time_range,
-    columnConfig,
   };
 }

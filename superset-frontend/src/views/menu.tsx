@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import 'src/public-path';
 
 // Menu App. Used in views that do not already include the Menu component in the layout.
 // eg, backend rendered views
@@ -26,8 +25,9 @@ import { Route, BrowserRouter } from 'react-router-dom';
 import { CacheProvider } from '@emotion/react';
 import { QueryParamProvider } from 'use-query-params';
 import createCache from '@emotion/cache';
-import { ThemeProvider, theme } from '@superset-ui/core';
+import { ThemeProvider } from '@superset-ui/core';
 import Menu from 'src/features/home/Menu';
+import { theme } from 'src/preamble';
 import getBootstrapData from 'src/utils/getBootstrapData';
 import { setupStore } from './store';
 

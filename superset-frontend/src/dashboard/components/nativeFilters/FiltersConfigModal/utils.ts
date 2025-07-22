@@ -16,19 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import type { FormInstance } from '@superset-ui/core/components';
-import { nanoid } from 'nanoid';
-import { getInitialDataMask } from 'src/dataMask/reducer';
 import {
-  FilterConfiguration,
-  NativeFilterType,
-  NativeFilterTarget,
-  logging,
-  Filter,
   Divider,
+  Filter,
+  FilterConfiguration,
+  NativeFilterTarget,
+  NativeFilterType,
+  logging,
 } from '@superset-ui/core';
+import { nanoid } from 'nanoid';
+import { FormInstance } from 'src/components';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
-import { FilterChangesType, FilterRemoval, NativeFiltersForm } from './types';
+import { getInitialDataMask } from 'src/dataMask/reducer';
+import { FilterRemoval, NativeFiltersForm } from './types';
 
 export const REMOVAL_DELAY_SECS = 5;
 
@@ -92,69 +92,62 @@ export const validateForm = async (
 
 export const createHandleSave =
   (
-    saveForm: Function,
-    filterChanges: FilterChangesType,
-    values: NativeFiltersForm,
     filterConfigMap: Record<string, Filter | Divider>,
+    filterIds: string[],
+    removedFilters: Record<string, FilterRemoval>,
+    saveForm: Function,
+    values: NativeFiltersForm,
   ) =>
   async () => {
-    const transformFilter = (id: string) => {
-      const formInputs = values.filters?.[id] || filterConfigMap[id];
-      if (!formInputs) {
-        return undefined;
-      }
-      if (formInputs.type === NativeFilterType.Divider) {
+    const newFilterConfig: FilterConfiguration = filterIds
+      .filter(id => !removedFilters[id])
+      .map(id => {
+        // create a filter config object from the form inputs
+        const formInputs = values.filters?.[id];
+        // if user didn't open a filter, return the original config
+        if (!formInputs) return filterConfigMap[id];
+        if (formInputs.type === NativeFilterType.Divider) {
+          return {
+            id,
+            type: NativeFilterType.Divider,
+            scope: {
+              rootPath: [DASHBOARD_ROOT_ID],
+              excluded: [],
+            },
+            title: formInputs.title,
+            description: formInputs.description,
+          };
+        }
+        const target: Partial<NativeFilterTarget> = {};
+        if (formInputs.dataset) {
+          target.datasetId = formInputs.dataset.value;
+        }
+        if (formInputs.dataset && formInputs.column) {
+          target.column = { name: formInputs.column };
+        }
         return {
           id,
-          type: NativeFilterType.Divider,
-          scope: {
-            rootPath: [DASHBOARD_ROOT_ID],
-            excluded: [],
-          },
-          title: formInputs.title,
-          description: formInputs.description,
+          adhoc_filters: formInputs.adhoc_filters,
+          time_range: formInputs.time_range,
+          controlValues: formInputs.controlValues ?? {},
+          granularity_sqla: formInputs.granularity_sqla,
+          requiredFirst: Object.values(formInputs.requiredFirst ?? {}).find(
+            rf => rf,
+          ),
+          name: formInputs.name,
+          filterType: formInputs.filterType,
+          // for now there will only ever be one target
+          targets: [target],
+          defaultDataMask: formInputs.defaultDataMask ?? getInitialDataMask(),
+          cascadeParentIds: formInputs.dependencies || [],
+          scope: formInputs.scope,
+          sortMetric: formInputs.sortMetric,
+          type: formInputs.type,
+          description: (formInputs.description || '').trim(),
         };
-      }
+      });
 
-      const target: Partial<NativeFilterTarget> = {};
-      if (formInputs.dataset) {
-        target.datasetId = formInputs.dataset.value;
-      }
-      if (formInputs.dataset && formInputs.column) {
-        target.column = { name: formInputs.column };
-      }
-
-      return {
-        id,
-        adhoc_filters: formInputs.adhoc_filters,
-        time_range: formInputs.time_range,
-        controlValues: formInputs.controlValues ?? {},
-        granularity_sqla: formInputs.granularity_sqla,
-        requiredFirst: Object.values(formInputs.requiredFirst ?? {}).find(
-          rf => rf,
-        ),
-        name: formInputs.name,
-        filterType: formInputs.filterType,
-        targets: [target],
-        defaultDataMask: formInputs.defaultDataMask ?? getInitialDataMask(),
-        cascadeParentIds: formInputs.dependencies || [],
-        scope: formInputs.scope,
-        sortMetric: formInputs.sortMetric,
-        type: formInputs.type,
-        description: (formInputs.description || '').trim(),
-      };
-      return undefined;
-    };
-
-    const transformedModified = filterChanges.modified
-      .map(transformFilter)
-      .filter(Boolean);
-
-    const newFilterChanges = {
-      ...filterChanges,
-      modified: transformedModified,
-    };
-    await saveForm(newFilterChanges);
+    await saveForm(newFilterConfig);
   };
 
 export const createHandleRemoveItem =
@@ -170,7 +163,6 @@ export const createHandleRemoveItem =
       val: string[] | ((prevState: string[]) => string[]),
     ) => void,
     setSaveAlertVisible: Function,
-    removeFilter: (filterId: string) => void,
   ) =>
   (filterId: string) => {
     const completeFilterRemoval = (filterId: string) => {
@@ -195,14 +187,12 @@ export const createHandleRemoveItem =
       ...removedFilters,
       [filterId]: { isPending: true, timerId },
     }));
-    removeFilter(filterId);
-    // eslint-disable-next-line no-param-reassign
     setSaveAlertVisible(false);
   };
 
 export const NATIVE_FILTER_PREFIX = 'NATIVE_FILTER-';
 export const NATIVE_FILTER_DIVIDER_PREFIX = 'NATIVE_FILTER_DIVIDER-';
-export const generateFilterId = (type: NativeFilterType): string => {
+export const generateFilterId = (type: NativeFilterType) => {
   const prefix =
     type === NativeFilterType.NativeFilter
       ? NATIVE_FILTER_PREFIX

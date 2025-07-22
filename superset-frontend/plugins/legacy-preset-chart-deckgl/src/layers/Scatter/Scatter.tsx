@@ -16,19 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ScatterplotLayer } from '@deck.gl/layers';
+import { ScatterplotLayer } from 'deck.gl/typed';
 import {
+  Datasource,
   getMetricLabel,
   JsonObject,
   QueryFormData,
   t,
 } from '@superset-ui/core';
 import { commonLayerProps } from '../common';
-import { createCategoricalDeckGLComponent, GetLayerType } from '../../factory';
+import { createCategoricalDeckGLComponent } from '../../factory';
 import TooltipRow from '../../TooltipRow';
 import { unitToRadius } from '../../utils/geo';
+import { TooltipProps } from '../../components/Tooltip';
 
-export function getPoints(data: JsonObject[]) {
+function getPoints(data: JsonObject[]) {
   return data.map(d => d.position);
 }
 
@@ -62,16 +64,13 @@ function setTooltipContent(
   };
 }
 
-export const getLayer: GetLayerType<ScatterplotLayer> = function ({
-  formData,
-  payload,
-  setTooltip,
-  setDataMask,
-  filterState,
-  onContextMenu,
-  datasource,
-  emitCrossFilters,
-}) {
+export function getLayer(
+  formData: QueryFormData,
+  payload: JsonObject,
+  onAddFilter: () => void,
+  setTooltip: (tooltip: TooltipProps['tooltip']) => void,
+  datasource: Datasource,
+) {
   const fd = formData;
   const dataWithRadius = payload.data.features.map((d: JsonObject) => {
     let radius = unitToRadius(fd.point_unit, d.radius) || 10;
@@ -91,21 +90,17 @@ export const getLayer: GetLayerType<ScatterplotLayer> = function ({
     id: `scatter-layer-${fd.slice_id}` as const,
     data: dataWithRadius,
     fp64: true,
-    getFillColor: (d: any) => d.color,
-    getRadius: (d: any) => d.radius,
+    getFillColor: d => d.color,
+    getRadius: d => d.radius,
     radiusMinPixels: Number(fd.min_radius) || undefined,
     radiusMaxPixels: Number(fd.max_radius) || undefined,
     stroked: false,
-    ...commonLayerProps({
-      formData: fd,
+    ...commonLayerProps(
+      fd,
       setTooltip,
-      setTooltipContent: setTooltipContent(fd, datasource?.verboseMap),
-      setDataMask,
-      filterState,
-      onContextMenu,
-      emitCrossFilters,
-    }),
+      setTooltipContent(fd, datasource?.verboseMap),
+    ),
   });
-};
+}
 
 export default createCategoricalDeckGLComponent(getLayer, getPoints);

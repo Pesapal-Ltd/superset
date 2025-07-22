@@ -27,7 +27,7 @@ describe('parseResponse()', () => {
     fetchMock.get(LOGIN_GLOB, { result: '1234' });
   });
 
-  afterAll(() => fetchMock.restore());
+  afterAll(fetchMock.restore);
 
   const mockGetUrl = '/mock/get/url';
   const mockPostUrl = '/mock/post/url';
@@ -38,14 +38,12 @@ describe('parseResponse()', () => {
   const mockPostPayload = { post: 'payload' };
   const mockErrorPayload = { status: 500, statusText: 'Internal error' };
 
-  beforeEach(() => {
-    fetchMock.get(mockGetUrl, mockGetPayload);
-    fetchMock.post(mockPostUrl, mockPostPayload);
-    fetchMock.get(mockErrorUrl, () => Promise.reject(mockErrorPayload));
-    fetchMock.get(mockNoParseUrl, new Response('test response'));
-  });
+  fetchMock.get(mockGetUrl, mockGetPayload);
+  fetchMock.post(mockPostUrl, mockPostPayload);
+  fetchMock.get(mockErrorUrl, () => Promise.reject(mockErrorPayload));
+  fetchMock.get(mockNoParseUrl, new Response('test response'));
 
-  afterEach(() => fetchMock.reset());
+  afterEach(fetchMock.reset);
 
   it('returns a Promise', () => {
     const apiPromise = callApi({ url: mockGetUrl, method: 'GET' });
@@ -143,7 +141,7 @@ describe('parseResponse()', () => {
     const mockBigIntUrl = '/mock/get/bigInt';
     const mockGetBigIntPayload = `{
       "value": 9223372036854775807, "minus": { "value": -483729382918228373892, "str": "something" },
-      "number": 1234, "floatValue": { "plus": 0.3452211361231223, "minus": -0.3452211361231223, "even": 1234567890123456.0000000 },
+      "number": 1234, "floatValue": { "plus": 0.3452211361231223, "minus": -0.3452211361231223 },
       "string.constructor": "data.constructor",
       "constructor": "constructor"
     }`;
@@ -161,7 +159,6 @@ describe('parseResponse()', () => {
     expect(responseBigNumber.json.floatValue.minus).toEqual(
       -0.3452211361231223,
     );
-    expect(responseBigNumber.json.floatValue.even).toEqual(1234567890123456);
     expect(
       responseBigNumber.json.floatValue.plus +
         responseBigNumber.json.floatValue.minus,

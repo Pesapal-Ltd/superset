@@ -24,6 +24,8 @@ import newComponentFactory from 'src/dashboard/util/newComponentFactory';
 import { DASHBOARD_GRID_TYPE } from 'src/dashboard/util/componentTypes';
 import { GRID_COLUMN_COUNT } from 'src/dashboard/util/constants';
 
+const args = { id: 'id', widthMultiple: 1, heightMultiple: 3 };
+
 jest.mock(
   'src/dashboard/containers/DashboardComponent',
   () =>
@@ -32,9 +34,7 @@ jest.mock(
         type="button"
         data-test="mock-dashboard-component"
         onClick={() => onResizeStart()}
-        onBlur={() =>
-          onResizeStop(null, null, null, { width: 1, height: 3 }, 'id')
-        }
+        onBlur={() => onResizeStop(args)}
       >
         Mock
       </button>

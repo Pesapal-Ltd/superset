@@ -18,8 +18,8 @@
  */
 import { useState } from 'react';
 import { styled, t } from '@superset-ui/core';
-import { Icons } from '@superset-ui/core/components/Icons';
-import { Select } from '@superset-ui/core/components';
+import Icons from 'src/components/Icons';
+import { Select } from 'src/components';
 import { CollapsibleControl } from './CollapsibleControl';
 import { INPUT_WIDTH } from './constants';
 
@@ -46,20 +46,20 @@ const AddFilter = styled.div`
     flex-direction: row;
     align-items: center;
     cursor: pointer;
-    color: ${theme.colorPrimary};
+    color: ${theme.colors.primary.base};
     &:hover {
-      color: ${theme.colorPrimaryText};
+      color: ${theme.colors.primary.dark1};
     }
   `}
 `;
 
-const DeleteFilter = styled(Icons.DeleteOutlined)`
+const DeleteFilter = styled(Icons.Trash)`
   ${({ theme }) => `
     cursor: pointer;
-    margin-left: ${theme.sizeUnit * 2}px;
+    margin-left: ${theme.gridUnit * 2}px;
     color: ${theme.colors.grayscale.base};
     &:hover {
-      color: ${theme.colorText};
+      color: ${theme.colors.grayscale.dark1};
     }
   `}
 `;
@@ -69,7 +69,7 @@ const RowPanel = styled.div`
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin-bottom: ${theme.sizeUnit}px;
+    margin-bottom: ${theme.gridUnit}px;
 
     & > div {
       width: ${INPUT_WIDTH}px;
@@ -78,9 +78,10 @@ const RowPanel = styled.div`
 `;
 
 const Label = styled.div`
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
+  text-transform: uppercase;
+  font-size: ${({ theme }) => theme.typography.sizes.s}px;
   color: ${({ theme }) => theme.colors.grayscale.base};
-  margin-bottom: ${({ theme }) => theme.sizeUnit}px;
+  margin-bottom: ${({ theme }) => theme.gridUnit}px;
 `;
 
 const Row = ({
@@ -171,7 +172,7 @@ const List = ({
       ))}
       {availableFilters.length > rows.length && (
         <AddFilter role="button" onClick={onAdd}>
-          <Icons.PlusOutlined iconSize="xs" />
+          <Icons.PlusSmall />
           {t('Add filter')}
         </AddFilter>
       )}

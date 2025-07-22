@@ -18,12 +18,7 @@
  */
 import { t, ComparisonType } from '@superset-ui/core';
 
-import {
-  ControlPanelSectionConfig,
-  ControlPanelState,
-  ControlState,
-} from '../types';
-import { INVALID_DATE } from '..';
+import { ControlPanelSectionConfig } from '../types';
 
 const fullChoices = [
   ['1 day ago', t('1 day ago')],
@@ -99,28 +94,9 @@ export const timeComparisonControls: ({
         name: 'start_date_offset',
         config: {
           type: 'TimeOffsetControl',
-          label: t('Shift start date'),
+          label: t('shift start date'),
           visibility: ({ controls }) =>
             controls?.time_compare.value === 'custom',
-          mapStateToProps: (
-            state: ControlPanelState,
-            controlState: ControlState,
-          ) => {
-            const { form_data } = state;
-            const { time_compare } = form_data;
-            const newState = { ...controlState };
-            if (
-              time_compare === 'custom' &&
-              (controlState.value === '' || controlState.value === INVALID_DATE)
-            ) {
-              newState.externalValidationErrors = [
-                t('A date is required when using custom date shift'),
-              ];
-            } else {
-              newState.externalValidationErrors = [];
-            }
-            return newState;
-          },
         },
       },
     ],

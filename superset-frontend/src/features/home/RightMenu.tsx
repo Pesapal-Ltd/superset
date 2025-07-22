@@ -22,8 +22,7 @@ import rison from 'rison';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { useQueryParams, BooleanParam } from 'use-query-params';
-import { get, isEmpty } from 'lodash';
-import ThemeEditor from '@superset-ui/core/components/ThemeEditor';
+import { isEmpty } from 'lodash';
 
 import {
   t,
@@ -33,14 +32,11 @@ import {
   SupersetClient,
   getExtensionsRegistry,
   useTheme,
-  isFeatureEnabled,
-  FeatureFlag,
 } from '@superset-ui/core';
-import { Menu } from '@superset-ui/core/components/Menu';
-import { Label, Tooltip } from '@superset-ui/core/components';
-import { Icons } from '@superset-ui/core/components/Icons';
-import { Typography } from '@superset-ui/core/components/Typography';
-import { ensureAppRoot } from 'src/utils/pathUtils';
+import { MainNav as Menu } from 'src/components/Menu';
+import { Tooltip } from 'src/components/Tooltip';
+import Icons from 'src/components/Icons';
+import Label from 'src/components/Label';
 import { findPermission } from 'src/utils/findPermission';
 import { isUserAdmin } from 'src/dashboard/util/permissionUtils';
 import {
@@ -52,9 +48,7 @@ import { RootState } from 'src/dashboard/types';
 import DatabaseModal from 'src/features/databases/DatabaseModal';
 import UploadDataModal from 'src/features/databases/UploadDataModel';
 import { uploadUserPerms } from 'src/views/CRUD/utils';
-import TelemetryPixel from '@superset-ui/core/components/TelemetryPixel';
-import { useThemeContext } from 'src/theme/ThemeProvider';
-import ThemeSelect from '@superset-ui/core/components/ThemeSelect';
+import TelemetryPixel from 'src/components/TelemetryPixel';
 import LanguagePicker from './LanguagePicker';
 import {
   ExtensionConfigs,
@@ -65,24 +59,33 @@ import {
 const extensionsRegistry = getExtensionsRegistry();
 
 const versionInfoStyles = (theme: SupersetTheme) => css`
-  padding: ${theme.sizeUnit * 1.5}px ${theme.sizeUnit * 4}px
-    ${theme.sizeUnit * 4}px ${theme.sizeUnit * 7}px;
+  padding: ${theme.gridUnit * 1.5}px ${theme.gridUnit * 4}px
+    ${theme.gridUnit * 4}px ${theme.gridUnit * 7}px;
   color: ${theme.colors.grayscale.base};
-  font-size: ${theme.fontSizeXS}px;
+  font-size: ${theme.typography.sizes.xs}px;
   white-space: nowrap;
+`;
+const StyledI = styled.div`
+  color: ${({ theme }) => theme.colors.primary.dark1};
 `;
 
 const styledDisabled = (theme: SupersetTheme) => css`
   color: ${theme.colors.grayscale.light1};
+  .ant-menu-item-active {
+    color: ${theme.colors.grayscale.light1};
+    cursor: default;
+  }
 `;
 
 const StyledDiv = styled.div<{ align: string }>`
   display: flex;
-  height: 100%;
   flex-direction: row;
   justify-content: ${({ align }) => align};
   align-items: center;
-  margin-right: ${({ theme }) => theme.sizeUnit}px;
+  margin-right: ${({ theme }) => theme.gridUnit}px;
+  .ant-menu-submenu-title > svg {
+    top: ${({ theme }) => theme.gridUnit * 5.25}px;
+  }
 `;
 
 const StyledMenuItemWithIcon = styled.div`
@@ -93,8 +96,8 @@ const StyledMenuItemWithIcon = styled.div`
 `;
 
 const StyledAnchor = styled.a`
-  padding-right: ${({ theme }) => theme.sizeUnit}px;
-  padding-left: ${({ theme }) => theme.sizeUnit}px;
+  padding-right: ${({ theme }) => theme.gridUnit}px;
+  padding-left: ${({ theme }) => theme.gridUnit}px;
 `;
 
 const tagStyles = (theme: SupersetTheme) => css`
@@ -103,27 +106,12 @@ const tagStyles = (theme: SupersetTheme) => css`
 
 const styledChildMenu = (theme: SupersetTheme) => css`
   &:hover {
-    color: ${theme.colorPrimary} !important;
+    color: ${theme.colors.primary.base} !important;
     cursor: pointer !important;
   }
 `;
 
 const { SubMenu } = Menu;
-
-const StyledSubMenu = styled(SubMenu)`
-  ${({ theme }) => css`
-    [data-icon='caret-down'] {
-      color: ${theme.colorIcon};
-      font-size: ${theme.fontSizeXS}px;
-      margin-left: ${theme.sizeUnit}px;
-    }
-    &.ant-menu-submenu-active {
-      .ant-menu-title-content {
-        color: ${theme.colorPrimary};
-      }
-    }
-  `}
-`;
 
 const RightMenu = ({
   align,
@@ -184,16 +172,10 @@ const RightMenu = ({
     useState<boolean>(false);
   const isAdmin = isUserAdmin(user);
   const showUploads = allowUploads || isAdmin;
-  const {
-    theme: themeEditorTheme,
-    setTheme,
-    setThemeMode,
-    themeMode,
-  } = useThemeContext();
   const dropdownItems: MenuObjectProps[] = [
     {
       label: t('Data'),
-      icon: <Icons.DatabaseOutlined data-test={`menu-item-${t('Data')}`} />,
+      icon: 'fa-database',
       childs: [
         {
           label: t('Connect database'),
@@ -234,7 +216,7 @@ const RightMenu = ({
     {
       label: t('SQL query'),
       url: '/sqllab?new=true',
-      icon: <Icons.SearchOutlined data-test={`menu-item-${t('SQL query')}`} />,
+      icon: 'fa-fw fa-search',
       perm: 'can_sqllab',
       view: 'Superset',
     },
@@ -243,16 +225,14 @@ const RightMenu = ({
       url: Number.isInteger(dashboardId)
         ? `/chart/add?dashboard_id=${dashboardId}`
         : '/chart/add',
-      icon: <Icons.BarChartOutlined data-test={`menu-item-${t('Chart')}`} />,
+      icon: 'fa-fw fa-bar-chart',
       perm: 'can_write',
       view: 'Chart',
     },
     {
       label: t('Dashboard'),
       url: '/dashboard/new',
-      icon: (
-        <Icons.DashboardOutlined data-test={`menu-item-${t('Dashboard')}`} />
-      ),
+      icon: 'fa-fw fa-dashboard',
       perm: 'can_write',
       view: 'Dashboard',
     },
@@ -267,7 +247,7 @@ const RightMenu = ({
     SupersetClient.get({
       endpoint: `/api/v1/database/?q=${rison.encode(payload)}`,
     }).then(({ json }: Record<string, any>) => {
-      // There might be some existing Gsheets and Clickhouse DBs
+      // There might be some existings Gsheets and Clickhouse DBs
       // with allow_file_upload set as True which is not possible from now on
       const allowedDatabasesWithFileUpload =
         json?.result?.filter(
@@ -299,6 +279,13 @@ const RightMenu = ({
       existsNonExamplesDatabases();
     }
   }, [canDatabase, canDataset]);
+
+  const menuIconAndLabel = (menu: MenuObjectProps) => (
+    <>
+      <i data-test={`menu-item-${menu.label}`} className={`fa ${menu.icon}`} />
+      {menu.label}
+    </>
+  );
 
   const handleMenuSelection = (itemChose: any) => {
     if (itemChose.key === GlobalMenuDataOptions.DbConnection) {
@@ -333,14 +320,7 @@ const RightMenu = ({
       </Menu.Item>
     ) : (
       <Menu.Item key={item.name} css={styledChildMenu}>
-        {item.url ? (
-          <Typography.Link href={ensureAppRoot(item.url)}>
-            {' '}
-            {item.label}{' '}
-          </Typography.Link>
-        ) : (
-          item.label
-        )}
+        {item.url ? <a href={item.url}> {item.label} </a> : item.label}
       </Menu.Item>
     );
 
@@ -373,6 +353,7 @@ const RightMenu = ({
   };
 
   const theme = useTheme();
+
   return (
     <StyledDiv align={align}>
       {canDatabase && (
@@ -409,40 +390,32 @@ const RightMenu = ({
       )}
       {environmentTag?.text && (
         <Label
-          css={{ borderRadius: `${theme.sizeUnit * 125}px` }}
+          css={{ borderRadius: `${theme.gridUnit * 125}px` }}
           color={
             /^#(?:[0-9a-f]{3}){1,2}$/i.test(environmentTag.color)
               ? environmentTag.color
-              : get(theme.colors, environmentTag.color)
+              : environmentTag.color
+                  .split('.')
+                  .reduce((o, i) => o[i], theme.colors)
           }
         >
           <span css={tagStyles}>{environmentTag.text}</span>
         </Label>
       )}
       <Menu
-        css={css`
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-        `}
         selectable={false}
         mode="horizontal"
         onClick={handleMenuSelection}
         onOpenChange={onMenuOpen}
-        disabledOverflow
       >
         {RightMenuExtension && <RightMenuExtension />}
         {!navbarRight.user_is_anonymous && showActionDropdown && (
-          <StyledSubMenu
-            key="sub1"
+          <SubMenu
             data-test="new-dropdown"
             title={
-              <Icons.PlusOutlined
-                iconColor={theme.colorPrimary}
-                data-test="new-dropdown-icon"
-              />
+              <StyledI data-test="new-dropdown-icon" className="fa fa-plus" />
             }
-            icon={<Icons.CaretDownOutlined iconSize="xs" />}
+            icon={<Icons.TriangleDown />}
           >
             {dropdownItems?.map?.(menu => {
               const canShowChild = menu.childs?.some(
@@ -451,11 +424,10 @@ const RightMenu = ({
               if (menu.childs) {
                 if (canShowChild) {
                   return (
-                    <StyledSubMenu
+                    <SubMenu
                       key={`sub2_${menu.label}`}
                       className="data-menu"
-                      title={menu.label}
-                      icon={menu.icon}
+                      title={menuIconAndLabel(menu)}
                     >
                       {menu?.childs?.map?.((item, idx) =>
                         typeof item !== 'string' && item.name && item.perm ? (
@@ -465,7 +437,7 @@ const RightMenu = ({
                           </Fragment>
                         ) : null,
                       )}
-                    </StyledSubMenu>
+                    </SubMenu>
                   );
                 }
                 if (!menu.url) {
@@ -481,34 +453,30 @@ const RightMenu = ({
                   <Menu.Item key={menu.label}>
                     {isFrontendRoute(menu.url) ? (
                       <Link to={menu.url || ''}>
-                        {menu.icon} {menu.label}
+                        <i
+                          data-test={`menu-item-${menu.label}`}
+                          className={`fa ${menu.icon}`}
+                        />{' '}
+                        {menu.label}
                       </Link>
                     ) : (
-                      <Typography.Link href={ensureAppRoot(menu.url || '')}>
-                        {menu.icon} {menu.label}
-                      </Typography.Link>
+                      <a href={menu.url}>
+                        <i
+                          data-test={`menu-item-${menu.label}`}
+                          className={`fa ${menu.icon}`}
+                        />{' '}
+                        {menu.label}
+                      </a>
                     )}
                   </Menu.Item>
                 )
               );
             })}
-          </StyledSubMenu>
+          </SubMenu>
         )}
-        {isFeatureEnabled(FeatureFlag.ThemeAllowThemeEditorBeta) && (
-          <span>
-            <ThemeEditor theme={themeEditorTheme} setTheme={setTheme} />
-          </span>
-        )}
-        {isFeatureEnabled(FeatureFlag.ThemeEnableDarkThemeSwitch) && (
-          <span>
-            <ThemeSelect setThemeMode={setThemeMode} themeMode={themeMode} />
-          </span>
-        )}
-
-        <StyledSubMenu
-          key="sub3_settings"
+        <SubMenu
           title={t('Settings')}
-          icon={<Icons.CaretDownOutlined iconSize="xs" />}
+          icon={<Icons.TriangleDown iconSize="xl" />}
         >
           {settings?.map?.((section, index) => [
             <Menu.ItemGroup key={`${section.label}`} title={section.label}>
@@ -527,9 +495,7 @@ const RightMenu = ({
                       {isFrontendRoute(child.url) ? (
                         <Link to={child.url || ''}>{menuItemDisplay}</Link>
                       ) : (
-                        <Typography.Link href={child.url || ''}>
-                          {menuItemDisplay}
-                        </Typography.Link>
+                        <a href={child.url}>{menuItemDisplay}</a>
                       )}
                     </Menu.Item>
                   );
@@ -547,15 +513,11 @@ const RightMenu = ({
             <Menu.ItemGroup key="user-section" title={t('User')}>
               {navbarRight.user_info_url && (
                 <Menu.Item key="info">
-                  <Typography.Link href={navbarRight.user_info_url}>
-                    {t('Info')}
-                  </Typography.Link>
+                  <a href={navbarRight.user_info_url}>{t('Info')}</a>
                 </Menu.Item>
               )}
               <Menu.Item key="logout" onClick={handleLogout}>
-                <Typography.Link href={navbarRight.user_logout_url}>
-                  {t('Logout')}
-                </Typography.Link>
+                <a href={navbarRight.user_logout_url}>{t('Logout')}</a>
               </Menu.Item>
             </Menu.ItemGroup>,
           ]}
@@ -586,7 +548,7 @@ const RightMenu = ({
               </div>
             </Menu.ItemGroup>,
           ]}
-        </StyledSubMenu>
+        </SubMenu>
         {navbarRight.show_language_picker && (
           <LanguagePicker
             locale={navbarRight.locale}
@@ -603,9 +565,9 @@ const RightMenu = ({
             title={navbarRight.documentation_text || t('Documentation')}
           >
             {navbarRight.documentation_icon ? (
-              <Icons.BookOutlined />
+              <i className={navbarRight.documentation_icon} />
             ) : (
-              <Icons.QuestionCircleOutlined />
+              <i className="fa fa-question" />
             )}
           </StyledAnchor>
           <span>&nbsp;</span>
@@ -622,7 +584,7 @@ const RightMenu = ({
             {navbarRight.bug_report_icon ? (
               <i className={navbarRight.bug_report_icon} />
             ) : (
-              <Icons.BugOutlined />
+              <i className="fa fa-bug" />
             )}
           </StyledAnchor>
           <span>&nbsp;</span>
@@ -630,7 +592,8 @@ const RightMenu = ({
       )}
       {navbarRight.user_is_anonymous && (
         <StyledAnchor href={navbarRight.user_login_url}>
-          <Icons.LoginOutlined /> {t('Login')}
+          <i className="fa fa-fw fa-sign-in" />
+          {t('Login')}
         </StyledAnchor>
       )}
       <TelemetryPixel

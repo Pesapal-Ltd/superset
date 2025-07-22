@@ -23,6 +23,8 @@ import {
   xAxisForceCategoricalControl,
   xAxisSortAscControl,
   xAxisSortControl,
+  xAxisSortSeriesAscendingControl,
+  xAxisSortSeriesControl,
 } from '../shared-controls';
 
 const controlsWithoutXAxis: ControlSetRow[] = [
@@ -53,6 +55,8 @@ export const echartsTimeSeriesQueryWithXAxisSort: ControlPanelSectionConfig = {
     [xAxisForceCategoricalControl],
     [xAxisSortControl],
     [xAxisSortAscControl],
+    [xAxisSortSeriesControl],
+    [xAxisSortSeriesAscendingControl],
     ...controlsWithoutXAxis,
   ],
 };

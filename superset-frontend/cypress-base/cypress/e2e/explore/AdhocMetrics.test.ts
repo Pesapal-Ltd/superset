@@ -16,13 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { interceptChart } from 'cypress/utils';
-
 describe('AdhocMetrics', () => {
   beforeEach(() => {
-    interceptChart({ legacy: false }).as('chartData');
+    cy.intercept('POST', '/superset/explore_json/**').as('postJson');
+    cy.intercept('GET', '/superset/explore_json/**').as('getJson');
     cy.visitChartByName('Num Births Trend');
-    cy.verifySliceSuccess({ waitAlias: '@chartData' });
+    cy.verifySliceSuccess({ waitAlias: '@postJson' });
   });
 
   it('Clear metric and set simple adhoc metric', () => {
@@ -42,10 +41,12 @@ describe('AdhocMetrics', () => {
     cy.get('[data-test="AdhocMetricEditTitle#trigger"]').click();
     cy.get('[data-test="AdhocMetricEditTitle#input"]').type(metricName);
 
-    cy.get('input[aria-label="Select column"]').click();
-    cy.get('input[aria-label="Select column"]').type('num_girls{enter}');
-    cy.get('input[aria-label="Select aggregate options"]').click();
-    cy.get('input[aria-label="Select aggregate options"]').type('sum{enter}');
+    cy.get('input[aria-label="Select column"]')
+      .click()
+      .type('num_girls{enter}');
+    cy.get('input[aria-label="Select aggregate options"]')
+      .click()
+      .type('sum{enter}');
 
     cy.get('[data-test="AdhocMetricEdit#save"]').contains('Save').click();
 
@@ -53,8 +54,9 @@ describe('AdhocMetrics', () => {
 
     cy.get('button[data-test="run-query-button"]').click();
     cy.verifySliceSuccess({
-      waitAlias: '@chartData',
+      waitAlias: '@postJson',
       querySubstring: `${metric} AS "${metricName}"`, // SQL statement
+      chartSelector: 'svg',
     });
   });
 
@@ -88,8 +90,9 @@ describe('AdhocMetrics', () => {
 
     const metric = 'SUM(num)/COUNT(DISTINCT name)';
     cy.verifySliceSuccess({
-      waitAlias: '@chartData',
+      waitAlias: '@postJson',
       querySubstring: `${metric} AS "${metric}"`,
+      chartSelector: 'svg',
     });
   });
 
@@ -116,8 +119,9 @@ describe('AdhocMetrics', () => {
 
     const metric = 'SUM(num)';
     cy.verifySliceSuccess({
-      waitAlias: '@chartData',
+      waitAlias: '@postJson',
       querySubstring: `${metric} AS "${metric}"`,
+      chartSelector: 'svg',
     });
   });
 });

@@ -33,33 +33,30 @@ import {
   createFetchRelated,
 } from 'src/views/CRUD/utils';
 import { useSelector } from 'react-redux';
-import {
-  ConfirmStatusChange,
-  DeleteModal,
-  Loading,
-  Popover,
-  Tooltip,
-} from '@superset-ui/core/components';
+import Popover from 'src/components/Popover';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import { useListViewResource } from 'src/views/CRUD/hooks';
-import {
-  ImportModal as ImportModelsModal,
-  TagType,
-  ModifiedInfo,
-  TagsList,
-  ListView,
-  ListViewActionsBar,
-  ListViewFilterOperator as FilterOperator,
-  type ListViewProps,
-  type ListViewActionProps,
-  type ListViewFilters,
-} from 'src/components';
+import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
 import handleResourceExport from 'src/utils/export';
 import SubMenu, { ButtonProps, SubMenuProps } from 'src/features/home/SubMenu';
+import ListView, {
+  FilterOperator,
+  Filters,
+  ListViewProps,
+} from 'src/components/ListView';
+import Loading from 'src/components/Loading';
+import DeleteModal from 'src/components/DeleteModal';
+import ActionsBar, { ActionProps } from 'src/components/ListView/ActionsBar';
+import { TagsList } from 'src/components/Tags';
+import { Tooltip } from 'src/components/Tooltip';
 import { commonMenuData } from 'src/features/home/commonMenuData';
 import { QueryObjectColumns, SavedQueryObject } from 'src/views/CRUD/types';
-import { loadTags } from 'src/components/Tag/utils';
-import { Icons } from '@superset-ui/core/components/Icons';
+import copyTextToClipboard from 'src/utils/copy';
+import Tag from 'src/types/TagType';
+import ImportModelsModal from 'src/components/ImportModal/index';
+import { ModifiedInfo } from 'src/components/AuditInfo';
+import { loadTags } from 'src/components/Tags/utils';
+import Icons from 'src/components/Icons';
 import { UserWithPermissionsAndRoles } from 'src/types/bootstrapTypes';
 import SavedQueryPreviewModal from 'src/features/queries/SavedQueryPreviewModal';
 import { findPermission } from 'src/utils/findPermission';
@@ -91,7 +88,7 @@ interface SavedQueryListProps {
 const StyledTableLabel = styled.div`
   .count {
     margin-left: 5px;
-    color: ${({ theme }) => theme.colorPrimary};
+    color: ${({ theme }) => theme.colors.primary.base};
     text-decoration: underline;
     cursor: pointer;
   }
@@ -199,16 +196,13 @@ function SavedQueryList({
 
   subMenuButtons.push({
     name: (
-      <>
-        <Icons.PlusOutlined iconSize="m" />
-        {t('Query')}
-      </>
+      <Link to="/sqllab?new=true">
+        <i className="fa fa-plus" /> {t('Query')}
+      </Link>
     ),
     buttonStyle: 'primary',
-    onClick: () => {
-      history.push('/sqllab?new=true');
-    },
   });
+
   if (canCreate) {
     subMenuButtons.push({
       name: (
@@ -218,7 +212,7 @@ function SavedQueryList({
           placement="bottomRight"
           data-test="import-tooltip-test"
         >
-          <Icons.DownloadOutlined data-test="import-icon" iconSize="l" />
+          <Icons.Import data-test="import-icon" />
         </Tooltip>
       ),
       buttonStyle: 'link',
@@ -239,31 +233,16 @@ function SavedQueryList({
   };
 
   const copyQueryLink = useCallback(
-    async (savedQuery: SavedQueryObject) => {
-      try {
-        const payload = {
-          dbId: savedQuery.db_id,
-          name: savedQuery.label,
-          schema: savedQuery.schema,
-          catalog: savedQuery.catalog,
-          sql: savedQuery.sql,
-          autorun: false,
-          templateParams: null,
-        };
-
-        const response = await SupersetClient.post({
-          endpoint: '/api/v1/sqllab/permalink',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+    (id: number) => {
+      copyTextToClipboard(() =>
+        Promise.resolve(`${window.location.origin}/sqllab?savedQueryId=${id}`),
+      )
+        .then(() => {
+          addSuccessToast(t('Link Copied!'));
+        })
+        .catch(() => {
+          addDangerToast(t('Sorry, your browser does not support copying.'));
         });
-
-        const { url: permalink } = response.json;
-
-        await navigator.clipboard.writeText(permalink);
-        addSuccessToast(t('Link Copied!'));
-      } catch (error) {
-        addDangerToast(t('There was an error generating the permalink.'));
-      }
     },
     [addDangerToast, addSuccessToast],
   );
@@ -317,35 +296,25 @@ function SavedQueryList({
       {
         accessor: 'label',
         Header: t('Name'),
-        Cell: ({
-          row: {
-            original: { id, label },
-          },
-        }: any) => <Link to={`/sqllab?savedQueryId=${id}`}>{label}</Link>,
-        id: 'label',
       },
       {
         accessor: 'description',
         Header: t('Description'),
-        id: 'description',
       },
       {
         accessor: 'database.database_name',
         Header: t('Database'),
         size: 'xl',
-        id: 'database.database_name',
       },
       {
         accessor: 'database',
         hidden: true,
         disableSortBy: true,
-        id: 'database',
       },
       {
         accessor: 'schema',
         Header: t('Schema'),
         size: 'xl',
-        id: 'schema',
       },
       {
         Cell: ({
@@ -384,7 +353,6 @@ function SavedQueryList({
         Header: t('Tables'),
         size: 'xl',
         disableSortBy: true,
-        id: 'sql_tables',
       },
       {
         Cell: ({
@@ -393,13 +361,12 @@ function SavedQueryList({
           },
         }: any) => (
           // Only show custom type tags
-          <TagsList tags={tags.filter((tag: TagType) => tag.type === 1)} />
+          <TagsList tags={tags.filter((tag: Tag) => tag.type === 1)} />
         ),
         Header: t('Tags'),
         accessor: 'tags',
         disableSortBy: true,
         hidden: !isFeatureEnabled(FeatureFlag.TaggingSystem),
-        id: 'tags',
       },
       {
         Cell: ({
@@ -413,7 +380,6 @@ function SavedQueryList({
         Header: t('Last modified'),
         accessor: 'changed_on_delta_humanized',
         size: 'xl',
-        id: 'changed_on_delta_humanized',
       },
       {
         Cell: ({ row: { original } }: any) => {
@@ -422,7 +388,7 @@ function SavedQueryList({
           };
           const handleEdit = ({ metaKey }: MouseEvent) =>
             openInSqlLab(original.id, Boolean(metaKey));
-          const handleCopy = () => copyQueryLink(original);
+          const handleCopy = () => copyQueryLink(original.id);
           const handleExport = () => handleBulkSavedQueryExport([original]);
           const handleDelete = () => setQueryCurrentlyDeleting(original);
 
@@ -438,35 +404,33 @@ function SavedQueryList({
               label: 'edit-action',
               tooltip: t('Edit query'),
               placement: 'bottom',
-              icon: 'EditOutlined',
+              icon: 'Edit',
               onClick: handleEdit,
             },
             {
               label: 'copy-action',
               tooltip: t('Copy query URL'),
               placement: 'bottom',
-              icon: 'CopyOutlined',
+              icon: 'Copy',
               onClick: handleCopy,
             },
             canExport && {
               label: 'export-action',
               tooltip: t('Export query'),
               placement: 'bottom',
-              icon: 'UploadOutlined',
+              icon: 'Share',
               onClick: handleExport,
             },
             canDelete && {
               label: 'delete-action',
               tooltip: t('Delete query'),
               placement: 'bottom',
-              icon: 'DeleteOutlined',
+              icon: 'Trash',
               onClick: handleDelete,
             },
           ].filter(item => !!item);
 
-          return (
-            <ListViewActionsBar actions={actions as ListViewActionProps[]} />
-          );
+          return <ActionsBar actions={actions as ActionProps[]} />;
         },
         Header: t('Actions'),
         id: 'actions',
@@ -475,13 +439,12 @@ function SavedQueryList({
       {
         accessor: QueryObjectColumns.ChangedBy,
         hidden: true,
-        id: QueryObjectColumns.ChangedBy,
       },
     ],
     [canDelete, canEdit, canExport, copyQueryLink, handleSavedQueryPreview],
   );
 
-  const filters: ListViewFilters = useMemo(
+  const filters: Filters = useMemo(
     () => [
       {
         Header: t('Search'),
@@ -542,7 +505,7 @@ function SavedQueryList({
               fetchSelects: loadTags,
             },
           ]
-        : []) as ListViewFilters),
+        : []) as Filters),
       {
         Header: t('Modified by'),
         key: 'changed_by',

@@ -45,7 +45,6 @@ import {
   isDefined,
   NO_TIME_RANGE,
   validateMaxValue,
-  getColumnLabel,
 } from '@superset-ui/core';
 
 import {
@@ -83,8 +82,6 @@ import {
   dndSeriesControl,
   dndAdhocMetricControl2,
   dndXAxisControl,
-  dndTooltipColumnsControl,
-  dndTooltipMetricsControl,
 } from './dndControls';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
@@ -338,20 +335,6 @@ const color_scheme: SharedControlConfig<'ColorSchemeControl'> = {
   mapStateToProps: state => getColorControlsProps(state),
 };
 
-const time_shift_color: SharedControlConfig<'CheckboxControl'> = {
-  type: 'CheckboxControl',
-  label: t('Match time shift color with original series'),
-  default: true,
-  renderTrigger: true,
-  description: t(
-    'When unchecked, colors from the selected color scheme will be used for time shifted series',
-  ),
-  visibility: ({ controls }) =>
-    Boolean(
-      controls?.time_compare?.value && !isEmpty(controls?.time_compare?.value),
-    ),
-};
-
 const truncate_metric: SharedControlConfig<'CheckboxControl'> = {
   type: 'CheckboxControl',
   label: t('Truncate Metric'),
@@ -376,40 +359,12 @@ const temporal_columns_lookup: SharedControlConfig<'HiddenControl'> = {
     ),
 };
 
-const zoomable: SharedControlConfig<'CheckboxControl'> = {
-  type: 'CheckboxControl',
-  label: t('Data Zoom'),
-  default: false,
-  renderTrigger: true,
-  description: t('Enable data zooming controls'),
-};
-
 const sort_by_metric: SharedControlConfig<'CheckboxControl'> = {
   type: 'CheckboxControl',
   label: t('Sort by metric'),
   description: t(
     'Whether to sort results by the selected metric in descending order.',
   ),
-};
-
-const order_by_cols: SharedControlConfig<'SelectControl'> = {
-  type: 'SelectControl',
-  label: t('Ordering'),
-  description: t('Order results by selected columns'),
-  multi: true,
-  default: [],
-  shouldMapStateToProps: () => true,
-  mapStateToProps: ({ datasource }) => ({
-    choices: (datasource?.columns || [])
-      .map(col =>
-        [true, false].map(asc => [
-          JSON.stringify([col.column_name, asc]),
-          `${getColumnLabel(col.column_name)} [${asc ? 'asc' : 'desc'}]`,
-        ]),
-      )
-      .flat(),
-  }),
-  resetOnHide: false,
 };
 
 export default {
@@ -423,8 +378,6 @@ export default {
   secondary_metric: dndSecondaryMetricControl,
   groupby: dndGroupByControl,
   columns: dndColumnsControl,
-  tooltip_columns: dndTooltipColumnsControl,
-  tooltip_metrics: dndTooltipMetricsControl,
   granularity,
   granularity_sqla: dndGranularitySqlaControl,
   time_grain_sqla,
@@ -443,17 +396,14 @@ export default {
   x_axis_time_format,
   adhoc_filters: dndAdhocFilterControl,
   color_scheme,
-  time_shift_color,
   series_columns: dndColumnsControl,
   series_limit,
   series_limit_metric: dndSortByControl,
   legacy_order_by: dndSortByControl,
   truncate_metric,
   x_axis: dndXAxisControl,
-  zoomable,
   show_empty_columns,
   temporal_columns_lookup,
   currency_format,
   sort_by_metric,
-  order_by_cols,
 };

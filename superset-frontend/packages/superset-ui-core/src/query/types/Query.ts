@@ -31,7 +31,7 @@ import { Maybe } from '../../types';
 import { PostProcessingRule } from './PostProcessing';
 import { JsonObject } from '../../connection';
 import { TimeGranularity } from '../../time-format';
-import { GenericDataType, DataRecordValue } from './QueryResponse';
+import { GenericDataType } from './QueryResponse';
 
 export type BaseQueryObjectFilterClause = {
   col: QueryFormColumn;
@@ -41,13 +41,13 @@ export type BaseQueryObjectFilterClause = {
 
 export type BinaryQueryObjectFilterClause = BaseQueryObjectFilterClause & {
   op: BinaryOperator;
-  val: DataRecordValue;
+  val: string | number | boolean;
   formattedVal?: string;
 };
 
 export type SetQueryObjectFilterClause = BaseQueryObjectFilterClause & {
   op: SetOperator;
-  val: DataRecordValue[];
+  val: (string | number | boolean)[];
   formattedVal?: string[];
 };
 
@@ -71,8 +71,6 @@ export type QueryObjectExtras = Partial<{
   where?: string;
   /** Instant Time Comparison */
   instant_time_comparison_range?: string;
-
-  time_compare?: string;
 }>;
 
 export type ResidualQueryObjectData = {
@@ -229,7 +227,6 @@ export const ErrorTypeEnum = {
   ASYNC_WORKERS_ERROR: 'ASYNC_WORKERS_ERROR',
   ADHOC_SUBQUERY_NOT_ALLOWED_ERROR: 'ADHOC_SUBQUERY_NOT_ALLOWED_ERROR',
   INVALID_SQL_ERROR: 'INVALID_SQL_ERROR',
-  RESULT_TOO_LARGE_ERROR: 'RESULT_TOO_LARGE_ERROR',
 
   // Generic errors
   GENERIC_COMMAND_ERROR: 'GENERIC_COMMAND_ERROR',
@@ -286,7 +283,7 @@ export enum QueryState {
   TimedOut = 'timed_out',
 }
 
-// Indicates a Query's state is still processing
+// Inidcates a Query's state is still processing
 export const runningQueryStateList: QueryState[] = [
   QueryState.Running,
   QueryState.Started,
@@ -351,17 +348,15 @@ export type Query = {
 };
 
 export type QueryResults = {
-  results: InnerQueryResults;
-};
-
-export type InnerQueryResults = {
-  displayLimitReached: boolean;
-  columns: QueryColumn[];
-  data: Record<string, unknown>[];
-  expanded_columns: QueryColumn[];
-  selected_columns: QueryColumn[];
-  query: { limit: number };
-  query_id?: number;
+  results: {
+    displayLimitReached: boolean;
+    columns: QueryColumn[];
+    data: Record<string, unknown>[];
+    expanded_columns: QueryColumn[];
+    selected_columns: QueryColumn[];
+    query: { limit: number };
+    query_id?: number;
+  };
 };
 
 export type QueryResponse = Query & QueryResults;

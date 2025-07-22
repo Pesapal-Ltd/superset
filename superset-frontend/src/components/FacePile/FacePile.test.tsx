@@ -16,9 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { act, fireEvent, render, screen } from 'spec/helpers/testing-library';
+import { Provider } from 'react-redux';
+import { styledMount as mount } from 'spec/helpers/theming';
+import { Avatar } from 'src/components';
 import { store } from 'src/views/store';
-import { FacePile } from '.';
+import FacePile from '.';
 import { getRandomColor } from './utils';
 
 const users = [...new Array(10)].map((_, i) => ({
@@ -27,39 +29,23 @@ const users = [...new Array(10)].map((_, i) => ({
   id: i,
 }));
 
-beforeEach(() => {
-  jest.useFakeTimers();
-});
-
-afterEach(() => {
-  jest.useRealTimers();
-});
-
 describe('FacePile', () => {
-  let container: HTMLElement;
-
-  beforeEach(() => {
-    ({ container } = render(<FacePile users={users} />, { store }));
-  });
+  const wrapper = mount(
+    <Provider store={store}>
+      <FacePile users={users} />
+    </Provider>,
+  );
 
   it('is a valid element', () => {
-    const exposedFaces = screen.getAllByText(/U/);
-    expect(exposedFaces).toHaveLength(4);
-    const overflownFaces = screen.getByText('+6');
-    expect(overflownFaces).toBeVisible();
-
-    // Display user info when hovering over one of exposed face in the pile.
-    fireEvent.mouseEnter(exposedFaces[0]);
-    act(() => jest.runAllTimers());
-    expect(screen.getByRole('tooltip')).toHaveTextContent('user 0');
+    expect(wrapper.find(FacePile)).toExist();
   });
 
   it('renders an Avatar', () => {
-    expect(container.querySelector('.ant-avatar')).toBeVisible();
+    expect(wrapper.find(Avatar)).toExist();
   });
 
   it('hides overflow', () => {
-    expect(container.querySelectorAll('.ant-avatar')).toHaveLength(5);
+    expect(wrapper.find(Avatar).length).toBe(5);
   });
 });
 

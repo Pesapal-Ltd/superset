@@ -22,10 +22,9 @@ import { NotificationMethodOption } from '../types';
 
 describe('RecipientIcon', () => {
   it('should render the email icon when type is Email', () => {
-    const { container } = render(
-      <RecipientIcon type={NotificationMethodOption.Email} />,
-    );
-    const emailIcon = container.querySelector('[data-icon="mail"]');
+    render(<RecipientIcon type={NotificationMethodOption.Email} />);
+    const regexPattern = new RegExp(NotificationMethodOption.Email, 'i');
+    const emailIcon = screen.getByLabelText(regexPattern);
     expect(emailIcon).toBeInTheDocument();
   });
 

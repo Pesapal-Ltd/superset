@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { extendedDayjs } from '@superset-ui/core/utils/dates';
-import { Dayjs } from 'dayjs';
+import moment, { Moment } from 'moment';
 import { CustomRangeType } from 'src/explore/components/controls/DateFilterControl/types';
-import { DAYJS_FORMAT } from './constants';
+import { MOMENT_FORMAT } from './constants';
 
 /**
  * RegExp to test a string for a full ISO 8601 Date
@@ -39,18 +38,18 @@ export const ISO8601_AND_CONSTANT = RegExp(
 
 const SPECIFIC_MODE = ['specific', 'today', 'now'];
 
-export const dttmToDayjs = (dttm: string): Dayjs => {
+export const dttmToMoment = (dttm: string): Moment => {
   if (dttm === 'now') {
-    return extendedDayjs().utc().startOf('second');
+    return moment().utc().startOf('second');
   }
   if (dttm === 'today') {
-    return extendedDayjs().utc().startOf('day');
+    return moment().utc().startOf('day');
   }
-  return extendedDayjs(dttm);
+  return moment(dttm);
 };
 
 export const dttmToString = (dttm: string): string =>
-  dttmToDayjs(dttm).format(DAYJS_FORMAT);
+  dttmToMoment(dttm).format(MOMENT_FORMAT);
 
 export const customTimeRangeEncode = (customRange: CustomRangeType): string => {
   const {

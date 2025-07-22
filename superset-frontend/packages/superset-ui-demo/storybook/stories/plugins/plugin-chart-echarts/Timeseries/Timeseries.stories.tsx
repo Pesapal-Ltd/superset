@@ -203,13 +203,7 @@ WithNegativeNumbers.argTypes = {
   orientation: { control: 'select', options: ['vertical', 'horizontal'] },
 };
 
-export const ConfidenceBand = ({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) => (
+export const ConfidenceBand = ({ width, height }) => (
   <SuperChart
     chartType="echarts-timeseries"
     width={width}
@@ -235,13 +229,7 @@ export const ConfidenceBand = ({
   />
 );
 
-export const StackWithNulls = ({
-  width,
-  height,
-}: {
-  width: number;
-  height: number;
-}) => (
+export const StackWithNulls = ({ width, height }) => (
   <SuperChart
     chartType="echarts-timeseries"
     width={width}

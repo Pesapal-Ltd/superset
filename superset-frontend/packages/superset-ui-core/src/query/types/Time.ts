@@ -30,8 +30,7 @@ export type TimeColumnConfigKey =
   | '__time_col'
   | '__time_grain'
   | '__time_range'
-  | '__granularity'
-  | '__time_compare';
+  | '__granularity';
 
 export type AppliedTimeExtras = Partial<
   Record<TimeColumnConfigKey, keyof QueryObject>

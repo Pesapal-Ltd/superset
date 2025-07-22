@@ -17,12 +17,14 @@
  * under the License.
  */
 import { fireEvent, render } from 'spec/helpers/testing-library';
-import { Modal } from '@superset-ui/core/components';
+
+import { AntdModal } from 'src/components';
 import fetchMock from 'fetch-mock';
-import Tabs from 'src/dashboard/components/gridComponents/Tabs';
+import { Tabs } from 'src/dashboard/components/gridComponents/Tabs';
 import { DASHBOARD_ROOT_ID } from 'src/dashboard/util/constants';
 import emptyDashboardLayout from 'src/dashboard/fixtures/emptyDashboardLayout';
 import { dashboardLayoutWithTabs } from 'spec/fixtures/mockDashboardLayout';
+import { getMockStore } from 'spec/fixtures/mockStore';
 import { nativeFilters } from 'spec/fixtures/mockNativeFilters';
 import { initialState } from 'src/SqlLab/fixtures';
 
@@ -79,17 +81,17 @@ const props = {
   nativeFilters: nativeFilters.filters,
 };
 
-function setup(overrideProps, overrideState = {}) {
+const mockStore = getMockStore({
+  ...initialState,
+  dashboardLayout: dashboardLayoutWithTabs,
+  dashboardFilters: {},
+});
+
+function setup(overrideProps) {
   return render(<Tabs {...props} {...overrideProps} />, {
     useDnd: true,
     useRouter: true,
-    useRedux: true,
-    initialState: {
-      ...initialState,
-      dashboardLayout: dashboardLayoutWithTabs,
-      dashboardFilters: {},
-      ...overrideState,
-    },
+    store: mockStore,
   });
 }
 
@@ -172,13 +174,17 @@ test('should direct display direct-link tab', () => {
   // display child in directPathToChild list
   const directPathToChild =
     dashboardLayoutWithTabs.present.ROW_ID2.parents.slice();
-  const { getByRole } = setup({}, { dashboardState: { directPathToChild } });
+  const directLinkProps = {
+    ...props,
+    directPathToChild,
+  };
+  const { getByRole } = setup(directLinkProps);
   expect(getByRole('tab', { selected: true })).toHaveTextContent('TAB_ID2');
 });
 
 test('should render Modal when clicked remove tab button', () => {
   const deleteComponent = jest.fn();
-  const modalMock = jest.spyOn(Modal, 'confirm');
+  const modalMock = jest.spyOn(AntdModal, 'confirm');
   const { container } = setup({ editMode: true, deleteComponent });
   fireEvent.click(container.querySelector('.ant-tabs-tab-remove'));
   expect(modalMock).toHaveBeenCalledTimes(1);

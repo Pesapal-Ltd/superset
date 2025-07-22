@@ -18,7 +18,7 @@
  */
 
 import { ReactNode } from 'react';
-import { PopoverProps } from '@superset-ui/core/components/Popover';
+import { PopoverProps } from 'antd/lib/popover';
 import { Comparator, ControlComponentProps } from '@superset-ui/chart-controls';
 
 export type ConditionalFormattingConfig = {

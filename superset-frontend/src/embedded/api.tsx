@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { DataMaskStateWithId } from '@superset-ui/core';
 import getBootstrapData from 'src/utils/getBootstrapData';
 import { store } from '../views/store';
 import { getDashboardPermalink as getDashboardPermalinkUtil } from '../utils/urlUtils';
@@ -32,7 +31,6 @@ type EmbeddedSupersetApi = {
   getScrollSize: () => Size;
   getDashboardPermalink: ({ anchor }: { anchor: string }) => Promise<string>;
   getActiveTabs: () => string[];
-  getDataMask: () => DataMaskStateWithId;
 };
 
 const getScrollSize = (): Size => ({
@@ -63,11 +61,8 @@ const getDashboardPermalink = async ({
 
 const getActiveTabs = () => store?.getState()?.dashboardState?.activeTabs || [];
 
-const getDataMask = () => store?.getState()?.dataMask || {};
-
 export const embeddedApi: EmbeddedSupersetApi = {
   getScrollSize,
   getDashboardPermalink,
   getActiveTabs,
-  getDataMask,
 };

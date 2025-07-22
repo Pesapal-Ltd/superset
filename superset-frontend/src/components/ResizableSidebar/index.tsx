@@ -26,7 +26,7 @@ const ResizableWrapper = styled.div`
   height: 100%;
 
   :hover .sidebar-resizer::after {
-    background-color: ${({ theme }) => theme.colorPrimary};
+    background-color: ${({ theme }) => theme.colors.primary.base};
   }
 
   .sidebar-resizer {
@@ -67,12 +67,7 @@ const ResizableSidebar: FC<Props> = ({
       <ResizableWrapper>
         <Resizable
           enable={{ right: enable }}
-          handleClasses={{
-            right: 'sidebar-resizer',
-            bottom: 'hidden',
-            bottomRight: 'hidden',
-            bottomLeft: 'hidden',
-          }}
+          handleClasses={{ right: 'sidebar-resizer' }}
           size={{ width, height: '100%' }}
           minWidth={minWidth}
           maxWidth={maxWidth}

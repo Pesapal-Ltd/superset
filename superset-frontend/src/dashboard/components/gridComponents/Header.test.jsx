@@ -17,11 +17,16 @@
  * under the License.
  */
 import { Provider } from 'react-redux';
+import { styledMount as mount } from 'spec/helpers/theming';
+import sinon from 'sinon';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import sinon from 'sinon';
 
-import { render, screen, fireEvent } from 'spec/helpers/testing-library';
+import DeleteComponentButton from 'src/dashboard/components/DeleteComponentButton';
+import EditableTitle from 'src/components/EditableTitle';
+import HoverMenu from 'src/dashboard/components/menu/HoverMenu';
+import WithPopoverMenu from 'src/dashboard/components/menu/WithPopoverMenu';
+import { Draggable } from 'src/dashboard/components/dnd/DragDroppable';
 import Header from 'src/dashboard/components/gridComponents/Header';
 import newComponentFactory from 'src/dashboard/util/newComponentFactory';
 import {
@@ -48,53 +53,49 @@ describe('Header', () => {
   };
 
   function setup(overrideProps) {
-    return render(
+    // We have to wrap provide DragDropContext for the underlying DragDroppable
+    // otherwise we cannot assert on DragDroppable children
+    const wrapper = mount(
       <Provider store={mockStoreWithTabs}>
         <DndProvider backend={HTML5Backend}>
           <Header {...props} {...overrideProps} />
         </DndProvider>
       </Provider>,
     );
+    return wrapper;
   }
 
   it('should render a Draggable', () => {
-    setup();
-    expect(screen.getByTestId('dragdroppable-object')).toBeInTheDocument();
+    const wrapper = setup();
+    expect(wrapper.find(Draggable)).toExist();
   });
 
   it('should render a WithPopoverMenu', () => {
-    setup();
-    expect(screen.getByRole('none')).toBeInTheDocument();
+    const wrapper = setup();
+    expect(wrapper.find(WithPopoverMenu)).toExist();
   });
 
   it('should render a HoverMenu in editMode', () => {
-    setup();
-    expect(screen.queryByTestId('hover-menu')).not.toBeInTheDocument();
+    let wrapper = setup();
+    expect(wrapper.find(HoverMenu)).not.toExist();
 
-    setup({ editMode: true });
-    const hoverMenus = screen.getAllByTestId('hover-menu');
-    expect(hoverMenus[0]).toBeInTheDocument();
+    // we cannot set props on the Header because of the WithDragDropContext wrapper
+    wrapper = setup({ editMode: true });
+    expect(wrapper.find(HoverMenu)).toExist();
   });
 
   it('should render an EditableTitle with meta.text', () => {
-    setup();
-    const titleElement = screen.getByTestId('editable-title');
-    expect(titleElement).toBeInTheDocument();
-    expect(titleElement).toHaveTextContent(props.component.meta.text);
+    const wrapper = setup();
+    expect(wrapper.find(EditableTitle)).toExist();
+    expect(wrapper.find('.editable-title')).toHaveText(
+      props.component.meta.text,
+    );
   });
 
   it('should call updateComponents when EditableTitle changes', () => {
     const updateComponents = sinon.spy();
-    setup({ editMode: true, updateComponents });
-
-    // First click to enter edit mode
-    const titleButton = screen.getByTestId('textarea-editable-title-input');
-    fireEvent.click(titleButton);
-
-    // Then change the input value and blur to trigger save
-    const titleInput = screen.getByTestId('textarea-editable-title-input');
-    fireEvent.change(titleInput, { target: { value: 'New title' } });
-    fireEvent.blur(titleInput);
+    const wrapper = setup({ editMode: true, updateComponents });
+    wrapper.find(EditableTitle).prop('onSaveTitle')('New title');
 
     const headerId = props.component.id;
     expect(updateComponents.callCount).toBe(1);
@@ -104,33 +105,33 @@ describe('Header', () => {
   });
 
   it('should render a DeleteComponentButton when focused in editMode', () => {
-    setup({ editMode: true });
-    const trashButton = screen.getByRole('img', { name: 'delete' });
-    expect(trashButton).toBeInTheDocument();
+    const wrapper = setup({ editMode: true });
+    wrapper.find(WithPopoverMenu).simulate('click'); // focus
+
+    expect(wrapper.find(DeleteComponentButton)).toExist();
   });
 
   it('should call deleteComponent when deleted', () => {
     const deleteComponent = sinon.spy();
-    setup({ editMode: true, deleteComponent });
-
-    const trashButton = screen.getByRole('img', { name: 'delete' });
-    fireEvent.click(trashButton.parentElement);
+    const wrapper = setup({ editMode: true, deleteComponent });
+    wrapper.find(WithPopoverMenu).simulate('click'); // focus
+    wrapper.find(DeleteComponentButton).simulate('click');
 
     expect(deleteComponent.callCount).toBe(1);
   });
 
   it('should render the AnchorLink in view mode', () => {
-    setup();
-    expect(screen.getByTestId('anchor-link')).toBeInTheDocument();
+    const wrapper = setup();
+    expect(wrapper.find('AnchorLink')).toExist();
   });
 
   it('should not render the AnchorLink in edit mode', () => {
-    setup({ editMode: true });
-    expect(screen.queryByTestId('anchor-link')).not.toBeInTheDocument();
+    const wrapper = setup({ editMode: true });
+    expect(wrapper.find('AnchorLink')).not.toExist();
   });
 
   it('should not render the AnchorLink in embedded mode', () => {
-    setup({ embeddedMode: true });
-    expect(screen.queryByTestId('anchor-link')).not.toBeInTheDocument();
+    const wrapper = setup({ embeddedMode: true });
+    expect(wrapper.find('AnchorLink')).not.toExist();
   });
 });

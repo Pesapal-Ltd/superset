@@ -19,14 +19,9 @@
 
 import {
   CategoricalColorNamespace,
-  ensureIsArray,
   getCategoricalSchemeRegistry,
   getLabelsColorMap,
 } from '@superset-ui/core';
-import { intersection, omit, pick } from 'lodash';
-import { areObjectsEqual } from 'src/reduxUtils';
-
-const EMPTY_ARRAY: string[] = [];
 
 /**
  * Force falsy namespace values to undefined to default to GLOBAL
@@ -46,7 +41,7 @@ export const getColorNamespace = (namespace?: string) => namespace || undefined;
  */
 export const enforceSharedLabelsColorsArray = (
   sharedLabelsColors: string[] | Record<string, string> | undefined,
-) => (Array.isArray(sharedLabelsColors) ? sharedLabelsColors : EMPTY_ARRAY);
+) => (Array.isArray(sharedLabelsColors) ? sharedLabelsColors : []);
 
 /**
  * Get labels shared across all charts in a dashboard.
@@ -72,9 +67,7 @@ export const getFreshSharedLabels = (
     .filter(([, count]) => count > 1)
     .map(([label]) => label);
 
-  return Array.from(
-    new Set([...ensureIsArray(currentSharedLabels), ...duplicates]),
-  );
+  return Array.from(new Set([...currentSharedLabels, ...duplicates]));
 };
 
 export const getSharedLabelsColorMapEntries = (
@@ -93,32 +86,20 @@ export const getSharedLabelsColorMapEntries = (
  * @param customLabelsColor - the custom label colors in label_colors field
  * @returns all color entries except custom label colors
  */
-export const getFreshLabelsColorMapEntries = (
+export const getLabelsColorMapEntries = (
   customLabelsColor: Record<string, string> = {},
 ): Record<string, string> => {
   const labelsColorMapInstance = getLabelsColorMap();
   const allEntries = Object.fromEntries(labelsColorMapInstance.getColorMap());
 
   // custom label colors are applied and stored separetely via label_colors
+  // removing all instances of custom label colors from the entries
   Object.keys(customLabelsColor).forEach(label => {
     delete allEntries[label];
   });
 
   return allEntries;
 };
-
-/**
- * Returns all dynamic labels and colors (excluding custom label colors).
- *
- * @param labelsColorMap - the labels color map
- * @param customLabelsColor - the custom label colors in label_colors field
- * @returns all color entries except custom label colors
- */
-export const getDynamicLabelsColors = (
-  fullLabelsColors: Record<string, string>,
-  customLabelsColor: Record<string, string> = {},
-): Record<string, string> =>
-  omit(fullLabelsColors, Object.keys(customLabelsColor));
 
 export const getColorSchemeDomain = (colorScheme: string) =>
   getCategoricalSchemeRegistry().get(colorScheme)?.colors || [];
@@ -130,29 +111,20 @@ export const getColorSchemeDomain = (colorScheme: string) =>
  * @returns true if the labels color map is the same as fresh
  */
 export const isLabelsColorMapSynced = (
-  storedLabelsColors: Record<string, any>,
-  freshLabelsColors: Record<string, any>,
-  customLabelColors: Record<string, string>,
+  metadata: Record<string, any>,
 ): boolean => {
-  const freshLabelsCount = Object.keys(freshLabelsColors).length;
+  const storedLabelsColorMap = metadata.map_label_colors || {};
+  const customLabelColors = metadata.label_colors || {};
+  const freshColorMap = getLabelsColorMap().getColorMap();
+  const fullFreshColorMap = {
+    ...Object.fromEntries(freshColorMap),
+    ...customLabelColors,
+  };
 
-  // still updating, pass
-  if (!freshLabelsCount) return true;
-
-  const commonKeys = intersection(
-    Object.keys(storedLabelsColors),
-    Object.keys(freshLabelsColors),
-  );
-
-  const comparableStoredLabelsColors = pick(storedLabelsColors, commonKeys);
-  const comparableFreshLabelsColors = pick(freshLabelsColors, commonKeys);
-
-  const isSynced = areObjectsEqual(
-    comparableStoredLabelsColors,
-    comparableFreshLabelsColors,
-    {
-      ignoreFields: Object.keys(customLabelColors),
-    },
+  const isSynced = Object.entries(fullFreshColorMap).every(
+    ([label, color]) =>
+      storedLabelsColorMap.hasOwnProperty(label) &&
+      storedLabelsColorMap[label] === color,
   );
 
   return isSynced;
@@ -250,7 +222,7 @@ export const applyColors = (
   if (fresh) {
     // requires a new map all together
     applicableColorMapEntries = {
-      ...getFreshLabelsColorMapEntries(customLabelsColor),
+      ...getLabelsColorMapEntries(customLabelsColor),
     };
   }
   if (merge) {
@@ -258,7 +230,7 @@ export const applyColors = (
     // without overriding existing ones
     applicableColorMapEntries = {
       ...fullLabelsColor,
-      ...getFreshLabelsColorMapEntries(customLabelsColor),
+      ...getLabelsColorMapEntries(customLabelsColor),
     };
   }
 

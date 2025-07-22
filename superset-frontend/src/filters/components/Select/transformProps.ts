@@ -44,8 +44,6 @@ export default function transformProps(
     setFocusedFilter = noOp,
     unsetFocusedFilter = noOp,
     setFilterActive = noOp,
-    clearAllTrigger,
-    onClearAllComplete,
   } = hooks;
   const [queryData] = queriesData;
   const { colnames = [], coltypes = [], data = [] } = queryData || {};
@@ -73,7 +71,5 @@ export default function transformProps(
     inputRef,
     filterBarOrientation: displaySettings?.filterBarOrientation,
     isOverflowingFilterBar: displaySettings?.isOverflowingFilterBar,
-    clearAllTrigger,
-    onClearAllComplete,
   };
 }

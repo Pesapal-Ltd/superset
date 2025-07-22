@@ -18,7 +18,7 @@
  */
 
 import { CSSProperties, ReactNode, PureComponent } from 'react';
-import { ParentSize } from '@visx/responsive';
+import { ParentSize } from '@vx/responsive';
 
 const defaultProps = {
   className: '',

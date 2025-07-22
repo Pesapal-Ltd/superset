@@ -55,7 +55,7 @@ describe('AnchorLink', () => {
       { useRedux: true },
     );
     expect(container.querySelector(`#${props.id}`)).toBeInTheDocument();
-    expect(queryByRole('button')).not.toBeInTheDocument();
+    expect(queryByRole('button')).toBe(null);
   });
 
   it('should render short link button', () => {

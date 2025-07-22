@@ -38,6 +38,10 @@ import {
   orderByControlSetItem,
   orderDescendingControlSetItem,
 } from './controls/orderBy';
+import {
+  serverPageLengthControlSetItem,
+  serverPaginationControlSetRow,
+} from './controls/pagination';
 import { queryModeControlSetItem } from './controls/queryMode';
 import { styleControlSetItem } from './controls/style';
 
@@ -53,7 +57,8 @@ const config: ControlPanelConfig = {
         [percentMetricsControlSetItem],
         [timeSeriesLimitMetricControlSetItem, orderByControlSetItem],
         [orderDescendingControlSetItem],
-        [rowLimitControlSetItem],
+        serverPaginationControlSetRow,
+        [rowLimitControlSetItem, serverPageLengthControlSetItem],
         [includeTimeControlSetItem],
         [showTotalsControlSetItem],
         ['adhoc_filters'],

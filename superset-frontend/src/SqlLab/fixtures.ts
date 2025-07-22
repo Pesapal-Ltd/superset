@@ -32,16 +32,15 @@ import { ISaveableDatasource } from 'src/SqlLab/components/SaveDatasetModal';
 
 export const mockedActions = sinon.stub({ ...actions });
 
-export const alert = { bsStyle: 'danger', msg: 'Oops', id: 'lksvmcx32' };
+export const alert = { bsStyle: 'danger', msg: 'Ooops', id: 'lksvmcx32' };
 export const table = {
   dbId: 1,
   selectStar: 'SELECT * FROM ab_user',
   queryEditorId: 'dfsadfs',
   catalog: null,
-  schema: 'main',
+  schema: 'superset',
   name: 'ab_user',
   id: 'r11Vgt60',
-  view: 'SELECT * FROM ab_user',
   dataPreviewQueryId: null,
   partitions: {
     cols: ['username'],
@@ -189,7 +188,7 @@ export const defaultQueryEditor = {
   version: LatestQueryEditorVersion,
   id: 'dfsadfs',
   autorun: false,
-  dbId: 1,
+  dbId: undefined,
   latestQueryId: null,
   selectedText: undefined,
   sql: 'SELECT *\nFROM\nWHERE',
@@ -529,12 +528,6 @@ export const failedQueryWithErrors = {
   errors: [
     {
       message: 'Something went wrong',
-      error_type: 'TEST_ERROR',
-      level: 'error',
-      extra: null,
-    },
-    {
-      message: 'Something else wrong',
       error_type: 'TEST_ERROR',
       level: 'error',
       extra: null,

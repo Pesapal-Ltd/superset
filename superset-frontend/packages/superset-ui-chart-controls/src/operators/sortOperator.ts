@@ -27,9 +27,10 @@ import {
 import { PostProcessingFactory } from './types';
 import { extractExtraMetrics } from './utils';
 
-export const sortOperator: PostProcessingFactory<
-  PostProcessingSort
-> = formData => {
+export const sortOperator: PostProcessingFactory<PostProcessingSort> = (
+  formData,
+  queryObject,
+) => {
   // the sortOperator only used in the barchart v2
   const sortableLabels = [
     getXAxisLabel(formData),

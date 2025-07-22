@@ -26,7 +26,6 @@ import {
   getMetricLabel,
   getNumberFormatter,
   tooltipHtml,
-  themeObject,
 } from '@superset-ui/core';
 import { SankeyChartProps, SankeyTransformedProps } from './types';
 import { Refs } from '../types';
@@ -63,7 +62,6 @@ export default function transformProps(
       value,
     });
   });
-  const { theme } = themeObject;
 
   const seriesData: NonNullable<SankeySeriesOption['data']> = Array.from(
     set,
@@ -72,32 +70,16 @@ export default function transformProps(
     itemStyle: {
       color: colorFn(name, sliceId),
     },
-    label: {
-      color: theme.colorText,
-      textShadow: theme.colorBgBase,
-    },
   }));
 
   // stores a map with the total values for each node considering the links
-  const incomingFlows = new Map<string, number>();
-  const outgoingFlows = new Map<string, number>();
-  const allNodeNames = new Set<string>();
-
+  const nodeValues = new Map<string, number>();
   links.forEach(link => {
     const { source, target, value } = link;
-    allNodeNames.add(source);
-    allNodeNames.add(target);
-    incomingFlows.set(target, (incomingFlows.get(target) || 0) + value);
-    outgoingFlows.set(source, (outgoingFlows.get(source) || 0) + value);
-  });
-
-  const nodeValues = new Map<string, number>();
-
-  allNodeNames.forEach(nodeName => {
-    const totalIncoming = incomingFlows.get(nodeName) || 0;
-    const totalOutgoing = outgoingFlows.get(nodeName) || 0;
-
-    nodeValues.set(nodeName, Math.max(totalIncoming, totalOutgoing));
+    const sourceValue = nodeValues.get(source) || 0;
+    const targetValue = nodeValues.get(target) || 0;
+    nodeValues.set(source, sourceValue + value);
+    nodeValues.set(target, targetValue + value);
   });
 
   const tooltipFormatter = (params: CallbackDataParams) => {

@@ -21,7 +21,7 @@ import { renderResultCell } from './utils';
 
 jest.mock('src/components/JsonModal', () => ({
   ...jest.requireActual('src/components/JsonModal'),
-  JsonModal: () => <div data-test="mock-json-modal" />,
+  default: () => <div data-test="mock-json-modal" />,
 }));
 
 const unexpectedGetCellContent = () => 'none';

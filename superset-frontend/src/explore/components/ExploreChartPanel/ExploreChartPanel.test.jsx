@@ -17,17 +17,9 @@
  * under the License.
  */
 import { isValidElement } from 'react';
-import {
-  render,
-  screen,
-  userEvent,
-  within,
-} from 'spec/helpers/testing-library';
-import {
-  getChartMetadataRegistry,
-  ChartMetadata,
-  VizType,
-} from '@superset-ui/core';
+import userEvent from '@testing-library/user-event';
+import { render, screen, within } from 'spec/helpers/testing-library';
+import { getChartMetadataRegistry, ChartMetadata } from '@superset-ui/core';
 import ChartContainer from 'src/explore/components/ExploreChartPanel';
 import { setItem, LocalStorageKeys } from 'src/utils/localStorageHelpers';
 
@@ -40,11 +32,11 @@ const createProps = (overrides = {}) => ({
   containerId: 'foo',
   width: '500px',
   isStarred: false,
-  vizType: VizType.Histogram,
+  vizType: 'histogram',
   chart: {
     id: 1,
     latestQueryFormData: {
-      viz_type: VizType.Histogram,
+      viz_type: 'histogram',
       datasource: '49__table',
       slice_id: 318,
       url_params: {},
@@ -67,8 +59,6 @@ const createProps = (overrides = {}) => ({
 });
 
 describe('ChartContainer', () => {
-  jest.setTimeout(10000);
-
   test('renders when vizType is line', () => {
     const props = createProps();
     expect(isValidElement(<ChartContainer {...props} />)).toBe(true);
@@ -80,7 +70,7 @@ describe('ChartContainer', () => {
       chart: { chartStatus: 'rendered', queriesResponse: [{}] },
     });
     getChartMetadataRegistry().registerValue(
-      VizType.Histogram,
+      'histogram',
       new ChartMetadata({
         name: 'fake table',
         thumbnail: '.png',

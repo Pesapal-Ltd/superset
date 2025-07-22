@@ -30,7 +30,7 @@ import {
 import { queries, defaultQueryEditor } from '../fixtures';
 
 describe('reduxStateToLocalStorageHelper', () => {
-  const queriesObj: Record<string, any> = {};
+  const queriesObj = {};
   beforeEach(() => {
     queries.forEach(q => {
       queriesObj[q.id] = q;

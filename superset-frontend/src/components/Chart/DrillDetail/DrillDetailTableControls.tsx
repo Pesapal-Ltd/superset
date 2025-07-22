@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { Tag } from 'src/components/Tag';
+import { Tag } from 'antd';
 import {
   BinaryQueryObjectFilterClause,
   css,
@@ -26,16 +26,8 @@ import {
   t,
   useTheme,
 } from '@superset-ui/core';
-import RowCountLabel from 'src/components/RowCountLabel';
-import { Icons } from '@superset-ui/core/components/Icons';
-
-export type TableControlsProps = {
-  filters: BinaryQueryObjectFilterClause[];
-  setFilters: (filters: BinaryQueryObjectFilterClause[]) => void;
-  totalCount?: number;
-  loading: boolean;
-  onReload: () => void;
-};
+import RowCountLabel from 'src/explore/components/RowCountLabel';
+import Icons from 'src/components/Icons';
 
 export default function TableControls({
   filters,
@@ -43,7 +35,13 @@ export default function TableControls({
   totalCount,
   loading,
   onReload,
-}: TableControlsProps) {
+}: {
+  filters: BinaryQueryObjectFilterClause[];
+  setFilters: (filters: BinaryQueryObjectFilterClause[]) => void;
+  totalCount?: number;
+  loading: boolean;
+  onReload: () => void;
+}) {
   const theme = useTheme();
   const filterMap: Record<string, BinaryQueryObjectFilterClause> = useMemo(
     () =>
@@ -83,29 +81,36 @@ export default function TableControls({
       css={css`
         display: flex;
         justify-content: space-between;
-        padding: ${theme.sizeUnit / 2}px 0;
-        margin-bottom: ${theme.sizeUnit * 2}px;
+        padding: ${theme.gridUnit / 2}px 0;
+        margin-bottom: ${theme.gridUnit * 2}px;
       `}
     >
       <div
         css={css`
           display: flex;
           flex-wrap: wrap;
+          margin-bottom: -${theme.gridUnit * 4}px;
         `}
       >
-        {filterTags.map(({ colName, val }, index) => (
+        {filterTags.map(({ colName, val }) => (
           <Tag
-            editable
-            onDelete={removeFilter.bind(null, colName)}
-            index={index}
-            id={index}
+            closable
+            onClose={removeFilter.bind(null, colName)}
             key={colName}
-            name={`${colName}=${val}`}
+            css={css`
+              height: ${theme.gridUnit * 6}px;
+              display: flex;
+              align-items: center;
+              padding: ${theme.gridUnit / 2}px ${theme.gridUnit * 2}px;
+              margin-right: ${theme.gridUnit * 4}px;
+              margin-bottom: ${theme.gridUnit * 4}px;
+              line-height: 1.2;
+            `}
             data-test="filter-col"
           >
             <span
               css={css`
-                margin-right: ${theme.sizeUnit}px;
+                margin-right: ${theme.gridUnit}px;
               `}
             >
               {colName}

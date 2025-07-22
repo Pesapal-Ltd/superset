@@ -168,10 +168,9 @@ export function transformSeries(
     lineStyle?: LineStyleOption;
     queryIndex?: number;
     timeCompare?: string[];
-    timeShiftColor?: boolean;
   },
 ): SeriesOption | undefined {
-  const { name, data } = series;
+  const { name } = series;
   const {
     area,
     connectNulls,
@@ -192,12 +191,10 @@ export function transformSeries(
     showValueIndexes = [],
     thresholdValues = [],
     richTooltip,
-    seriesKey,
     sliceId,
     isHorizontal = false,
     queryIndex = 0,
     timeCompare = [],
-    timeShiftColor,
   } = opts;
   const contexts = seriesContexts[name || ''] || [];
   const hasForecast =
@@ -213,7 +210,7 @@ export function transformSeries(
     filterState?.selectedValues && !filterState?.selectedValues.includes(name);
   const opacity = isFiltered
     ? OpacityEnum.SemiTransparent
-    : opts.lineStyle?.opacity || OpacityEnum.NonTransparent;
+    : OpacityEnum.NonTransparent;
 
   // don't create a series if doing a stack or area chart and the result
   // is a confidence band
@@ -226,7 +223,7 @@ export function transformSeries(
     stackId = forecastSeries.name;
   } else if (stack && isObservation) {
     // the suffix of the observation series is '' (falsy), which disables
-    // stacking. Therefore, we need to set something that is truthy.
+    // stacking. Therefore we need to set something that is truthy.
     stackId = getTimeCompareStackId('obs', timeCompare, name);
   } else if (stack && isTrend) {
     stackId = getTimeCompareStackId(forecastSeries.type, timeCompare, name);
@@ -245,22 +242,11 @@ export function transformSeries(
   } else {
     plotType = seriesType === 'bar' ? 'bar' : 'line';
   }
-  /**
-   * if timeShiftColor is enabled the colorScaleKey forces the color to be the
-   * same as the original series, otherwise uses separate colors
-   * */
-  const itemStyle: ItemStyleOption = {
-    color: timeShiftColor
-      ? colorScale(colorScaleKey, sliceId)
-      : colorScale(seriesKey || forecastSeries.name, sliceId),
+  // forcing the colorScale to return a different color for same metrics across different queries
+  const itemStyle = {
+    color: colorScale(colorScaleKey, sliceId),
     opacity,
-    borderWidth: 0,
   };
-  if (seriesType === 'bar' && connectNulls) {
-    itemStyle.borderWidth = 1.5;
-    itemStyle.borderType = 'dotted';
-    itemStyle.borderColor = itemStyle.color;
-  }
   let emphasis = {};
   let showSymbol = false;
   if (!isConfidenceBand) {
@@ -290,9 +276,6 @@ export function transformSeries(
       : { ...opts.lineStyle, opacity };
   return {
     ...series,
-    ...(Array.isArray(data) && seriesType === 'bar' && !stack
-      ? { data: transformNegativeLabelsPosition(series, isHorizontal) }
-      : null),
     connectNulls,
     queryIndex,
     yAxisIndex,
@@ -318,22 +301,21 @@ export function transformSeries(
             opacity: opacity * areaOpacity,
           }
         : undefined,
-    emphasis,
+    emphasis: {
+      // bold on hover as required since 5.3.0 to retain backwards feature parity:
+      // https://apache.github.io/echarts-handbook/en/basics/release-note/5-3-0/#removing-the-default-bolding-emphasis-effect-in-the-line-chart
+      // TODO: should consider only adding emphasis to currently hovered series
+      lineStyle: {
+        width: 'bolder',
+      },
+      ...emphasis,
+    },
     showSymbol,
     symbolSize: markerSize,
     label: {
       show: !!showValue,
       position: isHorizontal ? 'right' : 'top',
       formatter: (params: any) => {
-        // don't show confidence band value labels, as they're already visible on the tooltip
-        if (
-          [
-            ForecastSeriesEnum.ForecastUpper,
-            ForecastSeriesEnum.ForecastLower,
-          ].includes(forecastSeries.type)
-        ) {
-          return '';
-        }
         const { value, dataIndex, seriesIndex, seriesName } = params;
         const numericValue = isHorizontal ? value[0] : value[1];
         const isSelectedLegend = !legendState || legendState[seriesName];
@@ -629,31 +611,4 @@ export function getPadding(
     },
     isHorizontal,
   );
-}
-
-export function transformNegativeLabelsPosition(
-  series: SeriesOption,
-  isHorizontal: boolean,
-): TimeseriesDataRecord[] {
-  /*
-   * Adjusts label position for negative values in bar series
-   * @param series - Array of series options
-   * @param isHorizontal - Whether chart is horizontal
-   * @returns data with adjusted label positions for negative values
-   */
-  const transformValue = (value: any) => {
-    const [xValue, yValue] = Array.isArray(value) ? value : [null, null];
-    const axisValue = isHorizontal ? xValue : yValue;
-
-    return axisValue < 0
-      ? {
-          value,
-          label: {
-            position: 'outside',
-          },
-        }
-      : value;
-  };
-
-  return (series.data as TimeseriesDataRecord[]).map(transformValue);
 }

@@ -17,10 +17,11 @@
  * under the License.
  */
 import { JSONTree } from 'react-json-tree';
-import { t } from '@superset-ui/core';
+import { css, styled, SupersetTheme, t } from '@superset-ui/core';
+
 import { useJsonTreeTheme } from 'src/hooks/useJsonTreeTheme';
-import { Collapse, List, Typography } from '@superset-ui/core/components';
-import type { ErrorMessageComponentProps } from './types';
+import Collapse from 'src/components/Collapse';
+import { ErrorMessageComponentProps } from './types';
 
 interface MarshmallowErrorExtra {
   messages: object;
@@ -31,13 +32,27 @@ interface MarshmallowErrorExtra {
   }[];
 }
 
+const StyledUl = styled.ul`
+  padding-left: ${({ theme }) => theme.gridUnit * 5}px;
+  padding-top: ${({ theme }) => theme.gridUnit * 4}px;
+`;
+
+const collapseStyle = (theme: SupersetTheme) => css`
+  .ant-collapse-arrow {
+    left: 0px !important;
+  }
+  .ant-collapse-header {
+    padding-left: ${theme.gridUnit * 4}px !important;
+  }
+  .ant-collapse-content-box {
+    padding: 0px !important;
+  }
+`;
+
 const extractInvalidValues = (messages: object, payload: object): string[] => {
   const invalidValues: string[] = [];
 
-  const recursiveExtract = (
-    messages: Record<string, any>,
-    payload: Record<string, any>,
-  ) => {
+  const recursiveExtract = (messages: object, payload: object) => {
     Object.keys(messages).forEach(key => {
       const value = payload[key];
       const message = messages[key];
@@ -51,14 +66,11 @@ const extractInvalidValues = (messages: object, payload: object): string[] => {
       }
     });
   };
-  recursiveExtract(
-    messages as Record<string, any>,
-    payload as Record<string, any>,
-  );
+  recursiveExtract(messages, payload);
   return invalidValues;
 };
 
-export function MarshmallowErrorMessage({
+export default function MarshmallowErrorMessage({
   error,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   source = 'crud',
@@ -73,33 +85,24 @@ export function MarshmallowErrorMessage({
 
       {message}
 
-      <List
-        size="small"
-        dataSource={extractInvalidValues(extra.messages, extra.payload)}
-        renderItem={(value, index) => (
-          <List.Item key={index}>
-            <Typography.Text>{value}</Typography.Text>
-          </List.Item>
+      <StyledUl>
+        {extractInvalidValues(extra.messages, extra.payload).map(
+          (value, index) => (
+            <li key={index}>{value}</li>
+          ),
         )}
-      />
+      </StyledUl>
 
-      <Collapse
-        ghost
-        items={[
-          {
-            label: t('Details'),
-            key: 'details',
-            children: (
-              <JSONTree
-                data={extra.messages}
-                shouldExpandNodeInitially={() => true}
-                hideRoot
-                theme={jsonTreeTheme}
-              />
-            ),
-          },
-        ]}
-      />
+      <Collapse ghost css={collapseStyle}>
+        <Collapse.Panel header={t('Details')} key="details" css={collapseStyle}>
+          <JSONTree
+            data={extra.messages}
+            shouldExpandNode={() => true}
+            hideRoot
+            theme={jsonTreeTheme}
+          />
+        </Collapse.Panel>
+      </Collapse>
     </div>
   );
 }

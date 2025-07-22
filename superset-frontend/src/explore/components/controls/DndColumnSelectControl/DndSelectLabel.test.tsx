@@ -17,7 +17,8 @@
  * under the License.
  */
 import { useContext } from 'react';
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
+import { render, screen } from 'spec/helpers/testing-library';
 import { DndItemType } from 'src/explore/components/DndItemType';
 import DndSelectLabel, {
   DndSelectLabelProps,

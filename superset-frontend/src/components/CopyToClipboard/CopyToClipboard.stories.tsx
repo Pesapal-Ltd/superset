@@ -16,20 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Icons } from '@superset-ui/core/components/Icons';
+import { useTheme } from '@superset-ui/core';
+import Button from 'src/components/Button';
+import Icons from 'src/components/Icons';
 import ToastContainer from 'src/components/MessageToasts/ToastContainer';
-import { Button } from '@superset-ui/core/components';
-import { CopyToClipboard } from '.';
+import CopyToClipboard from '.';
 
 export default {
-  title: 'Components/CopyToClipboard',
+  title: 'CopyToClipboard',
   component: CopyToClipboard,
 };
 
 export const InteractiveCopyToClipboard = ({ copyNode, ...rest }: any) => {
+  const theme = useTheme();
   let node = <Button>Copy</Button>;
   if (copyNode === 'Icon') {
-    node = <Icons.CopyOutlined />;
+    node = <Icons.Copy iconColor={theme.colors.grayscale.base} />;
   } else if (copyNode === 'Text') {
     node = <span role="button">Copy</span>;
   }

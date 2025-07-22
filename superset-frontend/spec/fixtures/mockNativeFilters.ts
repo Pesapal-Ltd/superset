@@ -48,7 +48,6 @@ export const nativeFilters: NativeFiltersState = {
         excluded: [],
       },
       controlValues: {
-        creatable: false,
         multiSelect: false,
         enableEmptyFilter: false,
         inverseSelection: false,
@@ -80,7 +79,6 @@ export const nativeFilters: NativeFiltersState = {
         excluded: [],
       },
       controlValues: {
-        creatable: false,
         multiSelect: false,
         enableEmptyFilter: false,
         inverseSelection: false,
@@ -465,7 +463,6 @@ export const buildNativeFilter = (
 ) => ({
   id,
   controlValues: {
-    creatable: true,
     multiSelect: true,
     enableEmptyFilter: false,
     defaultToFirstItem: false,

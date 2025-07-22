@@ -20,12 +20,8 @@ import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 import { Store } from 'redux';
 
-import {
-  fireEvent,
-  render,
-  userEvent,
-  waitFor,
-} from 'spec/helpers/testing-library';
+import { render, fireEvent, waitFor } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import { initialState, defaultQueryEditor } from 'src/SqlLab/fixtures';
 import QueryLimitSelect, {
   QueryLimitSelectProps,
@@ -35,10 +31,10 @@ import QueryLimitSelect, {
 const middlewares = [thunk];
 const mockStore = configureStore(middlewares);
 
-jest.mock('@superset-ui/core/components/Select/Select', () => () => (
+jest.mock('src/components/Select/Select', () => () => (
   <div data-test="mock-deprecated-select-select" />
 ));
-jest.mock('@superset-ui/core/components/Select/AsyncSelect', () => () => (
+jest.mock('src/components/Select/AsyncSelect', () => () => (
   <div data-test="mock-deprecated-async-select" />
 ));
 
@@ -119,8 +115,8 @@ describe('QueryLimitSelect', () => {
     const expectedLabels = [10, 100, 1000, 10000, 50000].map(i =>
       convertToNumWithSpaces(i),
     );
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
+    const actualLabels = getAllByRole('menuitem').map(
+      elem => elem.textContent?.trim(),
     );
 
     expect(actualLabels).toEqual(expectedLabels);
@@ -139,8 +135,8 @@ describe('QueryLimitSelect', () => {
     await waitFor(() => expect(getByRole('menu')).toBeInTheDocument());
 
     const expectedLabels = [5].map(i => convertToNumWithSpaces(i));
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
+    const actualLabels = getAllByRole('menuitem').map(
+      elem => elem.textContent?.trim(),
     );
 
     expect(actualLabels).toEqual(expectedLabels);
@@ -161,8 +157,8 @@ describe('QueryLimitSelect', () => {
     const expectedLabels = [10, 100, 1000, 10000].map(i =>
       convertToNumWithSpaces(i),
     );
-    const actualLabels = getAllByRole('menuitem').map(elem =>
-      elem.textContent?.trim(),
+    const actualLabels = getAllByRole('menuitem').map(
+      elem => elem.textContent?.trim(),
     );
 
     expect(actualLabels).toEqual(expectedLabels);

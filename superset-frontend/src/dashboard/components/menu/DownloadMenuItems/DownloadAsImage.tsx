@@ -18,7 +18,7 @@
  */
 import { SyntheticEvent } from 'react';
 import { logging, t } from '@superset-ui/core';
-import { Menu } from '@superset-ui/core/components/Menu';
+import { Menu } from 'src/components/Menu';
 import { LOG_ACTIONS_DASHBOARD_DOWNLOAD_AS_IMAGE } from 'src/logger/LogUtils';
 import downloadAsImage from 'src/utils/downloadAsImage';
 import { useToasts } from 'src/components/MessageToasts/withToasts';
@@ -27,6 +27,7 @@ export default function DownloadAsImage({
   text,
   logEvent,
   dashboardTitle,
+  ...rest
 }: {
   text: string;
   dashboardTitle: string;
@@ -45,13 +46,10 @@ export default function DownloadAsImage({
   };
 
   return (
-    <Menu.Item
-      key="download-image"
-      onClick={e => {
-        onDownloadImage(e.domEvent);
-      }}
-    >
-      {text}
+    <Menu.Item key="download-image" {...rest}>
+      <div onClick={onDownloadImage} role="button" tabIndex={0}>
+        {text}
+      </div>
     </Menu.Item>
   );
 }

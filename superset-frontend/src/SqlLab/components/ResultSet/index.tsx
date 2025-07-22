@@ -28,22 +28,9 @@ import {
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { pick } from 'lodash';
-import {
-  Alert,
-  Button,
-  ButtonGroup,
-  Tooltip,
-  Card,
-  Modal,
-  Input,
-  Label,
-  Loading,
-} from '@superset-ui/core/components';
-import {
-  CopyToClipboard,
-  FilterableTable,
-  ErrorMessageWithStackTrace,
-} from 'src/components';
+import ButtonGroup from 'src/components/ButtonGroup';
+import Alert from 'src/components/Alert';
+import Button from 'src/components/Button';
 import { nanoid } from 'nanoid';
 import {
   QueryState,
@@ -57,6 +44,7 @@ import {
   getExtensionsRegistry,
   ErrorTypeEnum,
 } from '@superset-ui/core';
+import ErrorMessageWithStackTrace from 'src/components/ErrorMessage/ErrorMessageWithStackTrace';
 import {
   ISaveableDatasource,
   ISimpleColumn,
@@ -65,7 +53,13 @@ import {
 import { EXPLORE_CHART_DEFAULT, SqlLabRootState } from 'src/SqlLab/types';
 import { mountExploreUrl } from 'src/explore/exploreUtils';
 import { postFormData } from 'src/explore/exploreUtils/formData';
-import ProgressBar from '@superset-ui/core/components/ProgressBar';
+import ProgressBar from 'src/components/ProgressBar';
+import Loading from 'src/components/Loading';
+import Card from 'src/components/Card';
+import Label from 'src/components/Label';
+import { Tooltip } from 'src/components/Tooltip';
+import FilterableTable from 'src/components/FilterableTable';
+import CopyToClipboard from 'src/components/CopyToClipboard';
 import { addDangerToast } from 'src/components/MessageToasts/actions';
 import { prepareCopyToClipboardTabularData } from 'src/utils/common';
 import { getItem, LocalStorageKeys } from 'src/utils/localStorageHelpers';
@@ -84,7 +78,7 @@ import {
   LOG_ACTIONS_SQLLAB_CREATE_CHART,
   LOG_ACTIONS_SQLLAB_DOWNLOAD_CSV,
 } from 'src/logger/LogUtils';
-import { Icons } from '@superset-ui/core/components/Icons';
+import Icons from 'src/components/Icons';
 import { findPermission } from 'src/utils/findPermission';
 import ExploreCtasResultsButton from '../ExploreCtasResultsButton';
 import ExploreResultsButton from '../ExploreResultsButton';
@@ -115,24 +109,24 @@ export interface ResultSetProps {
 const ResultContainer = styled.div`
   display: flex;
   flex-direction: column;
-  row-gap: ${({ theme }) => theme.sizeUnit * 2}px;
+  row-gap: ${({ theme }) => theme.gridUnit * 2}px;
 `;
 
 const ResultlessStyles = styled.div`
   position: relative;
-  min-height: ${({ theme }) => theme.sizeUnit * 25}px;
+  min-height: ${({ theme }) => theme.gridUnit * 25}px;
   [role='alert'] {
-    margin-top: ${({ theme }) => theme.sizeUnit * 2}px;
+    margin-top: ${({ theme }) => theme.gridUnit * 2}px;
   }
   .sql-result-track-job {
-    margin-top: ${({ theme }) => theme.sizeUnit * 2}px;
+    margin-top: ${({ theme }) => theme.gridUnit * 2}px;
   }
 `;
 
 // Making text render line breaks/tabs as is as monospace,
 // but wrapping text too so text doesn't overflow
 const MonospaceDiv = styled.div`
-  font-family: ${({ theme }) => theme.fontFamilyCode};
+  font-family: ${({ theme }) => theme.typography.families.monospace};
   white-space: pre;
   word-break: break-word;
   overflow-x: auto;
@@ -140,7 +134,7 @@ const MonospaceDiv = styled.div`
 `;
 
 const ReturnedRows = styled.div`
-  font-size: ${({ theme }) => theme.fontSizeSM}px;
+  font-size: ${({ theme }) => theme.typography.sizes.s}px;
   line-height: 1;
 `;
 
@@ -152,16 +146,7 @@ const ResultSetControls = styled.div`
 const ResultSetButtons = styled.div`
   display: grid;
   grid-auto-flow: column;
-  padding-right: ${({ theme }) => 2 * theme.sizeUnit}px;
-`;
-
-const copyButtonStyles = css`
-  &:hover {
-    text-decoration: unset;
-  }
-  span > :first-of-type {
-    margin: 0px;
-  }
+  padding-right: ${({ theme }) => 2 * theme.gridUnit}px;
 `;
 
 const ROWS_CHIP_WIDTH = 100;
@@ -310,9 +295,6 @@ const ResultSet = ({
 
   const renderControls = () => {
     if (search || visualize || csv) {
-      const { results, queryLimit, limitingFactor, rows } = query;
-      const limit = queryLimit || results.query.limit;
-      const rowsCount = Math.min(rows || 0, results?.data?.length || 0);
       let { data } = query.results;
       if (cache && query.cached) {
         data = cachedData;
@@ -356,28 +338,12 @@ const ResultSet = ({
             )}
             {csv && canExportData && (
               <Button
-                css={copyButtonStyles}
                 buttonSize="small"
-                buttonStyle="secondary"
                 href={getExportCsvUrl(query.id)}
                 data-test="export-csv-button"
-                onClick={() => {
-                  logAction(LOG_ACTIONS_SQLLAB_DOWNLOAD_CSV, {});
-                  if (
-                    limitingFactor === LimitingFactor.Dropdown &&
-                    limit === rowsCount
-                  ) {
-                    Modal.warning({
-                      title: t('Download is on the way'),
-                      content: t(
-                        'Downloading %(rows)s rows based on the LIMIT configuration. If you want the entire result set, you need to adjust the LIMIT.',
-                        { rows: rowsCount.toLocaleString() },
-                      ),
-                    });
-                  }
-                }}
+                onClick={() => logAction(LOG_ACTIONS_SQLLAB_DOWNLOAD_CSV, {})}
               >
-                <Icons.DownloadOutlined iconSize="m" /> {t('Download to CSV')}
+                <i className="fa fa-file-text-o" /> {t('Download to CSV')}
               </Button>
             )}
 
@@ -387,12 +353,10 @@ const ResultSet = ({
                 wrapped={false}
                 copyNode={
                   <Button
-                    css={copyButtonStyles}
                     buttonSize="small"
-                    buttonStyle="secondary"
                     data-test="copy-to-clipboard-button"
                   >
-                    <Icons.CopyOutlined iconSize="s" /> {t('Copy to Clipboard')}
+                    <i className="fa fa-clipboard" /> {t('Copy to Clipboard')}
                   </Button>
                 }
                 hideTooltip
@@ -403,7 +367,8 @@ const ResultSet = ({
             )}
           </ResultSetButtons>
           {search && (
-            <Input
+            <input
+              type="text"
               onChange={changeSearch}
               value={searchText}
               className="form-control input-sm"
@@ -474,8 +439,9 @@ const ResultSet = ({
             <div ref={calculateAlertRefHeight}>
               <Alert
                 type="warning"
+                message={t('%(rows)d rows returned', { rows })}
                 onClose={() => setAlertIsOpen(false)}
-                message={t(
+                description={t(
                   'The number of rows displayed is limited to %(rows)d by the dropdown.',
                   { rows },
                 )}
@@ -487,7 +453,8 @@ const ResultSet = ({
               <Alert
                 type="warning"
                 onClose={() => setAlertIsOpen(false)}
-                message={
+                message={t('%(rows)d rows returned', { rows: rowsCount })}
+                description={
                   isAdmin
                     ? displayMaxRowsReachedMessage.withAdmin
                     : displayMaxRowsReachedMessage.withoutAdmin
@@ -512,14 +479,14 @@ const ResultSet = ({
             >
               <Label
                 css={css`
-                  line-height: ${theme.fontSizeLG}px;
+                  line-height: ${theme.typography.sizes.l}px;
                 `}
               >
                 {limitMessage && (
                   <Icons.ExclamationCircleOutlined
                     css={css`
-                      font-size: ${theme.fontSize}px;
-                      margin-right: ${theme.sizeUnit}px;
+                      font-size: ${theme.typography.sizes.m}px;
+                      margin-right: ${theme.gridUnit}px;
                     `}
                   />
                 )}
@@ -573,24 +540,18 @@ const ResultSet = ({
   }
 
   if (query.state === QueryState.Failed) {
-    const errors = [...(query.extra?.errors || []), ...(query.errors || [])];
-
     return (
       <ResultlessStyles>
-        {errors.map((error, index) => (
-          <ErrorMessageWithStackTrace
-            key={index}
-            title={t('Database error')}
-            error={error}
-            subtitle={<MonospaceDiv>{error.message}</MonospaceDiv>}
-            copyText={error.message || undefined}
-            link={query.link}
-            source="sqllab"
-          />
-        ))}
-        {errors.some(
-          error => error?.error_type === ErrorTypeEnum.FRONTEND_TIMEOUT_ERROR,
-        ) ? (
+        <ErrorMessageWithStackTrace
+          title={t('Database error')}
+          error={query?.extra?.errors?.[0] || query?.errors?.[0]}
+          subtitle={<MonospaceDiv>{query.errorMessage}</MonospaceDiv>}
+          copyText={query.errorMessage || undefined}
+          link={query.link}
+          source="sqllab"
+        />
+        {(query?.extra?.errors?.[0] || query?.errors?.[0])?.error_type ===
+        ErrorTypeEnum.FRONTEND_TIMEOUT_ERROR ? (
           <Button
             className="sql-result-track-job"
             buttonSize="small"
@@ -626,7 +587,7 @@ const ResultSet = ({
               <ButtonGroup>
                 <Button
                   buttonSize="small"
-                  css={{ marginRight: theme.sizeUnit }}
+                  css={{ marginRight: theme.gridUnit }}
                   onClick={() => popSelectStar(tempSchema, tempTable)}
                 >
                   {t('Query in a new tab')}
@@ -680,7 +641,6 @@ const ResultSet = ({
                 css={css`
                   display: flex;
                   justify-content: space-between;
-                  align-items: center;
                   gap: ${GAP}px;
                 `}
               >

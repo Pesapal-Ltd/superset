@@ -17,8 +17,8 @@
  * under the License.
  */
 import { styled } from '@superset-ui/core';
-import { FormItem } from '@superset-ui/core/components';
 import { PluginFilterStylesProps } from './types';
+import FormItem from '../../components/Form/FormItem';
 
 export const RESPONSIVE_WIDTH = 0;
 
@@ -34,13 +34,7 @@ export const StyledFormItem = styled(FormItem)`
 `;
 
 export const StatusMessage = styled.div<{
-  status?: 'error' | 'warning' | 'info' | 'help';
-  centerText?: boolean;
+  status?: 'error' | 'warning' | 'info';
 }>`
-  color: ${({ theme, status = 'error' }) =>
-    status === 'help'
-      ? theme.colors.grayscale.light1
-      : theme.colors[status]?.base};
-  text-align: ${({ centerText }) => (centerText ? 'center' : 'left')};
-  width: 100%;
+  color: ${({ theme, status = 'error' }) => theme.colors[status]?.base};
 `;

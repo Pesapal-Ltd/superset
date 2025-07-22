@@ -30,10 +30,8 @@ import {
 import { availableDomains } from 'src/utils/hostNamesConfig';
 import { safeStringify } from 'src/utils/safeStringify';
 import { optionLabel } from 'src/utils/common';
-import { ensureAppRoot } from 'src/utils/pathUtils';
 import { URL_PARAMS } from 'src/constants';
 import {
-  DISABLE_INPUT_OPERATORS,
   MULTI_OPERATORS,
   OPERATOR_ENUM_TO_OPERATOR_TYPE,
   UNSAVED_CHART_ID,
@@ -70,7 +68,7 @@ export function getAnnotationJsonUrl(slice_id, force) {
 
   const uri = URI(window.location.search);
   return uri
-    .pathname(ensureAppRoot('/api/v1/chart/data'))
+    .pathname('/api/v1/chart/data')
     .search({
       form_data: safeStringify({ slice_id }),
       force,
@@ -85,9 +83,9 @@ export function getURIDirectory(endpointType = 'base') {
       endpointType,
     )
   ) {
-    return ensureAppRoot('/superset/explore_json/');
+    return '/superset/explore_json/';
   }
-  return ensureAppRoot('/explore/');
+  return '/explore/';
 }
 
 export function mountExploreUrl(endpointType, extraSearch = {}, force = false) {
@@ -114,7 +112,7 @@ export function getChartDataUri({ path, qs, allowDomainSharding = false }) {
     protocol: window.location.protocol.slice(0, -1),
     hostname: getHostName(allowDomainSharding),
     port: window.location.port ? window.location.port : '',
-    path: ensureAppRoot(path),
+    path,
   });
   if (qs) {
     uri = uri.search(qs);
@@ -144,10 +142,7 @@ export function getExploreUrl({
   // eslint-disable-next-line no-param-reassign
   delete formData.label_colors;
 
-  let uri = getChartDataUri({
-    path: '/',
-    allowDomainSharding,
-  });
+  let uri = getChartDataUri({ path: '/', allowDomainSharding });
   if (curUrl) {
     uri = URI(URI(curUrl).search());
   }
@@ -261,7 +256,7 @@ export const exportChart = ({
     });
     payload = formData;
   } else {
-    url = ensureAppRoot('/api/v1/chart/data');
+    url = '/api/v1/chart/data';
     payload = buildV1ChartDataPayload({
       formData,
       force,
@@ -305,15 +300,9 @@ export const getSimpleSQLExpression = (subject, operator, comparator) => {
     [...MULTI_OPERATORS]
       .map(op => OPERATOR_ENUM_TO_OPERATOR_TYPE[op].operation)
       .indexOf(operator) >= 0;
-  const showComparator =
-    DISABLE_INPUT_OPERATORS.map(
-      op => OPERATOR_ENUM_TO_OPERATOR_TYPE[op].operation,
-    ).indexOf(operator) === -1;
   // If returned value is an object after changing dataset
   let expression =
-    typeof subject === 'object'
-      ? (subject?.column_name ?? '')
-      : (subject ?? '');
+    typeof subject === 'object' ? subject?.column_name ?? '' : subject ?? '';
   if (subject && operator) {
     expression += ` ${operator}`;
     const firstValue =
@@ -323,13 +312,13 @@ export const getSimpleSQLExpression = (subject, operator, comparator) => {
       firstValue !== undefined && Number.isNaN(Number(firstValue));
     const quote = isString ? "'" : '';
     const [prefix, suffix] = isMulti ? ['(', ')'] : ['', ''];
-    if (comparatorArray.length > 0 && showComparator) {
-      const formattedComparators = comparatorArray
-        .map(val => optionLabel(val))
-        .map(
-          val =>
-            `${quote}${isString ? String(val).replace(/'/g, "''") : val}${quote}`,
-        );
+    const formattedComparators = comparatorArray
+      .map(val => optionLabel(val))
+      .map(
+        val =>
+          `${quote}${isString ? String(val).replace(/'/g, "''") : val}${quote}`,
+      );
+    if (comparatorArray.length > 0) {
       expression += ` ${prefix}${formattedComparators.join(', ')}${suffix}`;
     }
   }

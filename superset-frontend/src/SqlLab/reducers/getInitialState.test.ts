@@ -167,10 +167,9 @@ describe('getInitialState', () => {
               table: 'table1',
               tab_state_id: 1,
               description: {
-                name: 'table1',
                 columns: [
-                  { name: 'id', type: 'INT', longType: 'INT()' },
-                  { name: 'column2', type: 'STRING', longType: 'STRING()' },
+                  { name: 'id', type: 'INT' },
+                  { name: 'column2', type: 'STRING' },
                 ],
               },
             },
@@ -179,10 +178,9 @@ describe('getInitialState', () => {
               table: 'table2',
               tab_state_id: 1,
               description: {
-                name: 'table2',
                 columns: [
-                  { name: 'id', type: 'INT', longType: 'INT()' },
-                  { name: 'column2', type: 'STRING', longType: 'STRING()' },
+                  { name: 'id', type: 'INT' },
+                  { name: 'column2', type: 'STRING' },
                 ],
               },
             },

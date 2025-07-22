@@ -28,9 +28,6 @@ import {
 } from '@superset-ui/core';
 import {
   autozoom,
-  deckGLCategoricalColorSchemeTypeSelect,
-  deckGLFixedColor,
-  deckGLLinearColorSchemeSelect,
   filterNulls,
   jsColumns,
   jsDataMutator,
@@ -40,7 +37,6 @@ import {
   spatial,
   viewport,
 } from '../../utilities/Shared_DeckGL';
-import { COLOR_SCHEME_TYPES } from '../../utilities/utils';
 
 const INTENSITY_OPTIONS = Array.from(
   { length: 10 },
@@ -67,7 +63,7 @@ const config: ControlPanelConfig = {
             name: 'intensity',
             config: {
               type: 'SelectControl',
-              label: t('Intensity'),
+              label: t('Intesity'),
               description: t(
                 'Intensity is the value multiplied by the weight to obtain the final weight',
               ),
@@ -103,21 +99,7 @@ const config: ControlPanelConfig = {
       controlSetRows: [
         [mapboxStyle],
         [viewport],
-        [
-          {
-            name: 'color_scheme_type',
-            config: {
-              ...deckGLCategoricalColorSchemeTypeSelect.config,
-              choices: [
-                [COLOR_SCHEME_TYPES.fixed_color, t('Fixed color')],
-                [COLOR_SCHEME_TYPES.linear_palette, t('Linear palette')],
-              ],
-              default: COLOR_SCHEME_TYPES.linear_palette,
-            },
-          },
-        ],
-        [deckGLFixedColor],
-        [deckGLLinearColorSchemeSelect],
+        ['linear_color_scheme'],
         [autozoom],
         [
           {

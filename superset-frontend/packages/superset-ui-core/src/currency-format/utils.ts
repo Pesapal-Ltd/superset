@@ -40,7 +40,7 @@ export const buildCustomFormatters = (
       const actualCurrencyFormat = currencyFormat?.symbol
         ? currencyFormat
         : savedCurrencyFormats[metric];
-      return actualCurrencyFormat?.symbol
+      return actualCurrencyFormat
         ? {
             ...acc,
             [metric]: new CurrencyFormatter({

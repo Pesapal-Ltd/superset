@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { Behavior, getChartMetadataRegistry, VizType } from '@superset-ui/core';
+import sinon, { SinonStub } from 'sinon';
+import { Behavior, FeatureFlag } from '@superset-ui/core';
+import * as core from '@superset-ui/core';
 import { getCrossFiltersConfiguration } from './crossFilters';
 import { DEFAULT_CROSS_FILTER_SCOPING } from '../constants';
 
@@ -54,7 +56,7 @@ const CHARTS = {
     id: 1,
     form_data: {
       datasource: '2__table',
-      viz_type: VizType.Line,
+      viz_type: 'echarts_timeseries_line',
       slice_id: 1,
       color_scheme: 'supersetColors',
     },
@@ -66,7 +68,7 @@ const CHARTS = {
     latestQueryFormData: {},
     sliceFormData: {
       datasource: '2__table',
-      viz_type: VizType.Line,
+      viz_type: 'echarts_timeseries_line',
     },
     queryController: null,
     queriesResponse: [{}],
@@ -77,7 +79,7 @@ const CHARTS = {
     form_data: {
       color_scheme: 'supersetColors',
       datasource: '2__table',
-      viz_type: VizType.Line,
+      viz_type: 'echarts_timeseries_line',
       slice_id: 2,
     },
     chartAlert: null,
@@ -88,7 +90,7 @@ const CHARTS = {
     latestQueryFormData: {},
     sliceFormData: {
       datasource: '2__table',
-      viz_type: VizType.Line,
+      viz_type: 'echarts_timeseries_line',
     },
     queryController: null,
     queriesResponse: [{}],
@@ -126,27 +128,29 @@ const CHART_CONFIG_METADATA = {
   global_chart_configuration: GLOBAL_CHART_CONFIG,
 };
 
-jest.mock('@superset-ui/core', () => ({
-  ...jest.requireActual('@superset-ui/core'),
-  getChartMetadataRegistry: jest.fn(),
-}));
-
-const mockedGetChartMetadataRegistry = getChartMetadataRegistry as jest.Mock;
+let metadataRegistryStub: SinonStub;
 
 beforeEach(() => {
-  mockedGetChartMetadataRegistry.mockImplementation(() => ({
-    // @ts-ignore
-    get: () => ({
-      behaviors: [Behavior.InteractiveChart],
-    }),
-  }));
+  metadataRegistryStub = sinon
+    .stub(core, 'getChartMetadataRegistry')
+    .callsFake(() => ({
+      // @ts-ignore
+      get: () => ({
+        behaviors: [Behavior.InteractiveChart],
+      }),
+    }));
 });
 
 afterEach(() => {
-  mockedGetChartMetadataRegistry.mockRestore();
+  metadataRegistryStub.restore();
 });
 
 test('Generate correct cross filters configuration without initial configuration', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.DashboardCrossFilters]: true,
+  };
+
   // @ts-ignore
   expect(getCrossFiltersConfiguration(DASHBOARD_LAYOUT, {}, CHARTS)).toEqual({
     chartConfiguration: {
@@ -176,6 +180,11 @@ test('Generate correct cross filters configuration without initial configuration
 });
 
 test('Generate correct cross filters configuration with initial configuration', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.DashboardCrossFilters]: true,
+  };
+
   expect(
     getCrossFiltersConfiguration(
       DASHBOARD_LAYOUT,
@@ -212,7 +221,25 @@ test('Generate correct cross filters configuration with initial configuration', 
   });
 });
 
+test('Return undefined if DASHBOARD_CROSS_FILTERS feature flag is disabled', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.DashboardCrossFilters]: false,
+  };
+  expect(
+    getCrossFiltersConfiguration(
+      DASHBOARD_LAYOUT,
+      CHART_CONFIG_METADATA,
+      CHARTS,
+    ),
+  ).toEqual(undefined);
+});
+
 test('Recalculate charts in global filter scope when charts change', () => {
+  // @ts-ignore
+  global.featureFlags = {
+    [FeatureFlag.DashboardCrossFilters]: true,
+  };
   expect(
     getCrossFiltersConfiguration(
       {
@@ -239,7 +266,7 @@ test('Recalculate charts in global filter scope when charts change', () => {
           form_data: {
             slice_id: 3,
             datasource: '3__table',
-            viz_type: VizType.Line,
+            viz_type: 'echarts_timeseries_line',
             color_scheme: 'supersetColors',
           },
           chartAlert: null,
@@ -250,7 +277,7 @@ test('Recalculate charts in global filter scope when charts change', () => {
           latestQueryFormData: {},
           sliceFormData: {
             datasource: '3__table',
-            viz_type: VizType.Line,
+            viz_type: 'echarts_timeseries_line',
           },
           queryController: null,
           queriesResponse: [{}],

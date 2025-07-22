@@ -16,26 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import { act } from 'react-dom/test-utils';
 import {
-  act,
   render,
   screen,
   waitFor,
   fireEvent,
   cleanup,
-  defaultStore as store,
-} from 'spec/helpers/testing-library';
+} from '@testing-library/react';
 import fetchMock from 'fetch-mock';
+import { Provider } from 'react-redux';
 import sinon from 'sinon';
-import { SupersetClient } from '@superset-ui/core';
+import {
+  supersetTheme,
+  ThemeProvider,
+  SupersetClient,
+} from '@superset-ui/core';
+import { defaultStore as store } from 'spec/helpers/testing-library';
+import { DatasourceModal } from 'src/components/Datasource';
+import * as uiCore from '@superset-ui/core';
 import mockDatasource from 'spec/fixtures/mockDatasource';
-import { DatasourceModal } from '.';
 
 // Define your constants here
 const SAVE_ENDPOINT = 'glob:*/api/v1/dataset/7';
 const SAVE_PAYLOAD = { new: 'data' };
-const SAVE_DATASOURCE_ENDPOINT = 'glob:*/api/v1/dataset/7?override_columns=*';
-const GET_DATASOURCE_ENDPOINT = 'glob:*/api/v1/dataset/7';
+const SAVE_DATASOURCE_ENDPOINT = 'glob:*/api/v1/dataset/7';
+const GET_DATASOURCE_ENDPOINT = SAVE_DATASOURCE_ENDPOINT;
 const GET_DATABASE_ENDPOINT = 'glob:*/api/v1/database/?q=*';
 
 const mockedProps = {
@@ -49,15 +55,15 @@ const mockedProps = {
 };
 
 let container;
-const routeProps = {
-  history: {},
-  location: {},
-  match: {},
-};
+let isFeatureEnabledMock;
+
 async function renderAndWait(props = mockedProps) {
   const { container: renderedContainer } = render(
-    <DatasourceModal {...props} {...routeProps} />,
-    { store, useRouter: true },
+    <Provider store={store}>
+      <ThemeProvider theme={supersetTheme}>
+        <DatasourceModal {...props} />
+      </ThemeProvider>
+    </Provider>,
   );
 
   container = renderedContainer;
@@ -66,11 +72,16 @@ async function renderAndWait(props = mockedProps) {
 beforeEach(() => {
   fetchMock.reset();
   cleanup();
+  isFeatureEnabledMock = jest.spyOn(uiCore, 'isFeatureEnabled');
   renderAndWait();
   fetchMock.post(SAVE_ENDPOINT, SAVE_PAYLOAD);
   fetchMock.put(SAVE_DATASOURCE_ENDPOINT, {});
   fetchMock.get(GET_DATASOURCE_ENDPOINT, { result: {} });
   fetchMock.get(GET_DATABASE_ENDPOINT, { result: [] });
+});
+
+afterEach(() => {
+  isFeatureEnabledMock.mockRestore();
 });
 
 describe('DatasourceModal', () => {
@@ -88,6 +99,11 @@ describe('DatasourceModal', () => {
 
   it('renders a DatasourceEditor', async () => {
     expect(screen.getByTestId('datasource-editor')).toBeInTheDocument();
+  });
+
+  it('renders a legacy data source btn', () => {
+    const button = screen.getByTestId('datasource-modal-legacy-edit');
+    expect(button).toBeInTheDocument();
   });
 
   it('disables the save button when the datasource is managed externally', () => {

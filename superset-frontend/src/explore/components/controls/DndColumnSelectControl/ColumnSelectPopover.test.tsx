@@ -17,9 +17,12 @@
  * under the License.
  */
 
-import { render, fireEvent } from 'spec/helpers/testing-library';
+import { render, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+import { Provider } from 'react-redux';
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
+import { supersetTheme, ThemeProvider } from '@superset-ui/core';
 import ColumnSelectPopover, {
   ColumnSelectPopoverProps,
 } from 'src/explore/components/controls/DndColumnSelectControl/ColumnSelectPopover';
@@ -36,16 +39,19 @@ const renderPopover = (
   const store = mockStore({ explore: { datasource: { type: 'table' } } });
 
   return render(
-    <ColumnSelectPopover
-      hasCustomLabel
-      isTemporal
-      label="Custom Label"
-      onClose={jest.fn()}
-      setDatasetModal={jest.fn()}
-      setLabel={jest.fn()}
-      {...props}
-    />,
-    { store },
+    <Provider store={store}>
+      <ThemeProvider theme={supersetTheme}>
+        <ColumnSelectPopover
+          hasCustomLabel
+          isTemporal
+          label="Custom Label"
+          onClose={jest.fn()}
+          setDatasetModal={jest.fn()}
+          setLabel={jest.fn()}
+          {...props}
+        />
+      </ThemeProvider>
+    </Provider>,
   );
 };
 

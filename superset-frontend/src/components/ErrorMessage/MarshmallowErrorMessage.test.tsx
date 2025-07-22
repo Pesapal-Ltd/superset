@@ -17,9 +17,15 @@
  * under the License.
  */
 
-import { render, screen, fireEvent } from 'spec/helpers/testing-library';
-import { ErrorLevel, ErrorTypeEnum } from '@superset-ui/core';
-import { MarshmallowErrorMessage } from './MarshmallowErrorMessage';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+import {
+  ErrorLevel,
+  ErrorTypeEnum,
+  ThemeProvider,
+  supersetTheme,
+} from '@superset-ui/core';
+import MarshmallowErrorMessage from './MarshmallowErrorMessage';
 
 describe('MarshmallowErrorMessage', () => {
   const mockError = {
@@ -44,25 +50,39 @@ describe('MarshmallowErrorMessage', () => {
   };
 
   test('renders without crashing', () => {
-    render(<MarshmallowErrorMessage error={mockError} />);
+    render(
+      <ThemeProvider theme={supersetTheme}>
+        <MarshmallowErrorMessage error={mockError} />
+      </ThemeProvider>,
+    );
     expect(screen.getByText('Validation failed')).toBeInTheDocument();
   });
 
   test('renders the provided subtitle', () => {
     render(
-      <MarshmallowErrorMessage error={mockError} subtitle="Error Alert" />,
+      <ThemeProvider theme={supersetTheme}>
+        <MarshmallowErrorMessage error={mockError} subtitle="Error Alert" />
+      </ThemeProvider>,
     );
     expect(screen.getByText('Error Alert')).toBeInTheDocument();
   });
 
   test('renders extracted invalid values', () => {
-    render(<MarshmallowErrorMessage error={mockError} />);
+    render(
+      <ThemeProvider theme={supersetTheme}>
+        <MarshmallowErrorMessage error={mockError} />
+      </ThemeProvider>,
+    );
     expect(screen.getByText("can't be blank:")).toBeInTheDocument();
     expect(screen.getByText('is too low: 10')).toBeInTheDocument();
   });
 
   test('renders the JSONTree when details are expanded', () => {
-    render(<MarshmallowErrorMessage error={mockError} />);
+    render(
+      <ThemeProvider theme={supersetTheme}>
+        <MarshmallowErrorMessage error={mockError} />
+      </ThemeProvider>,
+    );
     fireEvent.click(screen.getByText('Details'));
     expect(screen.getByText('"can\'t be blank"')).toBeInTheDocument();
   });

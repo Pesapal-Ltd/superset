@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { render, screen, userEvent } from 'spec/helpers/testing-library';
+import { render, screen } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import TableControls from './DrillDetailTableControls';
 
 const setFilters = jest.fn();
@@ -101,6 +102,7 @@ test('should remove the filters on close', () => {
   expect(screen.getByText('platform')).toBeInTheDocument();
   expect(screen.getByText('GB')).toBeInTheDocument();
 
-  userEvent.click(screen.getByLabelText('Close'));
+  userEvent.click(screen.getByRole('img', { name: 'close' }));
+
   expect(setFilters).toHaveBeenCalledWith([]);
 });

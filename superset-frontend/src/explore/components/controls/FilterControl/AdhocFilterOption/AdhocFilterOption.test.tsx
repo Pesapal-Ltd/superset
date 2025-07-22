@@ -16,12 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import {
-  render,
-  screen,
-  userEvent,
-  waitFor,
-} from 'spec/helpers/testing-library';
+import { render, screen, waitFor } from 'spec/helpers/testing-library';
+import userEvent from '@testing-library/user-event';
 import AdhocFilter from 'src/explore/components/controls/FilterControl/AdhocFilter';
 import AdhocFilterOption, { AdhocFilterOptionProps } from '.';
 import { Clauses, ExpressionTypes } from '../types';
@@ -79,14 +75,14 @@ test('should render the remove button', async () => {
 
 test('should render the right caret', async () => {
   render(setup(mockedProps), { useDnd: true, useRedux: true });
-  expect(await screen.findByRole('img', { name: 'right' })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('img', { name: 'caret-right' }),
+  ).toBeInTheDocument();
 });
 
 test('should render the Popover on clicking the right caret', async () => {
   render(setup(mockedProps), { useDnd: true, useRedux: true });
-  const rightCaret = await screen.findByRole('img', {
-    name: 'right',
-  });
+  const rightCaret = await screen.findByRole('img', { name: 'caret-right' });
   userEvent.click(rightCaret);
   expect(screen.getByRole('tooltip')).toBeInTheDocument();
 });

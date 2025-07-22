@@ -88,11 +88,13 @@ describe('createNewOnOpen', () => {
 
   test('shows correct alert message for unsaved filters', async () => {
     const onCancel = jest.fn();
-    const { getByRole, getByTestId } = setup({
+    const { getByRole, getByTestId, findByRole } = setup({
       onCancel,
       createNewOnOpen: false,
     });
-    fireEvent.click(getByTestId('add-new-filter-button'));
+    fireEvent.mouseOver(getByTestId('new-dropdown-icon'));
+    const addFilterButton = await findByRole('menuitem', { name: 'Filter' });
+    fireEvent.click(addFilterButton);
     fireEvent.click(getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledTimes(0);
     expect(getByRole('alert')).toBeInTheDocument();

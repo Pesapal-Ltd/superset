@@ -25,21 +25,18 @@ import { useListViewResource } from 'src/views/CRUD/hooks';
 import { createErrorHandler, createFetchRelated } from 'src/views/CRUD/utils';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import SubMenu, { SubMenuProps } from 'src/features/home/SubMenu';
-import { DeleteModal, ConfirmStatusChange } from '@superset-ui/core/components';
-import {
-  ModifiedInfo,
-  ListView,
-  ListViewActionsBar,
-  ListViewFilterOperator as FilterOperator,
-  type ListViewProps,
-  type ListViewActionProps,
-  type ListViewFilters,
-} from 'src/components';
-
+import DeleteModal from 'src/components/DeleteModal';
+import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
+import ActionsBar, { ActionProps } from 'src/components/ListView/ActionsBar';
+import ListView, {
+  ListViewProps,
+  Filters,
+  FilterOperator,
+} from 'src/components/ListView';
 import CssTemplateModal from 'src/features/cssTemplates/CssTemplateModal';
 import { TemplateObject } from 'src/features/cssTemplates/types';
+import { ModifiedInfo } from 'src/components/AuditInfo';
 import { QueryObjectColumns } from 'src/views/CRUD/types';
-import { Icons } from '@superset-ui/core/components/Icons';
 
 const PAGE_SIZE = 25;
 
@@ -132,7 +129,6 @@ function CssTemplatesList({
       {
         accessor: 'template_name',
         Header: t('Name'),
-        id: 'template_name',
       },
       {
         Cell: ({
@@ -147,7 +143,6 @@ function CssTemplatesList({
         accessor: 'changed_on_delta_humanized',
         size: 'xl',
         disableSortBy: true,
-        id: 'changed_on_delta_humanized',
       },
       {
         Cell: ({ row: { original } }: any) => {
@@ -160,7 +155,7 @@ function CssTemplatesList({
                   label: 'edit-action',
                   tooltip: t('Edit template'),
                   placement: 'bottom',
-                  icon: 'EditOutlined',
+                  icon: 'Edit',
                   onClick: handleEdit,
                 }
               : null,
@@ -169,15 +164,13 @@ function CssTemplatesList({
                   label: 'delete-action',
                   tooltip: t('Delete template'),
                   placement: 'bottom',
-                  icon: 'DeleteOutlined',
+                  icon: 'Trash',
                   onClick: handleDelete,
                 }
               : null,
           ].filter(item => !!item);
 
-          return (
-            <ListViewActionsBar actions={actions as ListViewActionProps[]} />
-          );
+          return <ActionsBar actions={actions as ActionProps[]} />;
         },
         Header: t('Actions'),
         id: 'actions',
@@ -188,7 +181,6 @@ function CssTemplatesList({
       {
         accessor: QueryObjectColumns.ChangedBy,
         hidden: true,
-        id: QueryObjectColumns.ChangedBy,
       },
     ],
     [canDelete, canCreate],
@@ -202,9 +194,12 @@ function CssTemplatesList({
 
   if (canCreate) {
     subMenuButtons.push({
-      name: <>{t('CSS template')}</>,
+      name: (
+        <>
+          <i className="fa fa-plus" /> {t('CSS template')}
+        </>
+      ),
       buttonStyle: 'primary',
-      icon: <Icons.PlusOutlined iconSize="m" />,
       onClick: () => {
         setCurrentCssTemplate(null);
         setCssTemplateModalOpen(true);
@@ -222,7 +217,7 @@ function CssTemplatesList({
 
   menuData.buttons = subMenuButtons;
 
-  const filters: ListViewFilters = useMemo(
+  const filters: Filters = useMemo(
     () => [
       {
         Header: t('Name'),

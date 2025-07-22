@@ -18,7 +18,7 @@
  */
 
 import memoizeOne from 'memoize-one';
-import { SuperChart, VizType } from '@superset-ui/core';
+import { SuperChart } from '@superset-ui/core';
 import TableChartPlugin, {
   TableChartProps,
 } from '@superset-ui/plugin-chart-table';
@@ -75,7 +75,7 @@ export default {
   },
 };
 
-new TableChartPlugin().configure({ key: VizType.Table }).register();
+new TableChartPlugin().configure({ key: 'table' }).register();
 
 function expandArray<T>(input: T[], targetSize: number) {
   if (!input || input.length === 0) {
@@ -96,7 +96,7 @@ const expandColumns = memoizeOne(expandArray);
 /**
  * Load sample data for testing
  * @param props the original props passed to SuperChart
- * @param pageLength number of records per page
+ * @param pageLength number of records perpage
  * @param rows the target number of records
  * @param cols the target number of columns
  */
@@ -136,9 +136,9 @@ function loadData(
   };
 }
 
-export const Basic = ({ width, height }: { width: number; height: number }) => (
+export const Basic = ({ width, height }) => (
   <SuperChart
-    chartType={VizType.Table}
+    chartType="table"
     datasource={{
       columnFormats: {},
     }}
@@ -186,7 +186,7 @@ export const BigTable = (
   });
   return (
     <SuperChart
-      chartType={VizType.Table}
+      chartType="table"
       {...chartProps}
       width={width}
       height={height}

@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+// TODO: requires redux-localstorage > 1.0 for typescript support
 import persistState from 'redux-localstorage';
 import { pickBy } from 'lodash';
 import { isFeatureEnabled, FeatureFlag } from '@superset-ui/core';
@@ -128,8 +129,6 @@ const sqlLabPersistStateConfig = {
   },
 };
 
-// TODO: requires redux-localstorage > 1.0 for typescript support
-/** @type {any} */
 export const persistSqlLabStateEnhancer = persistState(
   sqlLabPersistStateConfig.paths,
   sqlLabPersistStateConfig.config,

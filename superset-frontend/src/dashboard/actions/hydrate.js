@@ -17,6 +17,7 @@
  * under the License.
  */
 /* eslint-disable camelcase */
+import { FeatureFlag, isFeatureEnabled } from '@superset-ui/core';
 import { chart } from 'src/components/Chart/chartReducer';
 import { initSliceEntities } from 'src/dashboard/reducers/sliceEntities';
 import { getInitialState as getInitialNativeFilterState } from 'src/dashboard/reducers/nativeFilters';
@@ -229,14 +230,16 @@ export const hydrateDashboard =
       filterConfig: metadata?.native_filter_configuration || [],
     });
 
-    const { chartConfiguration, globalChartConfiguration } =
-      getCrossFiltersConfiguration(
-        dashboardLayout.present,
-        metadata,
-        chartQueries,
-      );
-    metadata.chart_configuration = chartConfiguration;
-    metadata.global_chart_configuration = globalChartConfiguration;
+    if (isFeatureEnabled(FeatureFlag.DashboardCrossFilters)) {
+      const { chartConfiguration, globalChartConfiguration } =
+        getCrossFiltersConfiguration(
+          dashboardLayout.present,
+          metadata,
+          chartQueries,
+        );
+      metadata.chart_configuration = chartConfiguration;
+      metadata.global_chart_configuration = globalChartConfiguration;
+    }
 
     const { roles } = user;
     const canEdit = canUserEditDashboard(dashboard, user);
@@ -278,7 +281,9 @@ export const hydrateDashboard =
             conf: common?.conf,
           },
           filterBarOrientation:
-            metadata.filter_bar_orientation || FilterBarOrientation.Vertical,
+            (isFeatureEnabled(FeatureFlag.HorizontalFilterBar) &&
+              metadata.filter_bar_orientation) ||
+            FilterBarOrientation.Vertical,
           crossFiltersEnabled,
         },
         dataMask,
@@ -307,8 +312,7 @@ export const hydrateDashboard =
           isRefreshing: false,
           isFiltersRefreshing: false,
           activeTabs: activeTabs || dashboardState?.activeTabs || [],
-          datasetsStatus:
-            dashboardState?.datasetsStatus || ResourceStatus.Loading,
+          datasetsStatus: ResourceStatus.Loading,
         },
         dashboardLayout,
       },

@@ -33,11 +33,7 @@ import {
   viewport,
   spatial,
   mapboxStyle,
-  deckGLFixedColor,
-  deckGLCategoricalColorSchemeSelect,
-  deckGLCategoricalColorSchemeTypeSelect,
 } from '../../utilities/Shared_DeckGL';
-import { COLOR_SCHEME_TYPES } from '../../utilities/utils';
 
 const config: ControlPanelConfig = {
   controlPanelSections: [
@@ -59,28 +55,7 @@ const config: ControlPanelConfig = {
     {
       label: t('Grid'),
       expanded: true,
-      controlSetRows: [
-        [gridSize],
-        [
-          {
-            name: 'color_scheme_type',
-            config: {
-              ...deckGLCategoricalColorSchemeTypeSelect.config,
-              choices: [
-                ['default', 'Default'],
-                [COLOR_SCHEME_TYPES.fixed_color, t('Fixed color')],
-                [
-                  COLOR_SCHEME_TYPES.categorical_palette,
-                  t('Categorical palette'),
-                ],
-              ],
-              default: 'default',
-            },
-          },
-        ],
-        [deckGLFixedColor],
-        [deckGLCategoricalColorSchemeSelect],
-      ],
+      controlSetRows: [[gridSize, 'color_picker']],
     },
     {
       label: t('Advanced'),
