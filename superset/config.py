@@ -582,17 +582,17 @@ class CustomAppInitializer(SupersetAppInitializer):
 
             print(f"New roles to be created: {roles_to_create}")
             
-            public_role = sm.find_role("Public")
-            if not public_role:
-                print("Could not find 'Public' role. Cannot use it as a template.")
+            gamma_role = sm.find_role('Gamma')
+            if not gamma_role:
+                print("Could not find 'Gamma' role. Cannot use it as a template.")
                 return
             
-            public_permissions = public_role.permissions
+            gamma_permissions = gamma_role.permissions
             
             try:
                 for role_name in roles_to_create:
                     logger.info(f"Creating role: '{role_name}'")
-                    sm.add_role(name=role_name, permissions=public_permissions)
+                    sm.add_role(name=role_name, permissions=gamma_permissions)
                 db.session.commit() # We need to explicitly commit the session
                 logger.info("Successfully committed new roles to the database.")
             except Exception as e:
@@ -612,7 +612,7 @@ def get_dynamic_role_mapping():
     special_mapping = {
         "DataEngineer": ["Admin"], "DataEngineerTech": ["Admin"], "DeputyCTO": ["Admin"],
         "TechExec": ["Admin"], "CTO": ["Admin"], "COO": ["Admin"], "CEO": ["Admin"],
-        "JuniorDev": ["Admin"], "superset_admins": ["Admin"]
+        "JuniorDev": ["Admin"], "superset_admins": ["Admin"], "SalesAnalyst": ["Admin"]
     }
     
     # Fetch all roles from SSO
@@ -632,10 +632,10 @@ AUTH_ROLES_MAPPING = get_dynamic_role_mapping()
 # ---------------------------------------------------
 
 # Will allow user self registration
-AUTH_USER_REGISTRATION = False
+AUTH_USER_REGISTRATION = True
 
 # The default user self registration role
-AUTH_USER_REGISTRATION_ROLE = "Public"
+AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
 AUTH_ROLES_SYNC_AT_LOGIN = True
 #message
