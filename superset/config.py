@@ -329,7 +329,7 @@ APP_ICON = "/static/assets/images/Pesapal_Logo.png"
 LOGO_TARGET_PATH = None
 
 # Specify tooltip that should appear when hovering over the App Icon/Logo
-LOGO_TOOLTIP = ""
+LOGO_TOOLTIP = "Best Fintech In The World"
 
 # Specify any text that should appear to the right of the logo
 LOGO_RIGHT_TEXT: Callable[[], str] | str = ""
