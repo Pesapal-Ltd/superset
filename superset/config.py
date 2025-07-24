@@ -65,6 +65,7 @@ from superset.utils.core import NO_TIME_RANGE, parse_boolean_string, QuerySource
 from superset.utils.encrypt import SQLAlchemyUtilsAdapter
 from superset.utils.log import DBEventLogger
 from superset.utils.logging_configurator import DefaultLoggingConfigurator
+from tests.integration_tests.superset_test_config_thumbnails import REDIS_HOST
 
 logger = logging.getLogger(__name__)
 
@@ -306,7 +307,9 @@ AUTH_RATE_LIMITED = True
 AUTH_RATE_LIMIT = "5 per second"
 # A storage location conforming to the scheme in storage-scheme. See the limits
 # library for allowed values: https://limits.readthedocs.io/en/stable/storage.html
-# RATELIMIT_STORAGE_URI = "redis://host:port"
+REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
+RATELIMIT_STORAGE_URI = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 # A callable that returns the unique identity of the current request.
 # RATELIMIT_REQUEST_IDENTIFIER = flask.Request.endpoint
 
@@ -317,7 +320,7 @@ AUTH_RATE_LIMIT = "5 per second"
 
 # SUPERSET_WEBSERVER_URL = "https://dw.pesapalhosting.com:9004"
 # SUPERSET_WEBSERVER_BASEURL = "https://dw.pesapalhosting.com:9004"
-APP_NAME = "PESAPAL DATA"
+APP_NAME = "PESAPAL BI"
 
 # Specify the App icon
 APP_ICON = "/static/assets/images/Pesapal_Logo.png"
@@ -1530,13 +1533,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = "localhost"
-SMTP_STARTTLS = True
+SMTP_HOST = "emailout.pesapal.com"
+SMTP_STARTTLS = False
 SMTP_SSL = False
 SMTP_USER = "superset"
-SMTP_PORT = 25
-SMTP_PASSWORD = "superset"  # noqa: S105
-SMTP_MAIL_FROM = "superset@superset.com"
+SMTP_PORT = 2527
+SMTP_PASSWORD = "8Q94cXq60kyS5mOXRnzH"  # noqa: S105
+SMTP_MAIL_FROM = "superset@pesapal.com"
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
