@@ -65,7 +65,7 @@ from superset.utils.core import NO_TIME_RANGE, parse_boolean_string, QuerySource
 from superset.utils.encrypt import SQLAlchemyUtilsAdapter
 from superset.utils.log import DBEventLogger
 from superset.utils.logging_configurator import DefaultLoggingConfigurator
-from tests.integration_tests.superset_test_config_thumbnails import REDIS_HOST
+# from tests.integration_tests.superset_test_config_thumbnails import REDIS_HOST
 
 logger = logging.getLogger(__name__)
 
@@ -307,8 +307,13 @@ AUTH_RATE_LIMITED = True
 AUTH_RATE_LIMIT = "5 per second"
 # A storage location conforming to the scheme in storage-scheme. See the limits
 # library for allowed values: https://limits.readthedocs.io/en/stable/storage.html
+
 REDIS_HOST = os.environ.get("REDIS_HOST")
-REDIS_PORT = os.environ.get("REDIS_PORT")
+REDIS_PORT = os.environ.get("REDIS_PORT", '6379')
+REDIS_CELERY_DB = os.environ.get("REDIS_CELERY_DB", 2)
+REDIS_RESULTS_DB = os.environ.get("REDIS_RESULTS_DB", 3)
+REDIS_CACHE_DB = os.environ.get("REDIS_CACHE_DB", 4)
+
 RATELIMIT_STORAGE_URI = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 # A callable that returns the unique identity of the current request.
 # RATELIMIT_REQUEST_IDENTIFIER = flask.Request.endpoint
@@ -1037,7 +1042,7 @@ THUMBNAIL_ERROR_CACHE_TTL = int(timedelta(days=1).total_seconds())
 SCREENSHOT_LOCATE_WAIT = int(timedelta(seconds=10).total_seconds())
 # Time before selenium times out after waiting for all DOM class elements named
 # "loading" are gone.
-SCREENSHOT_LOAD_WAIT = int(timedelta(minutes=1).total_seconds())
+SCREENSHOT_LOAD_WAIT = int(timedelta(minutes=2).total_seconds())
 # Selenium destroy retries
 SCREENSHOT_SELENIUM_RETRIES = 5
 # Give selenium an headstart, in seconds
@@ -1074,10 +1079,19 @@ UPLOAD_CHUNK_SIZE = 4096
 CACHE_DEFAULT_TIMEOUT = int(timedelta(days=1).total_seconds())
 
 # Default cache for Superset objects
-CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "NullCache"}
+CACHE_CONFIG: CacheConfig = {
+    "CACHE_TYPE": "RedisCache",
+    "CACHE_DEFAULT_TIMEOUT": int(timedelta(minutes=1).total_seconds()),
+    "CACHE_KEY_PREFIX": "superset_cache",
+    "CACHE_REDIS_URL": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CACHE_DB}"
+}
 
 # Cache for datasource metadata and query results
-DATA_CACHE_CONFIG: CacheConfig = {"CACHE_TYPE": "NullCache"}
+DATA_CACHE_CONFIG: CacheConfig = {
+    **CACHE_CONFIG,
+    "CACHE_DEFAULT_TIMEOUT": int(timedelta(seconds=30).total_seconds()),
+    "CACHE_KEY_PREFIX": "superset_data_cache",
+}
 
 # Cache for dashboard filter state. `CACHE_TYPE` defaults to `SupersetMetastoreCache`
 # that stores the values in the key-value table in the Superset metastore, as it's
@@ -1309,7 +1323,8 @@ CELERY_BEAT_SCHEDULER_EXPIRES = timedelta(weeks=1)
 
 
 class CeleryConfig:  # pylint: disable=too-few-public-methods
-    broker_url = "sqla+sqlite:///celerydb.sqlite"
+    # broker_url = "sqla+sqlite:///celerydb.sqlite"
+    broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
     imports = (
         "superset.sql_lab",
         "superset.tasks.scheduler",
@@ -1317,7 +1332,8 @@ class CeleryConfig:  # pylint: disable=too-few-public-methods
         "superset.tasks.cache",
         "superset.tasks.slack",
     )
-    result_backend = "db+sqlite:///celery_results.sqlite"
+    # result_backend = "db+sqlite:///celery_results.sqlite"
+    result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
     worker_prefetch_multiplier = 1
     task_acks_late = False
     task_annotations = {
@@ -1335,6 +1351,8 @@ class CeleryConfig:  # pylint: disable=too-few-public-methods
             "task": "reports.prune_log",
             "schedule": crontab(minute=0, hour=0),
         },
+
+
         # Uncomment to enable pruning of the query table
         # "prune_query": {
         #     "task": "prune_query",
@@ -1826,7 +1844,16 @@ WEBDRIVER_CONFIGURATION = {
 
 # Additional args to be passed as arguments to the config object
 # Note: If using Chrome, you'll want to add the "--marionette" arg.
-WEBDRIVER_OPTION_ARGS = ["--headless"]
+WEBDRIVER_OPTION_ARGS = [
+    "--force-device-scale-factor=2.0",
+    "--high-dpi-support=2.0",
+    "--headless",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-extensions",
+]
 
 # The base URL to query for accessing the user interface
 WEBDRIVER_BASEURL = "http://0.0.0.0:8080/"
