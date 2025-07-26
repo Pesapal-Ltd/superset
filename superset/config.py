@@ -1856,7 +1856,7 @@ WEBDRIVER_OPTION_ARGS = [
 ]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "http://superset-webserver:8088/"
+WEBDRIVER_BASEURL = "http://superset:8088/"
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapalhosting.com:9004"
 # Time selenium will wait for the page to load and render for the email report.
