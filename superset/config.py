@@ -1822,7 +1822,7 @@ SLACK_CACHE_TIMEOUT = int(timedelta(days=1).total_seconds())
 # chrome:
 #   Requires: headless chrome
 #   Limitations: unable to generate screenshots of elements
-WEBDRIVER_TYPE = "chrome"
+WEBDRIVER_TYPE = "firefox"
 
 # Window size - this will impact the rendering of the data
 WEBDRIVER_WINDOW = {
@@ -1845,14 +1845,7 @@ WEBDRIVER_CONFIGURATION = {
 # Additional args to be passed as arguments to the config object
 # Note: If using Chrome, you'll want to add the "--marionette" arg.
 WEBDRIVER_OPTION_ARGS = [
-    "--force-device-scale-factor=2.0",
-    "--high-dpi-support=2.0",
-    "--headless",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-extensions",
+    "--headless"
 ]
 
 # The base URL to query for accessing the user interface
