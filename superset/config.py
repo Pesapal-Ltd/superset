@@ -325,7 +325,7 @@ RATELIMIT_STORAGE_URI = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 # SUPERSET_WEBSERVER_URL = "https://dw.pesapalhosting.com:9004"
 # SUPERSET_WEBSERVER_BASEURL = "https://dw.pesapalhosting.com:9004"
-APP_NAME = "PESAPAL BI"
+APP_NAME = "PESAPAL Engineering"
 
 # Specify the App icon
 APP_ICON = "/static/assets/images/Pesapal_Logo.png"
