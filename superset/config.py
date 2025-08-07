@@ -291,7 +291,7 @@ SHOW_STACKTRACE = False
 
 # Use all X-Forwarded headers when ENABLE_PROXY_FIX is True.
 # When proxying to a different port, set "x_port" to 0 to avoid downstream issues.
-ENABLE_PROXY_FIX = False
+ENABLE_PROXY_FIX = True
 PROXY_FIX_CONFIG = {"x_for": 1, "x_proto": 1, "x_host": 1, "x_port": 1, "x_prefix": 1}
 
 # Configuration for scheduling queries from SQL Lab.
@@ -1849,7 +1849,8 @@ WEBDRIVER_OPTION_ARGS = [
 ]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "http://superset:8088"
+WEBDRIVER_BASEURL = "https://dw.pesapalhosting.com:9004"
+
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapalhosting.com:9004"
 # Time selenium will wait for the page to load and render for the email report.
