@@ -259,5 +259,34 @@ USER superset
 FROM lean AS ci
 USER root
 RUN uv pip install .[postgres]
+
+
+
+# Install Firefox, GeckoDriver, and Selenium for Superset alerts and reports
+
+USER root
+
+# Install system dependencies for Firefox and download utilities
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        firefox-esr \
+        wget \
+        tar && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install GeckoDriver (the driver for Firefox)
+ENV GECKODRIVER_VERSION=v0.34.0
+RUN wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz && \
+    tar -C /usr/local/bin -xzf /tmp/geckodriver.tar.gz && \
+    chmod +x /usr/local/bin/geckodriver && \
+    rm /tmp/geckodriver.tar.gz
+
+# Install the Selenium Python library using uv
+RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
+    uv pip install selenium==4.15.0
+
+
+
+
 USER superset
 CMD ["/app/docker/entrypoints/docker-ci.sh"]

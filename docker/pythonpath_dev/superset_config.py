@@ -107,6 +107,21 @@ WEBDRIVER_BASEURL="http://superset_app:8088"
 WEBDRIVER_BASEURL_USER_FRIENDLY = (
     f"http://localhost:8888/{os.environ.get('SUPERSET_APP_ROOT', '/')}/"
 )
+
+WEBDRIVER_TYPE = "chrome"
+
+WEBDRIVER_OPTION_ARGS = [
+    "--force-device-scale-factor=2.0",
+    "--high-dpi-support=2.0",
+    "--headless",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-extensions",
+]
+
+
 SQLLAB_CTAS_NO_LIMIT = True
 
 log_level_text = os.getenv("SUPERSET_LOG_LEVEL", "INFO")
