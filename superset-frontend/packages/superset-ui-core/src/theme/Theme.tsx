@@ -43,7 +43,6 @@ import {
 } from '@emotion/react';
 import createCache from '@emotion/cache';
 import { noop } from 'lodash';
-import { isThemeDark } from './utils/themeUtils';
 import { GlobalStyles } from './GlobalStyles';
 
 import {
@@ -53,15 +52,9 @@ import {
   SupersetTheme,
   allowedAntdTokens,
   SharedAntdTokens,
-  DeprecatedThemeColors,
 } from './types';
 
-import {
-  normalizeThemeConfig,
-  serializeThemeConfig,
-  getSystemColors,
-  getDeprecatedColors,
-} from './utils';
+import { normalizeThemeConfig, serializeThemeConfig } from './utils';
 
 /* eslint-disable theme-colors/no-literal-colors */
 
@@ -75,6 +68,10 @@ export class Theme {
     brandLogoMargin: '18px',
     brandLogoHref: '/',
     brandLogoHeight: '24px',
+
+    // Spinner
+    brandSpinnerUrl: undefined,
+    brandSpinnerSvg: undefined,
 
     // Default colors
     colorPrimary: '#2893B3', // NOTE: previous lighter primary color was #20a7c9
@@ -166,14 +163,7 @@ export class Theme {
       ...Theme.defaultTokens,
       ...antdConfig.token, // Passing through the extra, superset-specific tokens
       ...tokens,
-      colors: {} as DeprecatedThemeColors, // Placeholder that will be filled in the second phase
     };
-
-    // Second phase: Now that theme is initialized, we can determine if it's dark
-    // and generate the legacy colors correctly
-    const systemColors = getSystemColors(tokens);
-    const isDark = isThemeDark(this.theme); // Use utility function with theme
-    this.theme.colors = getDeprecatedColors(systemColors, isDark);
 
     // Update the providers with the fully formed theme
     this.updateProviders(
