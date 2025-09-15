@@ -1551,13 +1551,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = "emailout.pesapal.com"
-SMTP_STARTTLS = False
+SMTP_HOST = "smtp.gmail.com"
+SMTP_STARTTLS = True
 SMTP_SSL = False
-SMTP_USER = "dwsuperset"
-SMTP_PORT = 2527
-SMTP_PASSWORD = "8Q94cXq60kyS5mOXRnzH"  # noqa: S105
-SMTP_MAIL_FROM = "kennedy@pesapal.com"
+SMTP_USER = "kennedy.owino48@gmail.com"
+SMTP_PORT = 587
+SMTP_PASSWORD = "ilgnrdqonukfhmcc"  # noqa: S105
+SMTP_MAIL_FROM = "kennedy.owino48@gmail.com"
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
