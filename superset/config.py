@@ -363,20 +363,20 @@ OAUTH_PROVIDERS = [
         'token_key': 'access_token',
         'icon': 'fa-windows',
         'remote_app': {
-            'client_id': '09beb220-4f0a-4045-ab35-c04e2440a2f8',
-            'client_secret': '7ffd19f9-c389-4968-9b1e-2080f5b50251',
+            'client_id': os.environ.get("CLIENT_ID"),
+            'client_secret': os.environ.get("CLIENT_SECRET"),
             # Replace with your actual client secret
-            'server_metadata_url': 'https://myaccount.pesapal.com/.well-known/openid-configuration',
+            'server_metadata_url': os.environ.get("SERVER_METADATA_URL"),
             'client_kwargs': {
-                'scope': 'openid profile roles',  # Scopes from your configuration
-                'code_challenge_method': 'S256'
+                'scope': os.environ.get("SCOPES"),  # Scopes from your configuration
+                'code_challenge_method': os.environ.get("CODE_CHALLENGE_METHOD"),
             },
-            'access_token_url': 'https://myaccount.pesapal.com/v2/connect/token',
-            'authorize_url': 'https://myaccount.pesapal.com/v2/connect/authorize',
-            'jwks_uri': 'https://myaccount.pesapal.com/.well-known/jwks',
-            'userinfo_endpoint': 'https://myaccount.pesapal.com/v2/connect/userinfo',
-            'access_token_method': 'POST',
-            'token_endpoint_auth_method': 'client_secret_post'
+            'access_token_url': os.environ.get("ACCESS_TOKEN_URL"),
+            'authorize_url': os.environ.get("AUTHORIZE_URL"),
+            'jwks_uri': os.environ.get("JWKS_URI"),
+            'userinfo_endpoint': os.environ.get("USERINFO_ENDPOINT"),
+            'access_token_method': os.environ.get("ACCESS_TOKEN_METHOD"),
+            'token_endpoint_auth_method': os.environ.get("TOKEN_ENDPOINT_AUTH_METHOD"),
         }
     }
 ]
@@ -517,7 +517,7 @@ def get_sso_role_names():
     client_id = OAUTH_PROVIDERS[0]["remote_app"]["client_id"]
     client_secret = OAUTH_PROVIDERS[0]["remote_app"]["client_secret"]
     
-    token_url = "https://myaccount.pesapal.com/v2/connect/clientapptoken"
+    token_url = os.environ.get("TOKEN_URL")
     token_payload = {'grant_type': 'client_credentials'}
 
     try:
@@ -530,7 +530,7 @@ def get_sso_role_names():
             print("Failed to get Pesapal M2M token. SSO sync will be skipped.")
             return set()
 
-        roles_url = "https://myaccount.pesapal.com/api/ssoservices/roles/get-required-roles"
+        roles_url = os.environ.get("ROLES_URL")
         headers = {"Authorization": f"Bearer {sso_access_token}"}
         roles_payload = {"client_app_key": client_id}
         
@@ -1551,13 +1551,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = "smtp.gmail.com"
-SMTP_STARTTLS = True
-SMTP_SSL = False
-SMTP_USER = "kennedy.owino48@gmail.com"
-SMTP_PORT = 587
-SMTP_PASSWORD = "ilgnrdqonukfhmcc"  # noqa: S105
-SMTP_MAIL_FROM = "kennedy.owino48@gmail.com"
+SMTP_HOST = os.environ.get("SMTP_HOST")
+SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS", True)
+SMTP_SSL = os.environ.get("SMTP_SSL", False)
+SMTP_USER = os.environ.get("SMTP_USER")
+SMTP_PORT = os.environ.get("SMTP_PORT")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD") # noqa: S105
+SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
