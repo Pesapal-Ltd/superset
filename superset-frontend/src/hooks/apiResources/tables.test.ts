@@ -219,11 +219,11 @@ describe('useTables hook', () => {
     );
     console.log(
       'Called URLs:',
-      fetchMock.calls().map(call => call[0]),
+      fetchMock.calls().map((call: any[]) => call[0]),
     );
 
     // Add a catch-all mock to see if any unmocked requests are being made
-    fetchMock.mock('*', url => {
+    fetchMock.mock('*', (url: string) => {
       console.log('Unmocked request to:', url);
       return 404;
     });
@@ -237,7 +237,7 @@ describe('useTables hook', () => {
     const expectDbId = 'db1';
     const expectedSchema = 'schema1';
     const tableApiRoute = `glob:*/api/v1/database/${expectDbId}/tables/?q=*`;
-    fetchMock.get(tableApiRoute, url =>
+    fetchMock.get(tableApiRoute, (url: string) =>
       url.includes(expectedSchema) ? fakeApiResult : fakeHasMoreApiResult,
     );
     fetchMock.get(`glob:*/api/v1/database/${expectDbId}/catalogs/*`, {

@@ -284,9 +284,9 @@ describe('Rule modal', () => {
 
     await waitFor(
       () => {
-        const allCalls = fetchMock.calls(putRuleEndpoint);
+        const allCalls = fetchMock.calls(putRuleEndpoint) as any[];
         // Find the PUT request among all calls
-        const putCall = allCalls.find(call => call[1]?.method === 'PUT');
+        const putCall = allCalls.find((call: any[]) => call[1]?.method === 'PUT');
         expect(putCall).toBeTruthy();
         expect(putCall?.[1]?.body).toContain('"name":"rls 1"');
         expect(putCall?.[1]?.body).toContain('"filter_type":"Base"');

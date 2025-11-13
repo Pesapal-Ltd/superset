@@ -48,11 +48,8 @@ services:
 
   db:
     env_file:
-      - path: docker/.env # default
-        required: true
-      - path: docker/.env-local # optional override
-        required: false
-    image: postgres:15
+      - docker/.env # default
+    image: postgres:16
     container_name: superset_db
     restart: unless-stopped
     volumes:
@@ -63,11 +60,9 @@ services:
 
 
   superset:
+    image: apache/superset:5.28.1
     env_file:
-      - path: docker/.env # default
-        required: true
-      - path: docker/.env-local # optional override
-        required: false
+      - docker/.env # default
     build:
       <<: *common-build
     container_name: superset_app
@@ -85,15 +80,13 @@ services:
       - custom_network
 
   superset-init:
+    image: apache/superset:5.28.1
     container_name: superset_init
     build:
       <<: *common-build
     command: ["/app/docker/docker-init.sh"]
     env_file:
-      - path: docker/.env # default
-        required: true
-      - path: docker/.env-local # optional override
-        required: false
+      - docker/.env # default
     depends_on:
       db:
         condition: service_started
@@ -111,13 +104,11 @@ services:
   superset-worker:
     build:
       <<: *common-build
+    image: apache/superset:5.28.1
     container_name: superset_worker
     command: ["/app/docker/docker-bootstrap.sh", "worker"]
     env_file:
-      - path: docker/.env # default
-        required: true
-      - path: docker/.env-local # optional override
-        required: false
+      - docker/.env # default
     restart: unless-stopped
     depends_on:
       superset-init:
@@ -136,13 +127,12 @@ services:
   superset-worker-beat:
     build:
       <<: *common-build
+    image: apache/superset:5.28.1
     container_name: superset_worker_beat
     command: ["/app/docker/docker-bootstrap.sh", "beat"]
     env_file:
-      - path: docker/.env # default
-        required: true
-      - path: docker/.env-local # optional override
-        required: false
+      - docker/.env # default
+
     restart: unless-stopped
     depends_on:
       superset-init:

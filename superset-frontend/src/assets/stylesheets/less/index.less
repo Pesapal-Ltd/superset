@@ -18,7 +18,7 @@
  */
 // Index .less, any imports here will be included in the final css build
 
-@import '~bootstrap/less/bootstrap.less';
+@import '~bootstrap3/less/bootstrap.less';
 @import './fonts.less';
 @import './variables.less';
 @import './cosmo/bootswatch.less';
@@ -33,11 +33,19 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 header {
   flex: 0 1 auto;
 }
+/*Custom styles for the dashboard*/
+header#main-menu{background-color: #A81414;margin: 0 !important;padding:0.656rem 0 !important}
+.top .antd5-row .antd5-menu-light{background-color: transparent !important;color: #fff !important;}
+.top .antd5-row .antd5-menu-light .antd5-menu-item{color: #fff !important;}
+.top .antd5-row .antd5-menu-light .antd5-menu-item-selected{background-color: #A81414 !important;}
+main .antd5-row.menu{border-bottom: 1px solid #CCC;background: #FFF;box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.10)}
+/**/
 
 #app {
   flex: 1 1 auto;
@@ -45,3 +53,5 @@ header {
   display: flex;
   flex-direction: column;
 }
+
+
