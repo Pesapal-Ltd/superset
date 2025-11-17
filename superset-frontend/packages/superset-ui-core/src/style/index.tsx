@@ -128,7 +128,7 @@ const defaultTheme = {
   },
   typography: {
     families: {
-      sansSerif: `'Roboto', Helvetica, Arial`,
+      sansSerif: `'Nunito', Helvetica, Arial`,
       serif: `Georgia, 'Times New Roman', Times, serif`,
       monospace: `'Fira Code', 'Courier New', monospace`,
     },
