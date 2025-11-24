@@ -17,15 +17,18 @@ text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);font-size: 16px;font-style: normal;
 .antd5-menu-light>.antd5-menu.antd5-menu-horizontal >.antd5-menu-item-open::after {
   border-bottom-color: rgba(255,255,255,.2) !important;background-color: rgba(255,255,255,.2)  !important;
 }
-
-
+/* Target only the main navigation */
+#main-nav .navbar .nav li a:hover,.navbar-nav li a:hover,
+.antd5-menu-light.antd5-menu-horizontal > .antd5-menu-item:hover{color: #A81414 !important;
+  
+}
 
 main .antd5-row.menu,main .dashboard-header-container{border-bottom: 1px solid #CCC;background: #FFF;box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.10)}
 .dragdroppable-column .with-popover-menu{display: none !important;}
 .title-panel .dynamic-title,.antd5-row.menu .header{margin-left:40px;color: #16659E !important;font-size: 18px;font-style: normal;font-weight: 600;}
 .superset-list-view.dashboard-list-view .header{margin: 15px 0;}
-.controls label{font-weight: 600 !important;}
-
+.controls label{font-weight: 700 !important;font-size: 14px !important;}
+.dot{background-color: #0B334F !important;}
 thead th{border-top: 1px solid #CCC !important;border-bottom: 1px solid #CCC !important;background: #EEE !important;}
 thead tr th span{color: #000 !important;font-size: 14px !important;font-style: normal;font-weight: 700 !important;text-transform: uppercase;}
 .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th{padding: 15px 20px !important;}
@@ -35,7 +38,8 @@ tbody tr:nth-child(odd) {background-color: #ffffff !important;}
 
 /*Custom styles for the dashboard*/
 
-
+body {
+  background-color: #f5f5f5 !important;}
 .dashboard-page {
   .app {
     min-height: 100vh;
@@ -116,10 +120,10 @@ tbody tr:nth-child(odd) {background-color: #ffffff !important;}
     text-transform: uppercase;
   }
 
-  .dashboard-component-chart-holder {
-    color: #cad5f3;
-    font-family: 'Inter', 'Roboto', Helvetica, Arial, sans-serif;
-  }
+  .slice_container .slice,.dashboard-component-chart-holder{border-radius: 3px !important;
+    background:#fff !important;
+    box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.10) !important;}
+    .header-title,.header-title a{color: #0B334F !important;font-size: 18px;font-style: normal;font-weight: 700;line-height: normal;}
 
   .dashboard-component-tabs {
     .nav-link {
@@ -182,3 +186,76 @@ tbody tr:nth-child(odd) {background-color: #ffffff !important;}
   }
 }
 
+/* Target only line charts */
+.slice_container .line-chart {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Target only bar charts */
+.slice_container .bar-chart {
+  border-left: 4px solid #3b82f6;
+}
+
+/* Target pie charts specifically */
+.slice_container .pie-chart {
+  text-align: center;
+  padding: 30px;
+}
+/* Custom color palette */
+:root {
+  --chart-primary: #3b82f6;
+  --chart-secondary: #10b981;
+  --chart-accent: #f59e0b;
+  --chart-danger: #ef4444;
+  --chart-purple: #8b5cf6;
+}
+
+.custom-palette .bar {
+  fill: var(--chart-primary);
+}
+
+.custom-palette .line {
+  stroke: var(--chart-secondary);
+}
+
+.custom-palette .slice:nth-child(1) { fill: var(--chart-primary); }
+.custom-palette .slice:nth-child(2) { fill: var(--chart-secondary); }
+.custom-palette .slice:nth-child(3) { fill: var(--chart-accent); }
+
+/* Chart entrance animations */
+.slice_container {
+  background: #ffffff;
+  border-radius: 0 !important;
+  box-shadow:none !important;
+  border: medium none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.slice_container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+  
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Data update animations */
+.bar {
+  transition: all 0.5s ease-in-out;
+}
+
+.line {
+  transition: stroke-dasharray 0.8s ease-in-out;
+}
