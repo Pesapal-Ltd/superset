@@ -1402,7 +1402,7 @@ SQLLAB_VALIDATION_TIMEOUT = int(timedelta(seconds=10).total_seconds())
 SQLLAB_DEFAULT_DBID = None
 
 # The MAX duration a query can run for before being killed by celery.
-SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(hours=6).total_seconds())
+SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(seconds=600).total_seconds())
 
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
@@ -1551,13 +1551,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS", True)
-SMTP_SSL = os.environ.get("SMTP_SSL", False)
-SMTP_USER = os.environ.get("SMTP_USER")
-SMTP_PORT = os.environ.get("SMTP_PORT")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD") # noqa: S105
-SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
+SMTP_HOST ="smtp.gmail.com"
+SMTP_STARTTLS = True
+SMTP_SSL = False
+SMTP_USER = "kennedy.owino48@gmail.com"
+SMTP_PORT = 587
+SMTP_PASSWORD = "fhppueqxthocbfxx" # noqa: S105
+SMTP_MAIL_FROM = "kennedy.owino48@gmail.com"
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
