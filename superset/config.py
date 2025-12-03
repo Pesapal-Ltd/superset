@@ -34,6 +34,7 @@ import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import timedelta
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from importlib.resources import files
 from typing import Any, Callable, Iterator, Literal, TYPE_CHECKING, TypedDict
@@ -158,13 +159,13 @@ BUILD_NUMBER = None
 DEFAULT_VIZ_TYPE = "table"
 
 # default row limit when requesting chart data
-ROW_LIMIT = 50000
+ROW_LIMIT = 1000 # from 50000
 # default row limit when requesting samples from datasource in explore view
-SAMPLES_ROW_LIMIT = 1000
+SAMPLES_ROW_LIMIT = 100 # from 1k
 # default row limit for native filters
-NATIVE_FILTER_DEFAULT_ROW_LIMIT = 1000
+NATIVE_FILTER_DEFAULT_ROW_LIMIT = 100 # from 1k
 # max rows retrieved by filter select auto complete
-FILTER_SELECT_ROW_LIMIT = 10000
+FILTER_SELECT_ROW_LIMIT = 1000 # from 10k
 # default time filter in explore
 # values may be "Last day", "Last week", "<ISO date> : now", etc.
 DEFAULT_TIME_FILTER = NO_TIME_RANGE
@@ -512,7 +513,7 @@ def get_sso_role_names():
     """
     Fetches the list of role names from the Pesapal SSO API.
     This function is self-contained and only makes external API calls.
-    """    
+    """
     
     client_id = OAUTH_PROVIDERS[0]["remote_app"]["client_id"]
     client_secret = OAUTH_PROVIDERS[0]["remote_app"]["client_secret"]
@@ -1266,26 +1267,90 @@ BACKUP_COUNT = 30
 #     log_params=None,
 # ):
 #     pass
-QUERY_LOGGER = None
+
+# QUERY_LOGGER = None
+
+# to log the queries
+audit_logger = logging.getLogger("query_audit")
+audit_logger.setLevel(logging.INFO)
+audit_filename=os.path.join(DATA_DIR, "query_audit.log")
+handler = logging.FileHandler(audit_filename)
+handler.setFormatter(logging.Formatter('%(message)s'))
+audit_logger.addHandler(handler)
+
+
+def custom_query_logger(
+    database,
+    query,
+    schema=None,
+    user=None,
+    client=None,
+    security_manager=None,
+    log_params=None,
+):
+    try:
+        user_name = "unknown"
+        user_id = None
+        if user:
+            if hasattr(user, 'username'):
+                user_name = user.username
+                user_id = getattr(user, 'id', None)
+            else:
+                user_name = str(user)
+        duration_ms = None
+        sql_text = str(query)
+        status = "unknown"
+
+        if hasattr(query, 'sql'):
+            print(query)
+            sql_text = query.sql
+            status = getattr(query, 'status', "unknown")
+            # Try to calculate duration if end_time exists
+            start = getattr(query, 'start_time', None)
+            end = getattr(query, 'end_time', None)
+            if start and end:
+                duration_ms = round((end - start) * 1000, 2)
+
+        log_payload = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "event": "query_execution",
+            "user": user_name,
+            "user_id": user_id,
+            "database": str(database),
+            "schema": schema,
+            "duration_ms": duration_ms,
+            "status": status,
+            "client": str(client) if client else "unknown",
+            "sql": sql_text,
+            "log_params": log_params or {}
+        }
+
+        audit_logger.info(json.dumps(log_payload, default=str))
+
+    except Exception as e:
+        print(f"QUERY_LOGGER_ERROR: {e}")
+
+# Assign the function to the config key
+QUERY_LOGGER = custom_query_logger
 
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
 # Maximum number of rows returned for any analytical database query
-SQL_MAX_ROW = 100000
+SQL_MAX_ROW = 1000 # from 100k
 
 # Maximum number of rows for any query with Server Pagination in Table Viz type
-TABLE_VIZ_MAX_ROW_SERVER = 500000
+TABLE_VIZ_MAX_ROW_SERVER = 50000 # from 500k
 
 
 # Maximum number of rows displayed in SQL Lab UI
 # Is set to avoid out of memory/localstorage issues in browsers. Does not affect
 # exported CSVs
-DISPLAY_MAX_ROW = 10000
+DISPLAY_MAX_ROW = 1000 # from 10k
 
 # Default row limit for SQL Lab queries. Is overridden by setting a new limit in
 # the SQL Lab UI
-DEFAULT_SQLLAB_LIMIT = 1000
+DEFAULT_SQLLAB_LIMIT = 10 # from 1k
 
 # The limit for the Superset Meta DB when the feature flag ENABLE_SUPERSET_META_DB is on
 SUPERSET_META_DB_LIMIT: int | None = 1000
@@ -1551,13 +1616,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS", True)
-SMTP_SSL = os.environ.get("SMTP_SSL", False)
-SMTP_USER = os.environ.get("SMTP_USER")
-SMTP_PORT = os.environ.get("SMTP_PORT")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD") # noqa: S105
-SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
+SMTP_HOST ="smtp.gmail.com"
+SMTP_STARTTLS = True
+SMTP_SSL = False
+SMTP_USER = "kennedy.owino48@gmail.com"
+SMTP_PORT = 587
+SMTP_PASSWORD = "fhppueqxthocbfxx" # noqa: S105
+SMTP_MAIL_FROM = "kennedy.owino48@gmail.com"
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
