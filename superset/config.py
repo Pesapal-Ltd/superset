@@ -1467,7 +1467,7 @@ SQLLAB_VALIDATION_TIMEOUT = int(timedelta(seconds=10).total_seconds())
 SQLLAB_DEFAULT_DBID = None
 
 # The MAX duration a query can run for before being killed by celery.
-SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(hours=6).total_seconds())
+SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(seconds=600).total_seconds())
 
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
