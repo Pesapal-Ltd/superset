@@ -1616,13 +1616,13 @@ CONFIG_PATH_ENV_VAR = "SUPERSET_CONFIG_PATH"
 FLASK_APP_MUTATOR = None
 
 # smtp server configuration
-SMTP_HOST ="smtp.gmail.com"
-SMTP_STARTTLS = True
-SMTP_SSL = False
-SMTP_USER = "kennedy.owino48@gmail.com"
-SMTP_PORT = 587
-SMTP_PASSWORD = "fhppueqxthocbfxx" # noqa: S105
-SMTP_MAIL_FROM = "kennedy.owino48@gmail.com"
+SMTP_HOST = os.environ.get("SMTP_HOST")
+SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS")
+SMTP_SSL = os.environ.get("SMTP_SSL")
+SMTP_USER = os.environ.get("SMTP_USER")
+SMTP_PORT = os.environ.get("SMTP_PORT")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")        # noqa: S105
+SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
 SMTP_SSL_SERVER_AUTH = False
@@ -1914,7 +1914,8 @@ WEBDRIVER_OPTION_ARGS = [
 ]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "https://dw.pesapalhosting.com:9004"
+# WEBDRIVER_BASEURL = "https://dw.pesapalhosting.com:9004"
+WEBDRIVER_BASEURL = "http://superset:8088"
 
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapalhosting.com:9004"
