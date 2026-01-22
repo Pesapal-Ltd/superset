@@ -61,7 +61,7 @@ const defaultTheme = {
       help: '#737373',
     },
     primary: {
-      base: '#20A7C9',
+      base: '#1e68A2',
       dark1: '#1A85A0',
       dark2: '#156378',
       light1: '#79CADE',
@@ -128,7 +128,7 @@ const defaultTheme = {
   },
   typography: {
     families: {
-      sansSerif: `'Inter', Helvetica, Arial`,
+      sansSerif: `'Nunito', Helvetica, Arial`,
       serif: `Georgia, 'Times New Roman', Times, serif`,
       monospace: `'Fira Code', 'Courier New', monospace`,
     },

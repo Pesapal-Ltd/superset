@@ -18,11 +18,11 @@
  */
 // Index .less, any imports here will be included in the final css build
 
-@import '~bootstrap/less/bootstrap.less';
+@import '~bootstrap3/less/bootstrap.less';
 @import './fonts.less';
 @import './variables.less';
 @import './cosmo/bootswatch.less';
-
+@import './custom-dashboard.less';
 html,
 body {
   font-size: @font-size-base;
@@ -33,11 +33,13 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 header {
   flex: 0 1 auto;
 }
+
 
 #app {
   flex: 1 1 auto;
@@ -45,3 +47,5 @@ header {
   display: flex;
   flex-direction: column;
 }
+
+
