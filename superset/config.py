@@ -1617,8 +1617,8 @@ FLASK_APP_MUTATOR = None
 
 # smtp server configuration
 SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS")
-SMTP_SSL = os.environ.get("SMTP_SSL")
+SMTP_STARTTLS = True
+SMTP_SSL = False
 SMTP_USER = os.environ.get("SMTP_USER")
 SMTP_PORT = os.environ.get("SMTP_PORT")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")        # noqa: S105
