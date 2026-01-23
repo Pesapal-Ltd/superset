@@ -128,7 +128,7 @@ describe('useSchemas hook', () => {
   test('returns refreshed data after expires', async () => {
     const expectDbId = 'db1';
     const schemaApiRoute = `glob:*/api/v1/database/*/schemas/*`;
-    fetchMock.get(schemaApiRoute, (url: string) =>
+    fetchMock.get(schemaApiRoute, url =>
       url.includes(expectDbId) ? fakeApiResult : fakeApiResult2,
     );
     const onSuccess = jest.fn();
@@ -183,7 +183,7 @@ describe('useSchemas hook', () => {
     const dbId = '1';
     const expectCatalog = 'catalog3';
     const schemaApiRoute = `glob:*/api/v1/database/*/schemas/*`;
-    fetchMock.get(schemaApiRoute, (url: string) =>
+    fetchMock.get(schemaApiRoute, url =>
       url.includes(`catalog:${expectCatalog}`)
         ? fakeApiResult3
         : fakeApiResult2,

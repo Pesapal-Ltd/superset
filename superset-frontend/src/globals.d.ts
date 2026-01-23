@@ -17,8 +17,3 @@
  * under the License.
  */
 declare var __webpack_public_path__: string;
-
-declare module 'fetch-mock' {
-  const fetchMock: any;
-  export default fetchMock;
-}

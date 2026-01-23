@@ -40,7 +40,7 @@ const getChartResponse = (result: ChartListChart[]) => ({
 });
 
 const CHARTS_ENDPOINT = 'glob:*/api/v1/chart/?*';
-const mockChartsFetch = (response: any) => {
+const mockChartsFetch = (response: fetchMock.MockResponse) => {
   fetchMock.reset();
   fetchMock.get('glob:*/api/v1/chart/_info?*', {
     permissions: ['can_export', 'can_read', 'can_write'],
