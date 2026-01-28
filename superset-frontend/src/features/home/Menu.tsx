@@ -271,7 +271,7 @@ export function Menu({
                 <img src={brand.icon} alt={brand.alt} />
               </GenericLink>
             ) : (
-              <a className="navbar-brand" href={brand.path} tabIndex={-1}>
+              <a className="navbar-brand try" href={brand.path} tabIndex={-1}>
                 <img src={brand.icon} alt={brand.alt} />
               </a>
             )}

@@ -42,6 +42,9 @@ ARG NPM_BUILD_CMD="build"
 # Install system dependencies required for node-gyp
 RUN /app/docker/apt-install.sh build-essential python3 zstd
 
+# Update npm to a version compatible with lockfileVersion 3
+RUN npm install -g npm@latest
+
 # Define environment variables for frontend build
 ENV BUILD_CMD=${NPM_BUILD_CMD} \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
@@ -55,17 +58,27 @@ WORKDIR /app/superset-frontend
 RUN mkdir -p /app/superset/static/assets \
              /app/superset/translations
 
-# Mount package files and install dependencies if not in dev mode
-# NOTE: we mount packages and plugins as they are referenced in package.json as workspaces
-# ideally we'd COPY only their package.json. Here npm ci will be cached as long
-# as the full content of these folders don't change, yielding a decent cache reuse rate.
-# Note that's it's not possible selectively COPY of mount using blobs.
-RUN --mount=type=bind,source=./superset-frontend/package.json,target=./package.json \
-    --mount=type=bind,source=./superset-frontend/package-lock.json,target=./package-lock.json \
-    --mount=type=cache,target=/root/.cache \
+# Copy package files and workspace directories needed for npm ci
+# NOTE: packages and plugins are referenced in package.json as workspaces
+# npm ci requires all workspace package.json files to be present
+COPY superset-frontend/package.json superset-frontend/package-lock.json ./
+COPY superset-frontend/packages ./packages
+COPY superset-frontend/plugins ./plugins
+COPY superset-frontend/src/setup ./src/setup
+
+# Install dependencies if not in dev mode
+RUN --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/root/.npm \
     if [ "$DEV_MODE" = "false" ]; then \
-        npm ci; \
+        echo "Running npm ci..."; \
+        npm --version && \
+        node --version && \
+        ls -la package.json package-lock.json && \
+        npm ci --loglevel=verbose || ( \
+            echo "npm ci failed. Checking for log files..." && \
+            find /root/.npm/_logs -name "*-debug-*.log" -exec cat {} \; 2>/dev/null || true && \
+            exit 1 \
+        ); \
     else \
         echo "Skipping 'npm ci' in dev mode"; \
     fi

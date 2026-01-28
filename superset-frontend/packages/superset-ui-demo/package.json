@@ -31,13 +31,14 @@
     "storybook": "storybook dev -p 9001"
   },
   "dependencies": {
+    "@applitools/eyes-storybook": "3.45.7",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mihkeleidast/storybook-addon-source": "^1.0.1",
     "@react-icons/all-files": "^4.1.0",
     "@storybook/addon-actions": "8.1.11",
-    "@storybook/addon-controls": "8.1.11",
+    "@storybook/addon-controls": "^8.6.15",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-links": "8.1.11",
     "@storybook/react": "^8.6.14",
@@ -50,6 +51,7 @@
     "fetch-mock": "12.6.0",
     "gh-pages": "^6.2.0",
     "jquery": "^3.7.1",
+    "lerna": "9.0.3",
     "memoize-one": "^5.2.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
