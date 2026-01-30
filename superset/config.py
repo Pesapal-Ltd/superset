@@ -34,6 +34,7 @@ import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import timedelta
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from importlib.resources import files
 from typing import Any, Callable, Iterator, Literal, TYPE_CHECKING, TypedDict
@@ -41,7 +42,7 @@ from typing import Any, Callable, Iterator, Literal, TYPE_CHECKING, TypedDict
 import click
 from celery.schedules import crontab
 from flask import Blueprint
-from flask_appbuilder.security.manager import AUTH_DB,AUTH_OAUTH,AUTH_REMOTE_USER
+from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH, AUTH_REMOTE_USER
 from flask_caching.backends.base import BaseCache
 from pandas import Series
 from pandas._libs.parsers import STR_NA_VALUES
@@ -65,6 +66,7 @@ from superset.utils.core import NO_TIME_RANGE, parse_boolean_string, QuerySource
 from superset.utils.encrypt import SQLAlchemyUtilsAdapter
 from superset.utils.log import DBEventLogger
 from superset.utils.logging_configurator import DefaultLoggingConfigurator
+
 # from tests.integration_tests.superset_test_config_thumbnails import REDIS_HOST
 
 logger = logging.getLogger(__name__)
@@ -102,7 +104,6 @@ else:
 # ---------------------------------------------------------
 VERSION_INFO_FILE = str(files("superset") / "static/version_info.json")
 PACKAGE_JSON_FILE = str(files("superset") / "static/assets/package.json")
-
 
 # Multiple favicons can be specified here. The "href" property
 # is mandatory, but "sizes," "type," and "rel" are optional.
@@ -158,13 +159,13 @@ BUILD_NUMBER = None
 DEFAULT_VIZ_TYPE = "table"
 
 # default row limit when requesting chart data
-ROW_LIMIT = 50000
+ROW_LIMIT = 1000  # from 50000
 # default row limit when requesting samples from datasource in explore view
-SAMPLES_ROW_LIMIT = 1000
+SAMPLES_ROW_LIMIT = 100  # from 1k
 # default row limit for native filters
-NATIVE_FILTER_DEFAULT_ROW_LIMIT = 1000
+NATIVE_FILTER_DEFAULT_ROW_LIMIT = 100  # from 1k
 # max rows retrieved by filter select auto complete
-FILTER_SELECT_ROW_LIMIT = 10000
+FILTER_SELECT_ROW_LIMIT = 1000  # from 10k
 # default time filter in explore
 # values may be "Last day", "Last week", "<ISO date> : now", etc.
 DEFAULT_TIME_FILTER = NO_TIME_RANGE
@@ -185,9 +186,7 @@ SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 
-
-
-CUSTOM_SECURITY_MANAGER = None
+CUSTOM_SECURITY_MANAGER = CustomSsoSecurityManager
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------------------------------------------------------
 
@@ -354,38 +353,39 @@ FAB_API_SWAGGER_UI = True
 # AUTH_DB : Is for database (username/password)
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
-AUTH_TYPE = AUTH_DB
+AUTH_TYPE = AUTH_OAUTH
 # AUTH_TYPE = AUTH_REMOTE_USER
 
-# OAUTH_PROVIDERS = [
-#     {
-#         'name': 'signin-oidc',
-#         'token_key': 'access_token',
-#         'icon': 'fa-windows',
-#         'remote_app': {
-#             'client_id': os.environ.get("CLIENT_ID"),
-#             'client_secret': os.environ.get("CLIENT_SECRET"),
-#             # Replace with your actual client secret
-#             'server_metadata_url': os.environ.get("SERVER_METADATA_URL"),
-#             'client_kwargs': {
-#                 'scope': os.environ.get("SCOPES"),  # Scopes from your configuration
-#                 'code_challenge_method': os.environ.get("CODE_CHALLENGE_METHOD"),
-#             },
-#             'access_token_url': os.environ.get("ACCESS_TOKEN_URL"),
-#             'authorize_url': os.environ.get("AUTHORIZE_URL"),
-#             'jwks_uri': os.environ.get("JWKS_URI"),
-#             'userinfo_endpoint': os.environ.get("USERINFO_ENDPOINT"),
-#             'access_token_method': os.environ.get("ACCESS_TOKEN_METHOD"),
-#             'token_endpoint_auth_method': os.environ.get("TOKEN_ENDPOINT_AUTH_METHOD"),
-#         }
-#     }
-# ]
+OAUTH_PROVIDERS = [
+    {
+        'name': 'signin-oidc',
+        'token_key': 'access_token',
+        'icon': 'fa-windows',
+        'remote_app': {
+            'client_id': os.environ.get("CLIENT_ID"),
+            'client_secret': os.environ.get("CLIENT_SECRET"),
+            # Replace with your actual client secret
+            'server_metadata_url': os.environ.get("SERVER_METADATA_URL"),
+            'client_kwargs': {
+                'scope': os.environ.get("SCOPES"),  # Scopes from your configuration
+                'code_challenge_method': os.environ.get("CODE_CHALLENGE_METHOD"),
+            },
+            'access_token_url': os.environ.get("ACCESS_TOKEN_URL"),
+            'authorize_url': os.environ.get("AUTHORIZE_URL"),
+            'jwks_uri': os.environ.get("JWKS_URI"),
+            'userinfo_endpoint': os.environ.get("USERINFO_ENDPOINT"),
+            'access_token_method': os.environ.get("ACCESS_TOKEN_METHOD"),
+            'token_endpoint_auth_method': os.environ.get("TOKEN_ENDPOINT_AUTH_METHOD"),
+        }
+    }
+]
 
 # Uncomment to setup Full admin role name
 AUTH_ROLE_ADMIN = 'Admin'
 
 # Uncomment to setup Public role name, no authentication needed
 AUTH_ROLE_PUBLIC = 'Public'
+
 
 # AUTH_ROLES_MAPPING = {
 # "DataEngineer": ["Admin"],
@@ -508,136 +508,145 @@ AUTH_ROLE_PUBLIC = 'Public'
 
 # === REPLACING THE ABOVE WITH AUTOMATIC ROLE CREATION AND MAPPING ===
 
-# def get_sso_role_names():
-#     """
-#     Fetches the list of role names from the Pesapal SSO API.
-#     This function is self-contained and only makes external API calls.
-#     """    
-    
-#     client_id = OAUTH_PROVIDERS[0]["remote_app"]["client_id"]
-#     client_secret = OAUTH_PROVIDERS[0]["remote_app"]["client_secret"]
-    
-#     token_url = os.environ.get("TOKEN_URL")
-#     token_payload = {'grant_type': 'client_credentials'}
+def get_sso_role_names():
+    """
+    Fetches the list of role names from the Pesapal SSO API.
+    This function is self-contained and only makes external API calls.
+    """
 
-#     try:
-#         token_response = requests.post(
-#             token_url, auth=(client_id, client_secret), data=token_payload, timeout=15
-#         )
-#         token_response.raise_for_status()
-#         sso_access_token = token_response.json().get("access_token")
-#         if not sso_access_token:
-#             print("Failed to get Pesapal M2M token. SSO sync will be skipped.")
-#             return set()
+    client_id = OAUTH_PROVIDERS[0]["remote_app"]["client_id"]
+    client_secret = OAUTH_PROVIDERS[0]["remote_app"]["client_secret"]
 
-#         roles_url = os.environ.get("ROLES_URL")
-#         headers = {"Authorization": f"Bearer {sso_access_token}"}
-#         roles_payload = {"client_app_key": client_id}
-        
-#         response = requests.post(roles_url, json=roles_payload, headers=headers, timeout=15)
-#         response.raise_for_status()
-#         data = response.json()
-        
-#         if data.get("response_code") == 1 and "supported_roles" in data:
-#             role_names = {role.get("role_name_code") for role in data["supported_roles"] if role.get("role_name_code")}
-#             print(f"Successfully fetched {len(role_names)} roles from SSO.")
-#             return role_names
-#         else:
-#             print(f"Pesapal roles API returned an error: {data.get('message')}")
-#             return set()
-#     except requests.RequestException as e:
-#         print(f"Error fetching roles from Pesapal SSO: {e}. Sync will be skipped.")
-#         return set()
+    token_url = os.environ.get("TOKEN_URL")
+    token_payload = {'grant_type': 'client_credentials'}
 
-# # We import the default initializer to extend it
-# from superset.app import SupersetAppInitializer
+    try:
+        token_response = requests.post(
+            token_url, auth=(client_id, client_secret), data=token_payload, timeout=15
+        )
+        token_response.raise_for_status()
+        sso_access_token = token_response.json().get("access_token")
+        if not sso_access_token:
+            print("Failed to get Pesapal M2M token. SSO sync will be skipped.")
+            return set()
 
-# class CustomAppInitializer(SupersetAppInitializer):
-#     def __init__(self, app: Flask) -> None:
-#         # First, run the default Superset initialization
-#         super().__init__(app)
+        roles_url = os.environ.get("ROLES_URL")
+        headers = {"Authorization": f"Bearer {sso_access_token}"}
+        roles_payload = {"client_app_key": client_id}
 
-#         self.app = app
+        response = requests.post(roles_url, json=roles_payload, headers=headers,
+                                 timeout=15)
+        response.raise_for_status()
+        data = response.json()
 
-#     def init_app(self) -> None:
-#         # Then, run the default `init_app` from the parent class
-#         super().init_app()
-        
-#         # NOW, all extensions are initialized, and we can safely run our code.
-#         self.sync_sso_roles()
-
-#     def sync_sso_roles(self):
-#         print("Running custom SSO role synchronization...")
-        
-#         sso_roles = get_sso_role_names()
-#         if not sso_roles:
-#             print("No roles returned from SSO, aborting sync.")
-#             return
-
-#         # We are running after init_app, so we need to push an app context
-#         with self.app.app_context():
-#             from superset.extensions import db, security_manager as sm
-
-#             existing_roles = {role.name for role in sm.get_all_roles()}
-#             print(f"Found existing Superset roles: {existing_roles}")
-            
-#             special_mapping_keys = {"DataEngineer", "DataEngineerTech", "DeputyCTO", "TechExec", "CTO", "COO", "CEO", "JuniorDev", "superset_admins"}
-#             roles_to_create = sso_roles - existing_roles - special_mapping_keys
-
-#             if not roles_to_create:
-#                 print("Superset roles are already in sync with SSO. No action needed.")
-#                 return
-
-#             print(f"New roles to be created: {roles_to_create}")
-            
-#             gamma_role = sm.find_role('Gamma')
-#             if not gamma_role:
-#                 print("Could not find 'Gamma' role. Cannot use it as a template.")
-#                 return
-            
-#             gamma_permissions = gamma_role.permissions
-            
-#             try:
-#                 for role_name in roles_to_create:
-#                     logger.info(f"Creating role: '{role_name}'")
-#                     sm.add_role(name=role_name, permissions=gamma_permissions)
-#                 db.session.commit() # We need to explicitly commit the session
-#                 logger.info("Successfully committed new roles to the database.")
-#             except Exception as e:
-#                 logger.error(f"An error occurred while creating roles: {e}")
-#                 db.session.rollback()
+        if data.get("response_code") == 1 and "supported_roles" in data:
+            role_names = {role.get("role_name_code") for role in data["supported_roles"]
+                          if role.get("role_name_code")}
+            print(f"Successfully fetched {len(role_names)} roles from SSO.")
+            return role_names
+        else:
+            print(f"Pesapal roles API returned an error: {data.get('message')}")
+            return set()
+    except requests.RequestException as e:
+        print(f"Error fetching roles from Pesapal SSO: {e}. Sync will be skipped.")
+        return set()
 
 
-# # Point APP_INITIALIZER to our new custom class
-# APP_INITIALIZER = CustomAppInitializer
+# We import the default initializer to extend it
+from superset.app import SupersetAppInitializer
 
 
-# def get_dynamic_role_mapping():
-#     """
-#     Creates the AUTH_ROLES_MAPPING dictionary.
-#     """
-#     # Special mapping to superset roles
-#     special_mapping = {
-#         "DataEngineer": ["Admin"], "DataEngineerTech": ["Admin"], "DeputyCTO": ["Admin"],
-#         "TechExec": ["Admin"], "CTO": ["Admin"], "COO": ["Admin"], "CEO": ["Admin"],
-#         "JuniorDev": ["Admin"], "superset_admins": ["Admin"]
-#     }
-    
-#     # Fetch all roles from SSO
-#     sso_roles = get_sso_role_names()
-    
-#     final_mapping = special_mapping.copy()
-    
-#     # Create 1-to-1 mappings for any role not in the special map
-#     for role_code in sso_roles:
-#         if role_code not in final_mapping:
-#             final_mapping[role_code] = [role_code]
-            
-#     print(f"Final AUTH_ROLES_MAPPING has been generated with {len(final_mapping)} entries.")
-#     return final_mapping
+class CustomAppInitializer(SupersetAppInitializer):
+    def __init__(self, app: Flask) -> None:
+        # First, run the default Superset initialization
+        super().__init__(app)
 
-# AUTH_ROLES_MAPPING = get_dynamic_role_mapping()
-# # ---------------------------------------------------
+        self.app = app
+
+    def init_app(self) -> None:
+        # Then, run the default `init_app` from the parent class
+        super().init_app()
+
+        # NOW, all extensions are initialized, and we can safely run our code.
+        self.sync_sso_roles()
+
+    def sync_sso_roles(self):
+        print("Running custom SSO role synchronization...")
+
+        sso_roles = get_sso_role_names()
+        if not sso_roles:
+            print("No roles returned from SSO, aborting sync.")
+            return
+
+        # We are running after init_app, so we need to push an app context
+        with self.app.app_context():
+            from superset.extensions import db, security_manager as sm
+
+            existing_roles = {role.name for role in sm.get_all_roles()}
+            print(f"Found existing Superset roles: {existing_roles}")
+
+            special_mapping_keys = {"DataEngineer", "DataEngineerTech", "DeputyCTO",
+                                    "TechExec", "CTO", "COO", "CEO", "JuniorDev",
+                                    "superset_admins"}
+            roles_to_create = sso_roles - existing_roles - special_mapping_keys
+
+            if not roles_to_create:
+                print("Superset roles are already in sync with SSO. No action needed.")
+                return
+
+            print(f"New roles to be created: {roles_to_create}")
+
+            gamma_role = sm.find_role('Gamma')
+            if not gamma_role:
+                print("Could not find 'Gamma' role. Cannot use it as a template.")
+                return
+
+            gamma_permissions = gamma_role.permissions
+
+            try:
+                for role_name in roles_to_create:
+                    logger.info(f"Creating role: '{role_name}'")
+                    sm.add_role(name=role_name, permissions=gamma_permissions)
+                db.session.commit()  # We need to explicitly commit the session
+                logger.info("Successfully committed new roles to the database.")
+            except Exception as e:
+                logger.error(f"An error occurred while creating roles: {e}")
+                db.session.rollback()
+
+
+# Point APP_INITIALIZER to our new custom class
+APP_INITIALIZER = CustomAppInitializer
+
+
+def get_dynamic_role_mapping():
+    """
+    Creates the AUTH_ROLES_MAPPING dictionary.
+    """
+    # Special mapping to superset roles
+    special_mapping = {
+        "DataEngineer": ["Admin"], "DataEngineerTech": ["Admin"],
+        "DeputyCTO": ["Admin"],
+        "TechExec": ["Admin"], "CTO": ["Admin"], "COO": ["Admin"], "CEO": ["Admin"],
+        "JuniorDev": ["Admin"], "superset_admins": ["Admin"]
+    }
+
+    # Fetch all roles from SSO
+    sso_roles = get_sso_role_names()
+
+    final_mapping = special_mapping.copy()
+
+    # Create 1-to-1 mappings for any role not in the special map
+    for role_code in sso_roles:
+        if role_code not in final_mapping:
+            final_mapping[role_code] = [role_code]
+
+    print(
+        f"Final AUTH_ROLES_MAPPING has been generated with {len(final_mapping)} entries.")
+    return final_mapping
+
+
+AUTH_ROLES_MAPPING = get_dynamic_role_mapping()
+# ---------------------------------------------------
 
 # Will allow user self registration
 AUTH_USER_REGISTRATION = True
@@ -646,7 +655,7 @@ AUTH_USER_REGISTRATION = True
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
 AUTH_ROLES_SYNC_AT_LOGIN = True
-#message
+# message
 # When using LDAP Auth, setup the LDAP server
 # AUTH_LDAP_SERVER = "ldap://ldapserver.new"
 
@@ -745,7 +754,7 @@ class D3TimeFormat(TypedDict, total=False):
 
 D3_TIME_FORMAT: D3TimeFormat = {}
 
-CURRENCIES = ["USD", "EUR", "GBP", "INR", "MXN", "JPY", "CNY","KES","UGX","TZS"]
+CURRENCIES = ["USD", "EUR", "GBP", "INR", "MXN", "JPY", "CNY", "KES", "UGX", "TZS"]
 
 # ---------------------------------------------------
 # Feature flags
@@ -884,11 +893,10 @@ SSH_TUNNEL_TIMEOUT_SEC = 10.0
 #: Timeout (seconds) for transport socket (``socket.settimeout``)
 SSH_TUNNEL_PACKET_TIMEOUT_SEC = 1.0
 
-
 # Feature flags may also be set via 'SUPERSET_FEATURE_' prefixed environment vars.
 DEFAULT_FEATURE_FLAGS.update(
     {
-        k[len("SUPERSET_FEATURE_") :]: parse_boolean_string(v)
+        k[len("SUPERSET_FEATURE_"):]: parse_boolean_string(v)
         for k, v in os.environ.items()
         if re.search(r"^SUPERSET_FEATURE_\w+", k)
     }
@@ -1266,26 +1274,90 @@ BACKUP_COUNT = 30
 #     log_params=None,
 # ):
 #     pass
-QUERY_LOGGER = None
+
+# QUERY_LOGGER = None
+
+# to log the queries
+audit_logger = logging.getLogger("query_audit")
+audit_logger.setLevel(logging.INFO)
+audit_filename = os.path.join(DATA_DIR, "query_audit.log")
+handler = logging.FileHandler(audit_filename)
+handler.setFormatter(logging.Formatter('%(message)s'))
+audit_logger.addHandler(handler)
+
+
+def custom_query_logger(
+    database,
+    query,
+    schema=None,
+    user=None,
+    client=None,
+    security_manager=None,
+    log_params=None,
+):
+    try:
+        user_name = "unknown"
+        user_id = None
+        if user:
+            if hasattr(user, 'username'):
+                user_name = user.username
+                user_id = getattr(user, 'id', None)
+            else:
+                user_name = str(user)
+        duration_ms = None
+        sql_text = str(query)
+        status = "unknown"
+
+        if hasattr(query, 'sql'):
+            print(query)
+            sql_text = query.sql
+            status = getattr(query, 'status', "unknown")
+            # Try to calculate duration if end_time exists
+            start = getattr(query, 'start_time', None)
+            end = getattr(query, 'end_time', None)
+            if start and end:
+                duration_ms = round((end - start) * 1000, 2)
+
+        log_payload = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "event": "query_execution",
+            "user": user_name,
+            "user_id": user_id,
+            "database": str(database),
+            "schema": schema,
+            "duration_ms": duration_ms,
+            "status": status,
+            "client": str(client) if client else "unknown",
+            "sql": sql_text,
+            "log_params": log_params or {}
+        }
+
+        audit_logger.info(json.dumps(log_payload, default=str))
+
+    except Exception as e:
+        print(f"QUERY_LOGGER_ERROR: {e}")
+
+
+# Assign the function to the config key
+QUERY_LOGGER = custom_query_logger
 
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
 # Maximum number of rows returned for any analytical database query
-SQL_MAX_ROW = 100000
+SQL_MAX_ROW = 1000  # from 100k
 
 # Maximum number of rows for any query with Server Pagination in Table Viz type
-TABLE_VIZ_MAX_ROW_SERVER = 500000
-
+TABLE_VIZ_MAX_ROW_SERVER = 50000  # from 500k
 
 # Maximum number of rows displayed in SQL Lab UI
 # Is set to avoid out of memory/localstorage issues in browsers. Does not affect
 # exported CSVs
-DISPLAY_MAX_ROW = 10000
+DISPLAY_MAX_ROW = 1000  # from 10k
 
 # Default row limit for SQL Lab queries. Is overridden by setting a new limit in
 # the SQL Lab UI
-DEFAULT_SQLLAB_LIMIT = 1000
+DEFAULT_SQLLAB_LIMIT = 10  # from 1k
 
 # The limit for the Superset Meta DB when the feature flag ENABLE_SUPERSET_META_DB is on
 SUPERSET_META_DB_LIMIT: int | None = 1000
@@ -1316,6 +1388,7 @@ DASHBOARD_AUTO_REFRESH_INTERVALS = [
 # This is used as a workaround for the alerts & reports scheduler task to get the time
 # celery beat triggered it, see https://github.com/celery/celery/issues/6974 for details
 CELERY_BEAT_SCHEDULER_EXPIRES = timedelta(weeks=1)
+
 
 # Default celery config is to use SQLA as a broker, in a production setting
 # you'll want to use a proper broker as specified here:
@@ -1351,7 +1424,6 @@ class CeleryConfig:  # pylint: disable=too-few-public-methods
             "task": "reports.prune_log",
             "schedule": crontab(minute=0, hour=0),
         },
-
 
         # Uncomment to enable pruning of the query table
         # "prune_query": {
@@ -1402,7 +1474,7 @@ SQLLAB_VALIDATION_TIMEOUT = int(timedelta(seconds=10).total_seconds())
 SQLLAB_DEFAULT_DBID = None
 
 # The MAX duration a query can run for before being killed by celery.
-SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(hours=6).total_seconds())
+SQLLAB_ASYNC_TIME_LIMIT_SEC = int(timedelta(seconds=600).total_seconds())
 
 # Some databases support running EXPLAIN queries that allow users to estimate
 # query costs before they run. These EXPLAIN queries should have a small
@@ -1552,11 +1624,11 @@ FLASK_APP_MUTATOR = None
 
 # smtp server configuration
 SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_STARTTLS = os.environ.get("SMTP_STARTTLS", True)
-SMTP_SSL = os.environ.get("SMTP_SSL", False)
+SMTP_STARTTLS = True
+SMTP_SSL = False
 SMTP_USER = os.environ.get("SMTP_USER")
 SMTP_PORT = os.environ.get("SMTP_PORT")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD") # noqa: S105
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")  # noqa: S105
 SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 # If True creates a default SSL context with ssl.Purpose.CLIENT_AUTH using the
 # default system root CA certificates.
@@ -1602,7 +1674,6 @@ BLUEPRINTS: list[Blueprint] = []
 #   )
 # pylint: disable-next=unnecessary-lambda-assignment
 TRACKING_URL_TRANSFORMER = lambda url: url  # noqa: E731
-
 
 # customize the polling time of each engine
 DB_POLL_INTERVAL_SECONDS: dict[str, int] = {}
@@ -1658,7 +1729,6 @@ ENGINE_CONTEXT_MANAGER = engine_context_manager
 # Note that the returned uri and params are passed directly to sqlalchemy's
 # as such `create_engine(url, **params)`
 DB_CONNECTION_MUTATOR = None
-
 
 # A callable that is invoked for every invocation of DB Engine Specs
 # which allows for custom validation of the engine URI.
@@ -1719,7 +1789,6 @@ def SQL_QUERY_MUTATOR(  # pylint: disable=invalid-name,unused-argument  # noqa: 
 # a SET ROLE statement alongside every user query. Changing this variable maintains
 # functionality for both the SQL_Lab and Charts.
 MUTATE_AFTER_SPLIT = False
-
 
 # Boolean config that determines if alert SQL queries should also be mutated or not.
 MUTATE_ALERT_QUERY = False
@@ -1849,7 +1918,8 @@ WEBDRIVER_OPTION_ARGS = [
 ]
 
 # The base URL to query for accessing the user interface
-WEBDRIVER_BASEURL = "https://dw.pesapalhosting.com:9004"
+# WEBDRIVER_BASEURL = "https://dw.pesapalhosting.com:9004"
+WEBDRIVER_BASEURL = "http://superset:8088"
 
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapalhosting.com:9004"
@@ -2020,6 +2090,7 @@ SESSION_COOKIE_SAMESITE: Literal["None", "Lax", "Strict"] | None = "Lax"
 # Example config using Redis as the backend for server side sessions
 # from flask_session import RedisSessionInterface
 from redis import Redis
+
 #
 # #
 SESSION_SERVER_SIDE = True
@@ -2069,7 +2140,6 @@ SSL_CERT_PATH: str | None = None
 
 # pylint: disable-next=unnecessary-lambda-assignment
 SQLA_TABLE_MUTATOR = lambda table: table  # noqa: E731
-
 
 # Global async query config options.
 # Requires GLOBAL_ASYNC_QUERIES feature flag to be enabled.
@@ -2250,7 +2320,6 @@ class ExtraDynamicQueryFilters(TypedDict, total=False):
 
 EXTRA_DYNAMIC_QUERY_FILTERS: ExtraDynamicQueryFilters = {}
 
-
 # The migrations that add catalog permissions might take a considerably long time
 # to execute as it has to create permissions to all schemas and catalogs from all
 # other catalogs accessible by the credentials. This flag allows to skip the
@@ -2259,7 +2328,6 @@ EXTRA_DYNAMIC_QUERY_FILTERS: ExtraDynamicQueryFilters = {}
 # connection via the UI (without downtime).
 CATALOGS_SIMPLIFIED_MIGRATION: bool = False
 
-
 # When updating a DB connection or manually triggering a perm sync, the command
 # happens in sync mode. If you have a celery worker configured, it's recommended
 # to change below config to ``True`` to run this process in async mode. A DB
@@ -2267,7 +2335,6 @@ CATALOGS_SIMPLIFIED_MIGRATION: bool = False
 # considerably increases the time to process it. Running it in async mode prevents
 # keeping a web API call open for this long.
 SYNC_DB_PERMISSIONS_IN_ASYNC_MODE: bool = False
-
 
 # -------------------------------------------------------------------
 # *                WARNING:  STOP EDITING  HERE                    *
