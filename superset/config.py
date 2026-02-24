@@ -768,7 +768,7 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # When using a recent version of Druid that supports JOINs turn this on
     "DRUID_JOINS": False,
     "DYNAMIC_PLUGINS": False,
-    "ENABLE_TEMPLATE_PROCESSING": False,
+    "ENABLE_TEMPLATE_PROCESSING": True,
     # Allow for javascript controls components
     # this enables programmers to customize certain charts (like the
     # geospatial ones) by inputting javascript in controls. This exposes
@@ -1922,7 +1922,7 @@ WEBDRIVER_OPTION_ARGS = [
 WEBDRIVER_BASEURL = "http://superset:8088"
 
 # The base URL for the email report hyperlinks.
-WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapalhosting.com:9004"
+WEBDRIVER_BASEURL_USER_FRIENDLY = "https://dw.pesapal.com:9004"
 # Time selenium will wait for the page to load and render for the email report.
 EMAIL_PAGE_RENDER_WAIT = int(timedelta(seconds=30).total_seconds())
 
