@@ -471,6 +471,7 @@ const Chart = props => {
         formData={formData}
         width={width}
         height={getHeaderHeight()}
+        chartId={props.id}
       />
 
       {/*

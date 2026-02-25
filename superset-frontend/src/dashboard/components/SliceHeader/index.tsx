@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react';
 import { css, getExtensionsRegistry, styled, t } from '@superset-ui/core';
+import { useDynamicTitle } from 'src/dashboard/hooks/useDynamicTitle';
 import { useUiConfig } from 'src/components/UiConfigContext';
 import { Tooltip } from 'src/components/Tooltip';
 import { useSelector } from 'react-redux';
@@ -50,6 +51,7 @@ type SliceHeaderProps = SliceHeaderControlsProps & {
   formData: object;
   width: number;
   height: number;
+  chartId?: number;
 };
 
 const annotationsLoading = t('Annotation layers are still loading.');
@@ -158,6 +160,7 @@ const SliceHeader = forwardRef<HTMLDivElement, SliceHeaderProps>(
       formData,
       width,
       height,
+      chartId,
     },
     ref,
   ) => {
@@ -176,22 +179,31 @@ const SliceHeader = forwardRef<HTMLDivElement, SliceHeaderProps>(
       ({ dashboardInfo }) => dashboardInfo.crossFiltersEnabled,
     );
 
+    // Resolve {FilterName} placeholders in the title with active filter values.
+    // Always call the hook with the full sliceName so its memoisation is stable.
+    // In edit mode we show the raw template so users can modify it.
+    const resolvedTitle = useDynamicTitle(
+      sliceName,
+      chartId ?? slice?.slice_id ?? 0,
+    );
+    const displayTitle = editMode ? sliceName : resolvedTitle;
+
     const canExplore = !editMode && supersetCanExplore;
 
     useEffect(() => {
       const headerElement = headerRef.current;
       if (canExplore) {
-        setHeaderTooltip(getSliceHeaderTooltip(sliceName));
+        setHeaderTooltip(getSliceHeaderTooltip(displayTitle));
       } else if (
         headerElement &&
         (headerElement.scrollWidth > headerElement.offsetWidth ||
           headerElement.scrollHeight > headerElement.offsetHeight)
       ) {
-        setHeaderTooltip(sliceName ?? null);
+        setHeaderTooltip(displayTitle ?? null);
       } else {
         setHeaderTooltip(null);
       }
-    }, [sliceName, width, height, canExplore]);
+    }, [displayTitle, width, height, canExplore]);
 
     const exploreUrl = `/explore/?dashboard_page_id=${dashboardPageId}&slice_id=${slice.slice_id}`;
 
@@ -201,7 +213,7 @@ const SliceHeader = forwardRef<HTMLDivElement, SliceHeaderProps>(
           <Tooltip title={headerTooltip}>
             <EditableTitle
               title={
-                sliceName ||
+                displayTitle ||
                 (editMode
                   ? '---' // this makes an empty title clickable
                   : '')
