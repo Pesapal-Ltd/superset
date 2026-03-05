@@ -654,7 +654,7 @@ AUTH_USER_REGISTRATION = True
 # The default user self registration role
 AUTH_USER_REGISTRATION_ROLE = "Gamma"
 
-AUTH_ROLES_SYNC_AT_LOGIN = True
+AUTH_ROLES_SYNC_AT_LOGIN = False
 # message
 # When using LDAP Auth, setup the LDAP server
 # AUTH_LDAP_SERVER = "ldap://ldapserver.new"
