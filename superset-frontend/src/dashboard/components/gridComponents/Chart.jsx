@@ -58,6 +58,7 @@ import {
 } from '../../util/activeDashboardFilters';
 import getFormDataWithExtraFilters from '../../util/charts/getFormDataWithExtraFilters';
 import { PLACEHOLDER_DATASOURCE } from '../../constants';
+import { useDynamicCurrencyFormat } from '../../hooks/useDynamicCurrencyFormat';
 
 const propTypes = {
   id: PropTypes.number.isRequired,
@@ -310,6 +311,57 @@ const Chart = props => {
 
   formData.dashboardId = dashboardInfo.id;
 
+  // Dynamically override currency_format.symbol when a native filter named
+  // "Currency" is in scope for this chart. When the filter is present but
+  // nothing is selected, we clear the symbol so that "null" is never rendered
+  // as a prefix.
+  const { hasCurrencyFilter, symbol: dynamicCurrency } =
+    useDynamicCurrencyFormat(props.id);
+  const finalFormData = useMemo(() => {
+    // No Currency filter targets this chart — use the chart's own config as-is.
+    if (!hasCurrencyFilter) return formData;
+
+    // The symbol to apply: the selected currency code, or undefined to clear.
+    const overrideSymbol = dynamicCurrency ?? undefined;
+
+    // Helper: patch a single currency_format object.
+    const patchCurrencyFormat = currencyFormat =>
+      currencyFormat ? { ...currencyFormat, symbol: overrideSymbol } : currencyFormat;
+
+    // Patch top-level currency_format.
+    const patchedCurrencyFormat = patchCurrencyFormat(formData.currency_format);
+
+    // Patch any column_config entries that have their own currency_format so
+    // that aggregated / per-column currency prefixes are also kept consistent.
+    let patchedColumnConfig = formData.column_config;
+    if (formData.column_config && typeof formData.column_config === 'object') {
+      const patched = {};
+      let changed = false;
+      for (const [col, colCfg] of Object.entries(formData.column_config)) {
+        if (colCfg && colCfg.currency_format) {
+          patched[col] = {
+            ...colCfg,
+            currency_format: patchCurrencyFormat(colCfg.currency_format),
+          };
+          changed = true;
+        } else {
+          patched[col] = colCfg;
+        }
+      }
+      if (changed) patchedColumnConfig = patched;
+    }
+
+    return {
+      ...formData,
+      ...(patchedCurrencyFormat !== formData.currency_format && {
+        currency_format: patchedCurrencyFormat,
+      }),
+      ...(patchedColumnConfig !== formData.column_config && {
+        column_config: patchedColumnConfig,
+      }),
+    };
+  }, [formData, hasCurrencyFilter, dynamicCurrency]);
+
   const onExploreChart = useCallback(
     async clickEvent => {
       const isOpenInNewTab =
@@ -468,7 +520,7 @@ const Chart = props => {
         handleToggleFullSize={props.handleToggleFullSize}
         isFullSize={props.isFullSize}
         chartStatus={chartStatus}
-        formData={formData}
+        formData={finalFormData}
         width={width}
         height={getHeaderHeight()}
         chartId={props.id}
@@ -517,7 +569,7 @@ const Chart = props => {
           datasource={datasource}
           dashboardId={props.dashboardId}
           initialValues={EMPTY_OBJECT}
-          formData={formData}
+          formData={finalFormData}
           labelsColor={labelsColor}
           labelsColorMap={labelsColorMap}
           ownState={dataMask[props.id]?.ownState}
