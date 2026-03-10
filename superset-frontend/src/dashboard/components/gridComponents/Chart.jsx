@@ -338,11 +338,14 @@ const Chart = props => {
       const patched = {};
       let changed = false;
       for (const [col, colCfg] of Object.entries(formData.column_config)) {
-        if (colCfg && colCfg.currency_format) {
-          patched[col] = {
-            ...colCfg,
-            currency_format: patchCurrencyFormat(colCfg.currency_format),
-          };
+        if (colCfg && (colCfg.currency_format || colCfg.currencyFormat)) {
+          patched[col] = { ...colCfg };
+          if (colCfg.currency_format) {
+            patched[col].currency_format = patchCurrencyFormat(colCfg.currency_format);
+          }
+          if (colCfg.currencyFormat) {
+            patched[col].currencyFormat = patchCurrencyFormat(colCfg.currencyFormat);
+          }
           changed = true;
         } else {
           patched[col] = colCfg;
