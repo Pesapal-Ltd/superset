@@ -326,7 +326,9 @@ const Chart = props => {
 
     // Helper: patch a single currency_format object.
     const patchCurrencyFormat = currencyFormat =>
-      currencyFormat ? { ...currencyFormat, symbol: overrideSymbol } : currencyFormat;
+      currencyFormat && (currencyFormat.symbol || currencyFormat.symbolPosition)
+        ? { ...currencyFormat, symbol: overrideSymbol }
+        : currencyFormat;
 
     // Patch top-level currency_format.
     const patchedCurrencyFormat = patchCurrencyFormat(formData.currency_format);
