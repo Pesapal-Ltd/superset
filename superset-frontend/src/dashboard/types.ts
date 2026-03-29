@@ -138,6 +138,13 @@ export type DashboardInfo = {
     shared_label_colors: string[];
     map_label_colors: JsonObject;
     cross_filters_enabled: boolean;
+    email_verify_config?: {
+      enabled: boolean;
+      allowed_types?: string[];
+      allowed_roles?: string[];
+      recipient_column?: string;
+      merchant_id_column?: string;
+    };
   };
   crossFiltersEnabled: boolean;
   filterBarOrientation: FilterBarOrientation;
@@ -282,4 +289,5 @@ export enum MenuKeys {
   ToggleFullscreen = 'toggle_fullscreen',
   ManageEmbedded = 'manage_embedded',
   ManageEmailReports = 'manage_email_reports',
+  SendVerificationEmail = 'send_verification_email',
 }

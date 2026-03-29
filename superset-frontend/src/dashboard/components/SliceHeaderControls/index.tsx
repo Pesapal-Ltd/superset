@@ -56,6 +56,7 @@ import { MenuKeys, RootState } from 'src/dashboard/types';
 import DrillDetailModal from 'src/components/Chart/DrillDetail/DrillDetailModal';
 import { usePermissions } from 'src/hooks/usePermissions';
 import Button from 'src/components/Button';
+import SendVerifyModal from 'src/components/EmailVerify/SendVerifyModal';
 import { useCrossFiltersScopingModal } from '../nativeFilters/FilterBar/CrossFilters/ScopingModal/useCrossFiltersScopingModal';
 import { ViewResultsModalTrigger } from './ViewResultsModalTrigger';
 
@@ -161,6 +162,7 @@ const SliceHeaderControls = (
   const [drillModalIsOpen, setDrillModalIsOpen] = useState(false);
   // setting openKeys undefined falls back to uncontrolled behaviour
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [sendVerifyModalOpen, setSendVerifyModalOpen] = useState(false);
   const [openScopingModal, scopingModal] = useCrossFiltersScopingModal(
     props.slice.slice_id,
   );
@@ -172,6 +174,12 @@ const SliceHeaderControls = (
   const [modalFilters, setFilters] = useState<BinaryQueryObjectFilterClause[]>(
     [],
   );
+
+  // Read email_verify_config from the dashboard metadata in Redux
+  const emailVerifyConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['email_verify_config']>(
+    state => state.dashboardInfo?.metadata?.email_verify_config,
+  );
+  const emailVerifyEnabled = emailVerifyConfig?.enabled === true;
 
   const canEditCrossFilters =
     useSelector<RootState, boolean>(
@@ -279,6 +287,10 @@ const SliceHeaderControls = (
         if (queryMenuRef.current && !queryMenuRef.current.showModal) {
           queryMenuRef.current.open(domEvent);
         }
+        break;
+      }
+      case MenuKeys.SendVerificationEmail: {
+        setSendVerifyModalOpen(true);
         break;
       }
       default:
@@ -437,6 +449,24 @@ const SliceHeaderControls = (
 
       {(slice.description || canExplore) && <Menu.Divider />}
 
+      {emailVerifyEnabled && (
+        <>
+          <Menu.Item
+            key={MenuKeys.SendVerificationEmail}
+            data-test="send-verification-email-menu-item"
+          >
+            <Icons.MailOutlined
+              css={css`
+                margin-right: 8px;
+                color: #1890ff;
+              `}
+            />
+            {t('Send verification email')}
+          </Menu.Item>
+          <Menu.Divider />
+        </>
+      )}
+
       {supersetCanShare && (
         <ShareMenuItems
           dashboardId={dashboardId}
@@ -540,6 +570,15 @@ const SliceHeaderControls = (
         chartId={slice.slice_id}
         showModal={drillModalIsOpen}
       />
+
+      {emailVerifyEnabled && (
+        <SendVerifyModal
+          visible={sendVerifyModalOpen}
+          dashboardId={dashboardId}
+          chartId={slice.slice_id}
+          onClose={() => setSendVerifyModalOpen(false)}
+        />
+      )}
 
       {canEditCrossFilters && scopingModal}
     </>
