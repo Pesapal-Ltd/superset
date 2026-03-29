@@ -34,6 +34,7 @@ import {
   useSortBy,
   useGlobalFilter,
   useColumnOrder,
+  useRowSelect,
   PluginHook,
   TableOptions,
   FilterType,
@@ -89,6 +90,8 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   searchInputId?: string;
   onSearchColChange: (searchCol: string) => void;
   searchOptions: SearchOption[];
+  emailVerifyEnabled?: boolean;
+  onRowSelectionChange?: (selectedRows: D[]) => void;
 }
 
 export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
@@ -149,16 +152,40 @@ export default typedMemo(function DataTable<D extends object>({
   searchInputId,
   onSearchColChange,
   searchOptions,
+  emailVerifyEnabled,
+  onRowSelectionChange,
   ...moreUseTableOptions
 }: DataTableProps<D>): JSX.Element {
+  const selectionHook = useCallback(
+    (hooks: any) => {
+      if (emailVerifyEnabled) {
+        hooks.visibleColumns.push((columns: any) => [
+          {
+            id: 'selection',
+            Header: () => <th style={{ width: '40px', paddingLeft: '8px' }} />,
+            Cell: ({ row }: any) => (
+              <td style={{ width: '40px', textAlign: 'center', verticalAlign: 'middle' }}>
+                <input type="checkbox" {...row.getToggleRowSelectedProps()} />
+              </td>
+            ),
+          },
+          ...columns,
+        ]);
+      }
+    },
+    [emailVerifyEnabled],
+  );
+
   const tableHooks: PluginHook<D>[] = [
     useGlobalFilter,
     useSortBy,
     usePagination,
     useColumnOrder,
     doSticky ? useSticky : [],
+    emailVerifyEnabled ? useRowSelect : [],
+    emailVerifyEnabled ? selectionHook : [],
     hooks || [],
-  ].flat();
+  ].flat() as PluginHook<D>[];
 
   const columnNames = Object.keys(data?.[0] || {});
   const previousColumnNames = usePrevious(columnNames);
@@ -234,6 +261,7 @@ export default typedMemo(function DataTable<D extends object>({
     wrapStickyTable,
     setColumnOrder,
     allColumns,
+    selectedFlatRows,
     state: {
       pageIndex,
       pageSize,
@@ -266,6 +294,12 @@ export default typedMemo(function DataTable<D extends object>({
     },
     [manualSearch, onSearchChange, setGlobalFilter],
   );
+
+  useEffect(() => {
+    if (emailVerifyEnabled && onRowSelectionChange) {
+      onRowSelectionChange(selectedFlatRows.map((d: any) => d.original));
+    }
+  }, [selectedFlatRows, emailVerifyEnabled, onRowSelectionChange]);
 
   // updating the sort by to the own State of table viz
   useEffect(() => {

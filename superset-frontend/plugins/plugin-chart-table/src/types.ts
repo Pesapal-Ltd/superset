@@ -97,6 +97,8 @@ export type TableChartFormData = QueryFormData & {
   time_grain_sqla?: TimeGranularity;
   column_config?: Record<string, TableColumnConfig>;
   allow_rearrange_columns?: boolean;
+  email_verify_enabled?: boolean;
+  dashboardId?: number;
 };
 
 export interface TableChartProps extends ChartProps {
@@ -131,6 +133,7 @@ export interface ServerPaginationData {
   sortBy?: SortByItem[];
   searchText?: string;
   searchColumn?: string;
+  selectedRows?: any[];
 }
 
 export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
@@ -176,6 +179,7 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   hasServerPageLengthChanged: boolean;
   serverPageLength: number;
   slice_id: number;
+  emailVerifyEnabled?: boolean;
 }
 
 export enum ColorSchemeEnum {

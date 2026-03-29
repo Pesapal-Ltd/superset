@@ -279,6 +279,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     hasServerPageLengthChanged,
     serverPageLength,
     slice_id,
+    emailVerifyEnabled,
   } = props;
   const comparisonColumns = [
     { key: 'all', label: t('Display all') },
@@ -1193,6 +1194,30 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     }
   };
 
+  const handleRowSelectionChange = useCallback(
+    (selectedRows: D[]) => {
+      const plainSelectedRows = selectedRows.map(row => {
+        const plainRow = { ...row };
+        // Strip out complex instances if needed, or simply stringify parsing
+        // We'll use JSON stringify to do a robust comparison that survives Redux serialization
+        return plainRow;
+      });
+
+      // lodash isEqual might fail on class instances vs deserialized plain objects from Redux/URL
+      const isSelectedRowsEqual = 
+         JSON.stringify(plainSelectedRows) === JSON.stringify(serverPaginationData?.selectedRows || []);
+
+      if (!isSelectedRowsEqual) {
+        const modifiedOwnState = {
+          ...(serverPaginationData || {}),
+          selectedRows: JSON.parse(JSON.stringify(plainSelectedRows)),
+        };
+        updateTableOwnState(setDataMask, modifiedOwnState);
+      }
+    },
+    [serverPaginationData, setDataMask],
+  );
+
   return (
     <Styles>
       <DataTable<D>
@@ -1229,6 +1254,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         manualSearch={serverPagination}
         onSearchChange={debouncedSearch}
         searchOptions={searchOptions}
+        emailVerifyEnabled={emailVerifyEnabled}
+        onRowSelectionChange={handleRowSelectionChange}
       />
     </Styles>
   );

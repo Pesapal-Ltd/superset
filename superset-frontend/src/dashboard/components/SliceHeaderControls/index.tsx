@@ -175,11 +175,14 @@ const SliceHeaderControls = (
     [],
   );
 
-  // Read email_verify_config from the dashboard metadata in Redux
   const emailVerifyConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['email_verify_config']>(
     state => state.dashboardInfo?.metadata?.email_verify_config,
   );
   const emailVerifyEnabled = emailVerifyConfig?.enabled === true;
+
+  const selectedRows = useSelector<RootState, any[]>(
+    state => state.dataMask[props.slice.slice_id]?.ownState?.selectedRows || []
+  );
 
   const canEditCrossFilters =
     useSelector<RootState, boolean>(
@@ -576,6 +579,7 @@ const SliceHeaderControls = (
           visible={sendVerifyModalOpen}
           dashboardId={dashboardId}
           chartId={slice.slice_id}
+          selectedRows={selectedRows}
           onClose={() => setSendVerifyModalOpen(false)}
         />
       )}

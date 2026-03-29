@@ -67,6 +67,8 @@ interface EmailVerifyConfigPanelProps {
   dashboardId: number;
   /** Called after config is successfully saved so parent can reflect changes */
   onSaved?: (config: EmailVerifyConfig) => void;
+  /** Available column names from dashboard datasets */
+  columnOptions?: string[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ const DEFAULT_CONFIG: EmailVerifyConfig = {
 export default function EmailVerifyConfigPanel({
   dashboardId,
   onSaved,
+  columnOptions = [],
 }: EmailVerifyConfigPanelProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -275,11 +278,13 @@ export default function EmailVerifyConfigPanel({
                 showSearch
                 placeholder={t('e.g. merchant_email')}
                 id="email-verify-config-recipient-col"
-                // Free-text input — user types the column name directly
-                mode={undefined}
+                mode="tags"
               >
-                {/* Options would ideally be populated from the chart dataset;
-                    for now we allow free-text entry via tags mode workaround */}
+                {columnOptions.map(col => (
+                  <Option key={col} value={col}>
+                    {col}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
 
@@ -293,7 +298,14 @@ export default function EmailVerifyConfigPanel({
                 showSearch
                 placeholder={t('e.g. merchant_id')}
                 id="email-verify-config-merchant-id-col"
-              />
+                mode="tags"
+              >
+                {columnOptions.map(col => (
+                  <Option key={col} value={col}>
+                    {col}
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </>
         )}

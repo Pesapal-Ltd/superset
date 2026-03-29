@@ -309,7 +309,12 @@ const Chart = props => {
     ],
   );
 
+  const emailVerifyConfig = useSelector(
+    state => state.dashboardInfo?.metadata?.email_verify_config,
+  );
+
   formData.dashboardId = dashboardInfo.id;
+  formData.email_verify_enabled = emailVerifyConfig?.enabled === true;
 
   // Dynamically override currency_format.symbol when a native filter named
   // "Currency" is in scope for this chart. When the filter is present but

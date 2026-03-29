@@ -28,7 +28,7 @@
  *   5. Submit — which calls POST /api/v1/email-verify/send
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Button,
   Form,
@@ -42,7 +42,9 @@ import {
   message,
 } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
 import { SupersetClient, t } from '@superset-ui/core';
+import { RootState, Datasource } from 'src/dashboard/types';
 
 const { Option } = Select;
 
@@ -77,6 +79,8 @@ interface SendVerifyModalProps {
   defaultRecipient?: string;
   /** Pre-fill the merchant ID from a selected row */
   defaultMerchantId?: string;
+  /** Selected rows for bulk action */
+  selectedRows?: any[];
   /** Called when the modal is closed */
   onClose: () => void;
 }
@@ -91,9 +95,11 @@ export default function SendVerifyModal({
   chartId,
   defaultRecipient,
   defaultMerchantId,
+  selectedRows = [],
   onClose,
 }: SendVerifyModalProps) {
   const [form] = Form.useForm();
+  const isBulk = selectedRows && selectedRows.length > 0;
 
   const [config, setConfig] = useState<EmailVerifyConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
@@ -110,6 +116,18 @@ export default function SendVerifyModal({
     error?: string;
   } | null>(null);
 
+  // ── Access chart columns from Redux ──────────────────────────────────────
+  const chart = useSelector<RootState, any>(
+    state => state.charts[chartId || 0],
+  );
+  const datasource = useSelector<RootState, Datasource | undefined>(
+    state => state.datasources[chart?.form_data?.datasource],
+  );
+  const columnOptions = useMemo(
+    () => (datasource?.columns || []).map(c => c.column_name).sort(),
+    [datasource],
+  );
+
   // ── Load dashboard/chart config on open ──────────────────────────────────
   useEffect(() => {
     if (!visible) return;
@@ -119,8 +137,8 @@ export default function SendVerifyModal({
     setSelectedType(undefined);
     setSelectedTemplate(null);
 
-    if (defaultRecipient) form.setFieldsValue({ recipient_email: defaultRecipient });
-    if (defaultMerchantId) form.setFieldsValue({ merchant_id: defaultMerchantId });
+    if (!isBulk && defaultRecipient) form.setFieldsValue({ recipient_email: defaultRecipient });
+    if (!isBulk && defaultMerchantId) form.setFieldsValue({ merchant_id: defaultMerchantId });
 
     const loadConfig = async () => {
       setConfigLoading(true);
@@ -183,32 +201,91 @@ export default function SendVerifyModal({
       setSending(true);
       setSendResult(null);
 
-      const payload: Record<string, any> = {
-        template_id: selectedTemplate?.id,
-        recipient_email: values.recipient_email,
-        merchant_id: values.merchant_id,
-        variables: {},
-      };
-      if (dashboardId) payload.dashboard_id = dashboardId;
-      if (chartId) payload.chart_id = chartId;
+      if (isBulk) {
+        let successCount = 0;
+        let failCount = 0;
 
-      // Collect variable values from form
-      (selectedTemplate?.variables || []).forEach((v: string) => {
-        payload.variables[v] = values[`var_${v}`] || '';
-      });
+        for (const row of selectedRows) {
+          const emails = [];
+          if (row['MerchantEmail']) emails.push(row['MerchantEmail']);
+          if (row['CustomerEmail']) emails.push(row['CustomerEmail']);
+          if (values.additional_recipients?.length) {
+            emails.push(...values.additional_recipients);
+          }
 
-      const resp = await SupersetClient.post({
-        endpoint: '/api/v1/email-verify/send',
-        jsonPayload: payload,
-      });
-      const data: any = resp.json;
-      setSendResult({ success: data?.result?.success, error: data?.result?.error });
+          if (emails.length === 0) {
+            failCount++;
+            continue;
+          }
 
-      if (data?.result?.success) {
-        message.success(t('Verification email sent successfully!'));
+          const payload: Record<string, any> = {
+            template_id: selectedTemplate?.id,
+            recipient_email: emails.join(','),
+            merchant_id: row['MerchantName'] || '',
+            variables: {},
+          };
+          if (dashboardId) payload.dashboard_id = dashboardId;
+          if (chartId) payload.chart_id = chartId;
+
+          (selectedTemplate?.variables || []).forEach((v: string) => {
+            const mappedCol = values[`var_${v}`]?.[0] || v;
+            payload.variables[v] =
+              typeof row[mappedCol] !== 'undefined' ? String(row[mappedCol]) : '';
+          });
+
+          try {
+            await SupersetClient.post({
+              endpoint: '/api/v1/email-verify/send',
+              jsonPayload: payload,
+            });
+            successCount++;
+          } catch (e) {
+            failCount++;
+          }
+        }
+
+        setSendResult({
+          success: failCount === 0,
+          error:
+            failCount > 0
+              ? t(`Sent ${successCount}, Failed ${failCount} (Ensure rows have MerchantEmail)`)
+              : undefined,
+        });
+
+        if (failCount === 0) {
+          message.success(t('Successfully sent all emails in bulk!'));
+        }
+      } else {
+        const payload: Record<string, any> = {
+          template_id: selectedTemplate?.id,
+          recipient_email: values.recipient_email,
+          merchant_id: values.merchant_id,
+          variables: {},
+        };
+        if (dashboardId) payload.dashboard_id = dashboardId;
+        if (chartId) payload.chart_id = chartId;
+
+        // Collect variable values from form
+        (selectedTemplate?.variables || []).forEach((v: string) => {
+          let val = values[`var_${v}`];
+          if (Array.isArray(val) && val.length > 0) val = val[0];
+          payload.variables[v] = val || '';
+        });
+
+        const resp = await SupersetClient.post({
+          endpoint: '/api/v1/email-verify/send',
+          jsonPayload: payload,
+        });
+        const data: any = resp.json;
+        setSendResult({ success: data?.result?.success, error: data?.result?.error });
+
+        if (data?.result?.success) {
+          message.success(t('Verification email sent successfully!'));
+        }
       }
     } catch (err: any) {
-      message.error(err?.message || t('Failed to send verification email.'));
+      if (err?.errorFields) return; // Validation errors
+      message.error(err?.message || t('Failed to send verification email(s).'));
     } finally {
       setSending(false);
     }
@@ -265,24 +342,48 @@ export default function SendVerifyModal({
         </div>
       ) : (
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="recipient_email"
-            label={t('Recipient Email')}
-            rules={[
-              { required: true, message: t('Recipient email is required.') },
-              { type: 'email', message: t('Please enter a valid email address.') },
-            ]}
-          >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="merchant@example.com"
-              id="send-verify-recipient"
+          {isBulk ? (
+            <Alert
+              message={t('Bulk Sending Active')}
+              description={t(
+                `Emails will be sent for ${selectedRows.length} selected row(s). MerchantEmail and CustomerEmail are automatically mapped as recipients. MerchantName is automatically used.`,
+              )}
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
             />
-          </Form.Item>
+          ) : (
+            <>
+              <Form.Item
+                name="recipient_email"
+                label={t('Recipient Email')}
+                rules={[
+                  { required: true, message: t('Recipient email is required.') },
+                  { type: 'email', message: t('Please enter a valid email address.') },
+                ]}
+              >
+                <Input
+                  prefix={<MailOutlined />}
+                  placeholder="merchant@example.com"
+                  id="send-verify-recipient"
+                />
+              </Form.Item>
 
-          <Form.Item name="merchant_id" label={t('Merchant ID (optional)')}>
-            <Input placeholder={t('e.g. MERCHANT-001')} id="send-verify-merchant-id" />
-          </Form.Item>
+              <Form.Item name="merchant_id" label={t('Merchant ID (optional)')}>
+                <Input placeholder={t('e.g. MERCHANT-001')} id="send-verify-merchant-id" />
+              </Form.Item>
+            </>
+          )}
+
+          {isBulk && (
+            <Form.Item
+              name="additional_recipients"
+              label={t('Additional Recipients (CC)')}
+              help={t('These emails will be added as recipients for all bulk emails sent.')}
+            >
+              <Select mode="tags" placeholder={t('Enter additional emails...')} />
+            </Form.Item>
+          )}
 
           <Form.Item label={t('Email Type')}>
             <Select
@@ -369,12 +470,23 @@ export default function SendVerifyModal({
                       label={<Tag>{`{{${v}}}`}</Tag>}
                       rules={[
                         {
-                          required: true,
-                          message: t(`Value for {{${v}}} is required.`),
+                          required: !isBulk,
+                          message: t(`Value or column for {{${v}}} is required.`),
                         },
                       ]}
                     >
-                      <Input placeholder={t(`Enter value for ${v}`)} />
+                      <Select
+                        mode="tags"
+                        placeholder={
+                          isBulk ? t(`Default: Col '${v}'`) : t(`Enter value or col for ${v}`)
+                        }
+                      >
+                        {columnOptions.map((col: string) => (
+                          <Option key={col} value={col}>
+                            {col}
+                          </Option>
+                        ))}
+                      </Select>
                     </Form.Item>
                   ))}
                 </>

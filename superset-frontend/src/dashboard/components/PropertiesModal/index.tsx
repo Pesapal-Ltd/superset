@@ -52,12 +52,13 @@ import {
 } from 'src/utils/colorScheme';
 import getOwnerName from 'src/utils/getOwnerName';
 import Owner from 'src/types/Owner';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   setColorScheme,
   setDashboardMetadata,
 } from 'src/dashboard/actions/dashboardState';
 import { areObjectsEqual } from 'src/reduxUtils';
+import { RootState, DatasourcesState } from 'src/dashboard/types';
 import EmailVerifyConfigPanel, {
   EmailVerifyConfig,
 } from 'src/dashboard/components/EmailVerifyConfig';
@@ -126,6 +127,20 @@ const PropertiesModal = ({
   const [tags, setTags] = useState<TagType[]>([]);
   const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
   const originalDashboardMetadata = useRef<Record<string, any>>({});
+
+  const datasources = useSelector<RootState, DatasourcesState>(
+    state => state.datasources,
+  );
+
+  const allColumns = useMemo(() => {
+    const columnSet = new Set<string>();
+    Object.values(datasources).forEach(datasource => {
+      datasource.columns?.forEach(column => {
+        columnSet.add(column.column_name);
+      });
+    });
+    return Array.from(columnSet).sort();
+  }, [datasources]);
 
   const tagsAsSelectValues = useMemo(() => {
     const selectTags = tags.map((tag: { id: number; name: string }) => ({
@@ -798,6 +813,7 @@ const PropertiesModal = ({
           <EmailVerifyConfigPanel
             dashboardId={dashboardId}
             onSaved={handleEmailVerifySaved}
+            columnOptions={allColumns}
           />
         </Col>
       </Row>

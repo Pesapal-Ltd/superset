@@ -490,6 +490,7 @@ const transformProps = (
     comparison_color_scheme: comparisonColorScheme = ColorSchemeEnum.Green,
     comparison_type,
     slice_id,
+    email_verify_enabled: emailVerifyEnabled,
   } = formData;
   const isUsingTimeComparison =
     !isEmpty(time_compare) &&
@@ -719,9 +720,10 @@ const transformProps = (
     serverPagination,
     metrics,
     percentMetrics,
-    serverPaginationData: serverPagination
-      ? serverPaginationData
-      : defaultServerPaginationData,
+    serverPaginationData: {
+      ...(serverPagination ? serverPaginationData : defaultServerPaginationData),
+      selectedRows: serverPaginationData?.selectedRows || [],
+    },
     setDataMask,
     alignPositiveNegative,
     colorPositiveNegative,
@@ -749,6 +751,7 @@ const transformProps = (
     hasServerPageLengthChanged,
     serverPageLength,
     slice_id,
+    emailVerifyEnabled,
   };
 };
 
