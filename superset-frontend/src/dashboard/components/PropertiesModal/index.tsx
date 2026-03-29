@@ -58,7 +58,9 @@ import {
   setDashboardMetadata,
 } from 'src/dashboard/actions/dashboardState';
 import { areObjectsEqual } from 'src/reduxUtils';
-import EmailVerifyConfigPanel from 'src/dashboard/components/EmailVerifyConfig';
+import EmailVerifyConfigPanel, {
+  EmailVerifyConfig,
+} from 'src/dashboard/components/EmailVerifyConfig';
 
 const StyledFormItem = styled(FormItem)`
   margin-bottom: 0;
@@ -289,6 +291,17 @@ const PropertiesModal = ({
 
   const handleOnCancel = () => onHide();
 
+  const handleEmailVerifySaved = (config: EmailVerifyConfig) => {
+    try {
+      const currentMetadata = jsonMetadata ? JSON.parse(jsonMetadata) : {};
+      currentMetadata.email_verify_config = config;
+      setJsonMetadata(jsonStringify(currentMetadata));
+    } catch (e) {
+      // Fallback if parsing fails for some reason
+      console.error('Failed to update jsonMetadata with email config', e);
+    }
+  };
+
   const onColorSchemeChange = (
     colorScheme = '',
     { updateMetadata = true } = {},
@@ -321,7 +334,7 @@ const PropertiesModal = ({
   };
 
   const onFinish = () => {
-    const { title, slug, certifiedBy, certificationDetails } =
+    const { title, slug, certifiedBy, certificationDetails, css } =
       form.getFieldsValue();
     let currentJsonMetadata = jsonMetadata;
 
@@ -420,6 +433,7 @@ const PropertiesModal = ({
           certified_by: certifiedBy || null,
           certification_details:
             certifiedBy && certificationDetails ? certificationDetails : null,
+          css: css || null,
           ...morePutProps,
         }),
       }).then(() => {
@@ -781,7 +795,10 @@ const PropertiesModal = ({
       <Row>
         <Col xs={24} md={24}>
           <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
-          <EmailVerifyConfigPanel dashboardId={dashboardId} />
+          <EmailVerifyConfigPanel
+            dashboardId={dashboardId}
+            onSaved={handleEmailVerifySaved}
+          />
         </Col>
       </Row>
     </Modal>
