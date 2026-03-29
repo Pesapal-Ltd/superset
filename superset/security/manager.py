@@ -318,7 +318,13 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         "can_grant_guest_token",
         "can_set_embedded",
         "can_warm_up_cache",
+        # Email verification admin permissions
+        "can_manage_email_templates",
+        "can_configure_email_verify",
     }
+
+    # Email verification — can be granted to Alpha as well (configurable per-dashboard)
+    EMAIL_VERIFY_SEND_PERMISSION = "can_send_verification_email"
 
     READ_ONLY_PERMISSION = {
         "can_show",

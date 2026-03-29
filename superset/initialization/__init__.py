@@ -158,6 +158,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.sqllab.api import SqlLabRestApi
         from superset.sqllab.permalink.api import SqlLabPermalinkRestApi
         from superset.tags.api import TagRestApi
+        from superset.views.email_verify import EmailVerifyRestApi
         from superset.views.alerts import AlertView, ReportView
         from superset.views.all_entities import TaggedObjectsModelView
         from superset.views.annotations import AnnotationLayerView
@@ -224,6 +225,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(RLSRestApi)
         appbuilder.add_api(SavedQueryRestApi)
         appbuilder.add_api(TagRestApi)
+        appbuilder.add_api(EmailVerifyRestApi)
         appbuilder.add_api(SqlLabRestApi)
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)
@@ -380,6 +382,23 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             category="SQL Lab",
             category_label=__("SQL Lab"),
         )
+        appbuilder.add_link(
+            "Email Verification Templates",
+            label=__("Email Verification Templates"),
+            href=f"{app_root}/emailverify/templates/list/",
+            icon="fa-envelope",
+            category="Manage",
+            category_label=__("Manage"),
+        )
+        appbuilder.add_link(
+            "Email Verification Audit Log",
+            label=__("Email Verification Audit Log"),
+            href=f"{app_root}/emailverify/logs/",
+            icon="fa-history",
+            category="Manage",
+            category_label=__("Manage"),
+        )
+
         appbuilder.add_view(
             TagModelView,
             "Tags",

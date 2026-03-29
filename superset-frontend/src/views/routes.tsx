@@ -148,6 +148,20 @@ const ActionLogList: LazyExoticComponent<any> = lazy(
 const GroupsList: LazyExoticComponent<any> = lazy(
   () => import(/* webpackChunkName: "GroupsList" */ 'src/pages/GroupsList'),
 );
+
+const EmailVerifyTemplateList = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "EmailVerifyTemplateList" */ 'src/views/EmailVerify/TemplateList'
+    ),
+);
+
+const EmailVerifyAuditLog = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "EmailVerifyAuditLog" */ 'src/views/EmailVerify/AuditLog'
+    ),
+);
 type Routes = {
   path: string;
   Component: ComponentType;
@@ -255,6 +269,11 @@ export const routes: Routes = [
     path: '/actionlog/list',
     Component: ActionLogList,
   },
+  // Email Verification Templates — permission enforced server-side
+  {
+    path: '/emailverify/templates/list/',
+    Component: EmailVerifyTemplateList,
+  },
 ];
 
 if (isFeatureEnabled(FeatureFlag.TaggingSystem)) {
@@ -284,6 +303,11 @@ if (isAdmin) {
     {
       path: '/list_groups/',
       Component: GroupsList,
+    },
+    // Audit log is admin-only
+    {
+      path: '/emailverify/logs/',
+      Component: EmailVerifyAuditLog,
     },
   );
 }

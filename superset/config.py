@@ -163,7 +163,7 @@ ROW_LIMIT = 1000  # from 50000
 # default row limit when requesting samples from datasource in explore view
 SAMPLES_ROW_LIMIT = 100  # from 1k
 # default row limit for native filters
-NATIVE_FILTER_DEFAULT_ROW_LIMIT = 100  # from 1k
+NATIVE_FILTER_DEFAULT_ROW_LIMIT = 1000  # from 1k
 # max rows retrieved by filter select auto complete
 FILTER_SELECT_ROW_LIMIT = 1000  # from 10k
 # default time filter in explore
@@ -186,7 +186,7 @@ SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 
-CUSTOM_SECURITY_MANAGER = CustomSsoSecurityManager
+CUSTOM_SECURITY_MANAGER = None
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------------------------------------------------------
 
@@ -353,7 +353,7 @@ FAB_API_SWAGGER_UI = True
 # AUTH_DB : Is for database (username/password)
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
-AUTH_TYPE = AUTH_OAUTH
+AUTH_TYPE = AUTH_DB
 # AUTH_TYPE = AUTH_REMOTE_USER
 
 OAUTH_PROVIDERS = [
@@ -865,7 +865,7 @@ DEFAULT_FEATURE_FLAGS: dict[str, bool] = {
     # domains in your TALISMAN_CONFIG
     "SLACK_ENABLE_AVATARS": False,
     # Allow users to optionally specify date formats in email subjects, which will be parsed if enabled. # noqa: E501
-    "DATE_FORMAT_IN_EMAIL_SUBJECT": False,
+    "DATE_FORMAT_IN_EMAIL_SUBJECT": True,
     # Allow metrics and columns to be grouped into (potentially nested) folders in the
     # chart builder
     "DATASET_FOLDERS": False,
@@ -1635,6 +1635,21 @@ SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 SMTP_SSL_SERVER_AUTH = False
 ENABLE_CHUNK_ENCODING = False
 
+# ---------------------------------------------------
+# Email verification feature (Merchant workflows)
+# ---------------------------------------------------
+# Global kill switch — set to False to disable the entire feature
+EMAIL_VERIFY_ENABLED = True
+# Rate limit for the /send endpoint; format: "<n>/hour"
+EMAIL_VERIFY_RATE_LIMIT = "20/hour"
+# Email provider: "smtp" (default) | "sendgrid" | "ses"
+EMAIL_VERIFY_PROVIDER = "smtp"
+# Only required when EMAIL_VERIFY_PROVIDER = "sendgrid"
+EMAIL_VERIFY_SENDGRID_API_KEY = ""
+# Override the From address for verification emails.
+# Falls back to SMTP_MAIL_FROM if not set.
+EMAIL_VERIFY_FROM_ADDRESS = ""
+
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
 # permission management
@@ -1874,10 +1889,10 @@ ALERT_MINIMUM_INTERVAL = int(timedelta(minutes=0).total_seconds())
 REPORT_MINIMUM_INTERVAL = int(timedelta(minutes=0).total_seconds())
 
 # A custom prefix to use on all Alerts & Reports emails
-EMAIL_REPORTS_SUBJECT_PREFIX = "[Report] "
+EMAIL_REPORTS_SUBJECT_PREFIX = "[Warehouse] "
 
 # The text for call-to-action link in Alerts & Reports emails
-EMAIL_REPORTS_CTA = "Explore in Superset"
+EMAIL_REPORTS_CTA = "Explore in the Data Warehouse"
 
 # Slack API token for the superset reports, either string or callable
 SLACK_API_TOKEN: Callable[[], str] | str | None = None

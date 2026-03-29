@@ -58,6 +58,7 @@ import {
   setDashboardMetadata,
 } from 'src/dashboard/actions/dashboardState';
 import { areObjectsEqual } from 'src/reduxUtils';
+import EmailVerifyConfigPanel from 'src/dashboard/components/EmailVerifyConfig';
 
 const StyledFormItem = styled(FormItem)`
   margin-bottom: 0;
@@ -775,6 +776,14 @@ const PropertiesModal = ({
           </Col>
         </Row>
       </AntdForm>
+
+      {/* Email Verification — saves independently via its own Save button */}
+      <Row>
+        <Col xs={24} md={24}>
+          <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+          <EmailVerifyConfigPanel dashboardId={dashboardId} />
+        </Col>
+      </Row>
     </Modal>
   );
 };
