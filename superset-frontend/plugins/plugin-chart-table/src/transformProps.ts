@@ -752,6 +752,7 @@ const transformProps = (
     serverPageLength,
     slice_id,
     emailVerifyEnabled,
+    customState: chartProps.customState,
   };
 };
 

@@ -61,6 +61,7 @@ const propTypes = {
   onFilterMenuOpen: PropTypes.func,
   onFilterMenuClose: PropTypes.func,
   ownState: PropTypes.object,
+  customState: PropTypes.object,
   postTransformProps: PropTypes.func,
   source: PropTypes.oneOf([ChartSource.Dashboard, ChartSource.Explore]),
   emitCrossFilters: PropTypes.bool,
@@ -153,6 +154,7 @@ class ChartRenderer extends Component {
         !isEqual(nextProps.datasource, this.props.datasource) ||
         nextProps.annotationData !== this.props.annotationData ||
         nextProps.ownState !== this.props.ownState ||
+        nextProps.customState !== this.props.customState ||
         nextProps.filterState !== this.props.filterState ||
         nextProps.height !== this.props.height ||
         nextProps.width !== this.props.width ||
@@ -263,6 +265,7 @@ class ChartRenderer extends Component {
       annotationData,
       initialValues,
       ownState,
+      customState,
       filterState,
       chartIsStale,
       formData,
@@ -361,6 +364,7 @@ class ChartRenderer extends Component {
             initialValues={initialValues}
             formData={currentFormData}
             ownState={ownState}
+            customState={customState}
             filterState={filterState}
             hooks={this.hooks}
             behaviors={behaviors}

@@ -26,6 +26,7 @@ import {
   CSSProperties,
   DragEvent,
   useEffect,
+  useMemo,
 } from 'react';
 
 import {
@@ -92,6 +93,7 @@ export interface DataTableProps<D extends object> extends TableOptions<D> {
   searchOptions: SearchOption[];
   emailVerifyEnabled?: boolean;
   onRowSelectionChange?: (selectedRows: D[]) => void;
+  customState?: any;
 }
 
 export interface RenderHTMLCellProps extends HTMLProps<HTMLTableCellElement> {
@@ -154,6 +156,7 @@ export default typedMemo(function DataTable<D extends object>({
   searchOptions,
   emailVerifyEnabled,
   onRowSelectionChange,
+  customState,
   ...moreUseTableOptions
 }: DataTableProps<D>): JSX.Element {
   const selectionHook = useCallback(
@@ -162,7 +165,11 @@ export default typedMemo(function DataTable<D extends object>({
         hooks.visibleColumns.push((columns: any) => [
           {
             id: 'selection',
-            Header: () => <th style={{ width: '40px', paddingLeft: '8px' }} />,
+            Header: ({ getToggleAllPageRowsSelectedProps }: any) => (
+              <th style={{ width: '40px', paddingLeft: '8px' }}>
+                <input type="checkbox" {...getToggleAllPageRowsSelectedProps()} />
+              </th>
+            ),
             Cell: ({ row }: any) => (
               <td style={{ width: '40px', textAlign: 'center', verticalAlign: 'middle' }}>
                 <input type="checkbox" {...row.getToggleRowSelectedProps()} />
@@ -208,6 +215,16 @@ export default typedMemo(function DataTable<D extends object>({
   const paginationRef = useRef<HTMLDivElement>(null);
   const wrapperRef = userWrapperRef || defaultWrapperRef;
   const paginationData = JSON.stringify(serverPaginationData);
+  const selectedRowIds = useMemo(() => 
+    ((customState?.selectedRows as any[]) || []).reduce((acc: any, row: any) => {
+      const index = data.findIndex(d => isEqual(d, row));
+      if (index !== -1) {
+        acc[index] = true;
+      }
+      return acc;
+    }, {}),
+    [customState?.selectedRows, data]
+  );
 
   const defaultGetTableSize = useCallback(() => {
     if (wrapperRef.current) {
@@ -274,13 +291,17 @@ export default typedMemo(function DataTable<D extends object>({
       columns,
       data,
       initialState,
+      state: {
+        selectedRowIds,
+      },
       getTableSize: defaultGetTableSize,
       globalFilter: defaultGlobalFilter,
       sortTypes,
       autoResetSortBy: !isEqual(columnNames, previousColumnNames),
       manualSortBy: !!serverPagination,
+      autoResetSelectedRows: false,
       ...moreUseTableOptions,
-    },
+    } as any,
     ...tableHooks,
   );
 
@@ -402,9 +423,14 @@ export default typedMemo(function DataTable<D extends object>({
         {page && page.length > 0 ? (
           page.map(row => {
             prepareRow(row);
-            const { key: rowKey, ...rowProps } = row.getRowProps();
+            const { key: rowKey, className: rowClassName, ...rowProps } = row.getRowProps();
             return (
-              <tr key={rowKey || row.id} {...rowProps} role="row">
+              <tr 
+                key={rowKey || row.id} 
+                {...rowProps} 
+                role="row" 
+                className={`${rowClassName || ''} ${(row as any).isSelected ? 'dt-row-selected' : ''}`.trim()}
+              >
                 {row.cells.map(cell =>
                   cell.render('Cell', { key: cell.column.id }),
                 )}

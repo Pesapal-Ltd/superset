@@ -583,6 +583,7 @@ const Chart = props => {
           labelsColor={labelsColor}
           labelsColorMap={labelsColorMap}
           ownState={dataMask[props.id]?.ownState}
+          customState={dataMask[props.id]?.customState}
           filterState={dataMask[props.id]?.filterState}
           queriesResponse={chart.queriesResponse}
           timeout={timeout}

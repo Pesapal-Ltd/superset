@@ -108,6 +108,7 @@ export interface TableChartProps extends ChartProps {
   };
   rawFormData: TableChartFormData;
   queriesData: ChartDataResponseResult[];
+  customState?: any;
 }
 
 export type BasicColorFormatterType = {
@@ -180,6 +181,7 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   serverPageLength: number;
   slice_id: number;
   emailVerifyEnabled?: boolean;
+  customState?: any;
 }
 
 export enum ColorSchemeEnum {

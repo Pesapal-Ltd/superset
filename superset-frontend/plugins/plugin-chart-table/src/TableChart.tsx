@@ -25,6 +25,7 @@ import {
   MouseEvent,
   KeyboardEvent as ReactKeyboardEvent,
   useEffect,
+  useRef,
 } from 'react';
 
 import {
@@ -280,6 +281,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     serverPageLength,
     slice_id,
     emailVerifyEnabled,
+    customState,
   } = props;
   const comparisonColumns = [
     { key: 'all', label: t('Display all') },
@@ -1194,28 +1196,30 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     }
   };
 
+  const prevSelectedRowsRef = useRef<string>('[]');
+
   const handleRowSelectionChange = useCallback(
     (selectedRows: D[]) => {
       const plainSelectedRows = selectedRows.map(row => {
         const plainRow = { ...row };
-        // Strip out complex instances if needed, or simply stringify parsing
-        // We'll use JSON stringify to do a robust comparison that survives Redux serialization
         return plainRow;
       });
 
-      // lodash isEqual might fail on class instances vs deserialized plain objects from Redux/URL
-      const isSelectedRowsEqual = 
-         JSON.stringify(plainSelectedRows) === JSON.stringify(serverPaginationData?.selectedRows || []);
-
-      if (!isSelectedRowsEqual) {
-        const modifiedOwnState = {
-          ...(serverPaginationData || {}),
-          selectedRows: JSON.parse(JSON.stringify(plainSelectedRows)),
-        };
-        updateTableOwnState(setDataMask, modifiedOwnState);
+      const serializedSelectedRows = JSON.stringify(plainSelectedRows);
+      
+      if (prevSelectedRowsRef.current !== serializedSelectedRows) {
+        prevSelectedRowsRef.current = serializedSelectedRows;
+        
+        if (setDataMask) {
+          setDataMask({
+            customState: {
+              selectedRows: JSON.parse(serializedSelectedRows),
+            },
+          } as any);
+        }
       }
     },
-    [serverPaginationData, setDataMask],
+    [setDataMask],
   );
 
   return (
@@ -1256,6 +1260,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         searchOptions={searchOptions}
         emailVerifyEnabled={emailVerifyEnabled}
         onRowSelectionChange={handleRowSelectionChange}
+        customState={customState}
       />
     </Styles>
   );

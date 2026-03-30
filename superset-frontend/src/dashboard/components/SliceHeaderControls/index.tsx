@@ -181,7 +181,10 @@ const SliceHeaderControls = (
   const emailVerifyEnabled = emailVerifyConfig?.enabled === true;
 
   const selectedRows = useSelector<RootState, any[]>(
-    state => state.dataMask[props.slice.slice_id]?.ownState?.selectedRows || []
+    state =>
+      (state.dataMask[props.slice.slice_id] as any)?.customState?.selectedRows ||
+      state.dataMask[props.slice.slice_id]?.ownState?.selectedRows ||
+      [],
   );
 
   const canEditCrossFilters =
