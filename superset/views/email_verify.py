@@ -25,6 +25,7 @@ Registered at:  /api/v1/email-verify/
 from __future__ import annotations
 
 import logging
+import os
 import re
 import time
 from datetime import datetime, timedelta
@@ -133,6 +134,7 @@ def _get_email_verify_config(
 class EmailVerifyRestApi(BaseSupersetApi):
     """REST API — Merchant Email Verification."""
 
+    csrf_exempt = True
     resource_name = "email-verify"
     route_base = "/api/v1/email-verify"
     allow_browser_login = True
@@ -574,9 +576,11 @@ class EmailVerifyRestApi(BaseSupersetApi):
         if not recipient_email:
             return self.response_400(message="recipient_email is required.")
 
-        # Basic email format check
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", recipient_email):
-            return self.response_400(message=f"Invalid email address: {recipient_email}")
+        # Basic email format check — allow multiple comma/semicolon-separated emails
+        recipients = [r.strip() for r in re.split(r"[,;]", recipient_email) if r.strip()]
+        for r in recipients:
+            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", r):
+                return self.response_400(message=f"Invalid email address: {r}")
 
         # 2. Load dashboard/chart config and perform role + type auth checks
         if dashboard_id or chart_id:
@@ -646,12 +650,33 @@ class EmailVerifyRestApi(BaseSupersetApi):
         status = "failed"
         error_message: str | None = None
 
+        # Load Pesapal Logo for inline embedding (CID: pesapal_logo)
+        images = {}
+        try:
+            # BASE_DIR points to the 'superset' package directory
+            logo_path = os.path.join(
+                current_app.config["BASE_DIR"],
+                "..",
+                "superset-frontend",
+                "src",
+                "assets",
+                "images",
+                "base_pesapal_logo.png",
+            )
+            if os.path.exists(logo_path):
+              logger.info("Loading Pesapal logo for email CID: %s", logo_path)
+              with open(logo_path, "rb") as f:
+                images["pesapal_logo"] = f.read()
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.warning("Failed to load Pesapal logo for email CID: %s", exc)
+
         try:
             send_verification_email(
                 to_address=recipient_email,
                 subject=rendered_subject,
                 html_body=rendered_html,
                 text_body=rendered_text,
+                images=images,
             )
             status = "sent"
         except Exception as exc:  # pylint: disable=broad-except

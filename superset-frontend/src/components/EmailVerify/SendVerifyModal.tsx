@@ -40,6 +40,7 @@ import {
   Tag,
   Alert,
   message,
+  DatePicker,
 } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
@@ -47,6 +48,7 @@ import { SupersetClient, t } from '@superset-ui/core';
 import { RootState, Datasource } from 'src/dashboard/types';
 
 const { Option } = Select;
+const { TextArea } = Input;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -123,10 +125,35 @@ export default function SendVerifyModal({
   const datasource = useSelector<RootState, Datasource | undefined>(
     state => state.datasources[chart?.form_data?.datasource],
   );
-  const columnOptions = useMemo(
-    () => (datasource?.columns || []).map(c => c.column_name).sort(),
-    [datasource],
-  );
+
+  const [datasetColumns, setDatasetColumns] = useState<string[]>([]);
+  const [isLoadingDataset, setIsLoadingDataset] = useState(false);
+
+  // Sync columns from datasource or fetch if missing
+  useEffect(() => {
+    if (datasource?.columns) {
+      setDatasetColumns(datasource.columns.map(c => c.column_name).sort());
+    } else if (chart?.form_data?.datasource && !isLoadingDataset) {
+      const [id, type] = chart.form_data.datasource.split('__');
+      if (type === 'table') {
+        setIsLoadingDataset(true);
+        SupersetClient.get({ endpoint: `/api/v1/dataset/${id}` })
+          .then(({ json }) => {
+            const cols = (json.result?.columns || []).map((c: any) => c.column_name).sort();
+            setDatasetColumns(cols);
+          })
+          .catch(() => setIsLoadingDataset(false))
+          .finally(() => setIsLoadingDataset(false));
+      }
+    }
+  }, [datasource, chart?.form_data?.datasource]);
+
+  const columnOptions = useMemo(() => {
+    const queryCols = chart?.queriesResponse?.[0]?.colnames || [];
+    // Merge dataset columns with query columns (to include calculated ones etc)
+    const allCols = Array.from(new Set([...datasetColumns, ...queryCols])).sort();
+    return allCols;
+  }, [datasetColumns, chart?.queriesResponse]);
 
   // ── Load dashboard/chart config on open ──────────────────────────────────
   useEffect(() => {
@@ -213,14 +240,15 @@ export default function SendVerifyModal({
             emails.push(...values.additional_recipients);
           }
 
-          if (emails.length === 0) {
+          const uniqueEmails = Array.from(new Set(emails.map(e => String(e || '').trim()))).filter(Boolean);
+          if (uniqueEmails.length === 0) {
             failCount++;
             continue;
           }
 
           const payload: Record<string, any> = {
             template_id: selectedTemplate?.id,
-            recipient_email: emails.join(','),
+            recipient_email: uniqueEmails.join(','),
             merchant_id: row['MerchantName'] || '',
             variables: {},
           };
@@ -228,9 +256,21 @@ export default function SendVerifyModal({
           if (chartId) payload.chart_id = chartId;
 
           (selectedTemplate?.variables || []).forEach((v: string) => {
-            const mappedCol = values[`var_${v}`]?.[0] || v;
-            payload.variables[v] =
-              typeof row[mappedCol] !== 'undefined' ? String(row[mappedCol]) : '';
+            const formVal = values[`var_${v}`];
+            // Special cases for variables that are manual inputs in the modal
+            if (['Deadline', 'note', 'Year'].includes(v)) {
+              let val = formVal;
+              if (Array.isArray(val) && val.length > 0) val = val[0];
+              if (v === 'Deadline' && val) {
+                payload.variables[v] = val.format ? val.format('YYYY-MM-DD') : String(val);
+              } else {
+                payload.variables[v] = val || (v === 'Year' ? new Date().getFullYear().toString() : '');
+              }
+            } else {
+              const mappedCol = formVal?.[0] || v;
+              payload.variables[v] =
+                typeof row[mappedCol] !== 'undefined' ? String(row[mappedCol]) : '';
+            }
           });
 
           try {
@@ -269,7 +309,14 @@ export default function SendVerifyModal({
         (selectedTemplate?.variables || []).forEach((v: string) => {
           let val = values[`var_${v}`];
           if (Array.isArray(val) && val.length > 0) val = val[0];
-          payload.variables[v] = val || '';
+
+          if (v === 'Deadline' && val && val.format) {
+            payload.variables[v] = val.format('YYYY-MM-DD');
+          } else if (v === 'Year' && !val) {
+            payload.variables[v] = new Date().getFullYear().toString();
+          } else {
+            payload.variables[v] = val || '';
+          }
         });
 
         const resp = await SupersetClient.post({
@@ -424,6 +471,27 @@ export default function SendVerifyModal({
                   form.resetFields(
                     (selectedTemplate?.variables || []).map(v => `var_${v}`),
                   );
+
+                  // Auto-map variables based on column names
+                  if (tpl) {
+                    const newValues: Record<string, any> = {};
+                    tpl.variables.forEach(v => {
+                      if (v === 'Year') {
+                        newValues[`var_${v}`] = new Date().getFullYear().toString();
+                      } else if (v === 'Deadline') {
+                        // Leave empty for DatePicker
+                      } else {
+                        // Case-insensitive match for columns
+                        const matchedCol = columnOptions.find(
+                          col => col.toLowerCase() === v.toLowerCase()
+                        );
+                        if (matchedCol) {
+                          newValues[`var_${v}`] = [matchedCol];
+                        }
+                      }
+                    });
+                    form.setFieldsValue(newValues);
+                  }
                 }}
                 id="send-verify-template-select"
               >
@@ -444,6 +512,25 @@ export default function SendVerifyModal({
             )}
           </Form.Item>
 
+          {selectedTemplate &&
+            (selectedTemplate.variables || []).some(
+              v =>
+                v !== 'Year' &&
+                (v === 'Deadline' ||
+                  v === 'note' ||
+                  !columnOptions.some(col => col.toLowerCase() === v.toLowerCase())),
+            ) && (
+              <Alert
+                message={t('Manual Input Required')}
+                description={t(
+                  'Variables that matched dataset columns were automatically mapped and are hidden from this list to keep it simple.',
+                )}
+                type="info"
+                showIcon
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
           {selectedTemplate && (
             <>
               <div
@@ -463,22 +550,24 @@ export default function SendVerifyModal({
                   <p style={{ fontWeight: 600, marginBottom: 8 }}>
                     {t('Template Variables')}
                   </p>
-                  {(selectedTemplate.variables || []).map((v: string) => (
-                    <Form.Item
-                      key={v}
-                      name={`var_${v}`}
-                      label={<Tag>{`{{${v}}}`}</Tag>}
-                      rules={[
-                        {
-                          required: !isBulk,
-                          message: t(`Value or column for {{${v}}} is required.`),
-                        },
-                      ]}
-                    >
+                  {(selectedTemplate.variables || []).map((v: string) => {
+                    if (v === 'Year') return null; // Always hidden
+
+                    // If it's not a special manual field, check if it's auto-mapped to a column
+                    if (v !== 'Deadline' && v !== 'note') {
+                      const isAutoMapped = columnOptions.some(
+                        col => col.toLowerCase() === v.toLowerCase(),
+                      );
+                      if (isAutoMapped) return null; // Hide auto-mapped variables
+                    }
+
+                    let component = (
                       <Select
                         mode="tags"
                         placeholder={
-                          isBulk ? t(`Default: Col '${v}'`) : t(`Enter value or col for ${v}`)
+                          isBulk
+                            ? t(`Default: Col '${v}'`)
+                            : t(`Enter value or col for ${v}`)
                         }
                       >
                         {columnOptions.map((col: string) => (
@@ -487,8 +576,49 @@ export default function SendVerifyModal({
                           </Option>
                         ))}
                       </Select>
-                    </Form.Item>
-                  ))}
+                    );
+
+                    let label: React.ReactNode = <Tag>{`{{${v}}}`}</Tag>;
+                    let rules: any[] = [
+                      {
+                        required: !isBulk && v !== 'note',
+                        message: t(`Value or column for {{${v}}} is required.`),
+                      },
+                    ];
+
+                    if (v === 'Deadline') {
+                      label = (
+                        <span>
+                          <Tag>{`{{${v}}}`}</Tag> {t('Deadline Date')}
+                        </span>
+                      );
+                      component = <DatePicker style={{ width: '100%' }} />;
+                    } else if (v === 'note') {
+                      label = (
+                        <span>
+                          <Tag>{`{{${v}}}`}</Tag> {t('Note from Risk Team')}
+                        </span>
+                      );
+                      component = (
+                        <TextArea
+                          rows={3}
+                          placeholder={t('Optional: Add a comment for the merchant...')}
+                        />
+                      );
+                      rules = []; // Not required
+                    }
+
+                    return (
+                      <Form.Item
+                        key={v}
+                        name={`var_${v}`}
+                        label={label}
+                        rules={rules}
+                      >
+                        {component}
+                      </Form.Item>
+                    );
+                  })}
                 </>
               )}
             </>

@@ -27,7 +27,7 @@ import logging
 from typing import Any
 
 from flask import current_app
-from jinja2 import Environment, select_autoescape, StrictUndefined, UndefinedError
+from jinja2 import Environment, select_autoescape, StrictUndefined, UndefinedError, TemplateSyntaxError
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +47,23 @@ def render_template(template_body: str, variables: dict[str, Any]) -> str:
     """Render a Jinja2 template string with the supplied variables.
 
     Raises:
-        ValueError: If a variable referenced in the template is missing.
+        ValueError: If a variable referenced in the template is missing or
+                    if the template contains a syntax error.
     """
     try:
         return _jinja_env.from_string(template_body).render(**variables)
     except UndefinedError as exc:
         raise ValueError(f"Missing variable in template: {exc}") from exc
+    except TemplateSyntaxError as exc:
+        # Provide context around the error position if possible
+        context = ""
+        if exc.lineno is not None:
+            lines = template_body.splitlines()
+            if 0 < exc.lineno <= len(lines):
+                error_line = lines[exc.lineno - 1]
+                # Safely provide the line snippet since 'column' is not always available
+                context = f" at line {exc.lineno}: '{error_line.strip()}'"
+        raise ValueError(f"Template syntax error{context}: {exc.message}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +76,7 @@ def send_verification_email(
     subject: str,
     html_body: str,
     text_body: str | None = None,
+    images: dict[str, bytes] | None = None,
 ) -> bool:
     """Dispatch a verification email through the configured provider.
 
@@ -73,6 +85,7 @@ def send_verification_email(
         subject: Email subject line (already rendered).
         html_body: HTML email body (already rendered).
         text_body: Optional plain-text fallback (already rendered).
+        images: Optional dictionary of image content indexed by CID.
 
     Returns:
         True on success.
@@ -84,7 +97,7 @@ def send_verification_email(
     provider = config.get("EMAIL_VERIFY_PROVIDER", "smtp").lower()
 
     if provider == "smtp":
-        return _send_via_smtp(to_address, subject, html_body, text_body, config)
+        return _send_via_smtp(to_address, subject, html_body, text_body, images, config)
     if provider == "sendgrid":
         return _send_via_sendgrid(to_address, subject, html_body, text_body, config)
     if provider == "ses":
@@ -106,6 +119,7 @@ def _send_via_smtp(
     subject: str,
     html_body: str,
     text_body: str | None,
+    images: dict[str, bytes] | None,
     config: dict[str, Any],
 ) -> bool:
     """Send via Superset's existing SMTP infrastructure."""
@@ -125,7 +139,7 @@ def _send_via_smtp(
         config=config,
         files=None,
         data=None,
-        images=None,
+        images=images,
         dryrun=False,
         cc="",
         bcc="",
