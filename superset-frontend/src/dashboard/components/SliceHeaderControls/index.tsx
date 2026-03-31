@@ -186,6 +186,7 @@ const SliceHeaderControls = (
       state.dataMask[props.slice.slice_id]?.ownState?.selectedRows ||
       [],
   );
+  const hasRowsSelected = selectedRows.length > 0;
 
   const canEditCrossFilters =
     useSelector<RootState, boolean>(
@@ -455,7 +456,7 @@ const SliceHeaderControls = (
 
       {(slice.description || canExplore) && <Menu.Divider />}
 
-      {emailVerifyEnabled && (
+      {emailVerifyEnabled && hasRowsSelected && (
         <>
           <Menu.Item
             key={MenuKeys.SendVerificationEmail}
