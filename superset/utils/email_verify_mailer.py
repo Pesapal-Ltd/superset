@@ -144,6 +144,7 @@ def _send_via_smtp(
         cc="",
         bcc="",
         mime_subtype="mixed",
+        from_address=from_address,
     )
     logger.info("Verification email sent via SMTP to %s", to_address)
     return True

@@ -41,6 +41,7 @@ import {
   Alert,
   message,
   DatePicker,
+  Checkbox,
 } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
@@ -234,8 +235,9 @@ export default function SendVerifyModal({
 
         for (const row of selectedRows) {
           const emails = [];
-          if (row['MerchantEmail']) emails.push(row['MerchantEmail']);
-          if (row['CustomerEmail']) emails.push(row['CustomerEmail']);
+          const targets = values.recipient_targets || ['merchant', 'customer'];
+          if (targets.includes('merchant') && row['MerchantEmail']) emails.push(row['MerchantEmail']);
+          if (targets.includes('customer') && row['CustomerEmail']) emails.push(row['CustomerEmail']);
           if (values.additional_recipients?.length) {
             emails.push(...values.additional_recipients);
           }
@@ -288,7 +290,7 @@ export default function SendVerifyModal({
           success: failCount === 0,
           error:
             failCount > 0
-              ? t(`Sent ${successCount}, Failed ${failCount} (Ensure rows have MerchantEmail)`)
+              ? t(`Sent ${successCount}, Failed ${failCount} (Ensure rows have at least one selected recipient email)`)
               : undefined,
         });
 
@@ -393,7 +395,7 @@ export default function SendVerifyModal({
             <Alert
               message={t('Bulk Sending Active')}
               description={t(
-                `Emails will be sent for ${selectedRows.length} selected row(s). MerchantEmail and CustomerEmail are automatically mapped as recipients. MerchantName is automatically used.`,
+                `Emails will be sent for ${selectedRows.length} selected row(s). Use the checkboxes below to choose which recipients to include.`,
               )}
               type="info"
               showIcon
@@ -423,13 +425,29 @@ export default function SendVerifyModal({
           )}
 
           {isBulk && (
-            <Form.Item
-              name="additional_recipients"
-              label={t('Additional Recipients (CC)')}
-              help={t('These emails will be added as recipients for all bulk emails sent.')}
-            >
-              <Select mode="tags" placeholder={t('Enter additional emails...')} />
-            </Form.Item>
+            <>
+              <Form.Item
+                name="recipient_targets"
+                label={t('Send To')}
+                initialValue={['merchant', 'customer']}
+                rules={[{ required: true, message: t('Please select at least one recipient type.') }]}
+              >
+                <Checkbox.Group
+                  options={[
+                    { label: t('Merchant Email'), value: 'merchant' },
+                    { label: t('Customer Email'), value: 'customer' },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="additional_recipients"
+                label={t('Additional Recipients (CC)')}
+                help={t('These emails will be added as recipients for all bulk emails sent.')}
+              >
+                <Select mode="tags" placeholder={t('Enter additional emails...')} />
+              </Form.Item>
+            </>
           )}
 
           <Form.Item label={t('Email Type')}>

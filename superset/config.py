@@ -186,7 +186,7 @@ SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 
-CUSTOM_SECURITY_MANAGER = None
+CUSTOM_SECURITY_MANAGER = CustomSsoSecurityManager
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------------------------------------------------------
 
@@ -353,7 +353,7 @@ FAB_API_SWAGGER_UI = True
 # AUTH_DB : Is for database (username/password)
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
-AUTH_TYPE = AUTH_DB
+AUTH_TYPE = AUTH_OAUTH
 # AUTH_TYPE = AUTH_REMOTE_USER
 
 OAUTH_PROVIDERS = [
@@ -1635,20 +1635,20 @@ SMTP_MAIL_FROM = os.environ.get("SMTP_MAIL_FROM")
 SMTP_SSL_SERVER_AUTH = False
 ENABLE_CHUNK_ENCODING = False
 
-# ---------------------------------------------------
-# Email verification feature (Merchant workflows)
-# ---------------------------------------------------
+
+# Email verification feature
+
 # Global kill switch — set to False to disable the entire feature
 EMAIL_VERIFY_ENABLED = True
 # Rate limit for the /send endpoint; format: "<n>/hour"
-EMAIL_VERIFY_RATE_LIMIT = "20/hour"
+EMAIL_VERIFY_RATE_LIMIT = "50/hour"
 # Email provider: "smtp" (default) | "sendgrid" | "ses"
 EMAIL_VERIFY_PROVIDER = "smtp"
 # Only required when EMAIL_VERIFY_PROVIDER = "sendgrid"
 EMAIL_VERIFY_SENDGRID_API_KEY = ""
 # Override the From address for verification emails.
 # Falls back to SMTP_MAIL_FROM if not set.
-EMAIL_VERIFY_FROM_ADDRESS = ""
+EMAIL_VERIFY_FROM_ADDRESS = "data@pesapal.com"
 
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
