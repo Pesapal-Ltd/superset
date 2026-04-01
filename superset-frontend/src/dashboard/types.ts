@@ -145,6 +145,16 @@ export type DashboardInfo = {
       recipient_column?: string;
       merchant_id_column?: string;
     };
+    settlement_config?: {
+      enabled: boolean;
+      allowed_roles?: string[];
+      /** Column in the table that holds the ConfirmationCode. Default: 'ConfirmationCode' */
+      confirmation_code_column?: string;
+      /** Default reason pre-filled in the modal. Default: 'RiskVerification' */
+      default_reason?: string;
+      /** Whether to show a user-editable reason textarea. Default: true */
+      require_reason_input?: boolean;
+    };
   };
   crossFiltersEnabled: boolean;
   filterBarOrientation: FilterBarOrientation;
@@ -290,4 +300,6 @@ export enum MenuKeys {
   ManageEmbedded = 'manage_embedded',
   ManageEmailReports = 'manage_email_reports',
   SendVerificationEmail = 'send_verification_email',
+  HoldFunds = 'hold_funds',
+  ReleaseFunds = 'release_funds',
 }

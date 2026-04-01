@@ -57,6 +57,7 @@ import DrillDetailModal from 'src/components/Chart/DrillDetail/DrillDetailModal'
 import { usePermissions } from 'src/hooks/usePermissions';
 import Button from 'src/components/Button';
 import SendVerifyModal from 'src/components/EmailVerify/SendVerifyModal';
+import SettlementModal from 'src/components/Settlement/SettlementModal';
 import { useCrossFiltersScopingModal } from '../nativeFilters/FilterBar/CrossFilters/ScopingModal/useCrossFiltersScopingModal';
 import { ViewResultsModalTrigger } from './ViewResultsModalTrigger';
 
@@ -163,6 +164,8 @@ const SliceHeaderControls = (
   // setting openKeys undefined falls back to uncontrolled behaviour
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [sendVerifyModalOpen, setSendVerifyModalOpen] = useState(false);
+  const [settlementModalOpen, setSettlementModalOpen] = useState(false);
+  const [pendingSettlementAction, setPendingSettlementAction] = useState<'hold' | 'release'>('hold');
   const [openScopingModal, scopingModal] = useCrossFiltersScopingModal(
     props.slice.slice_id,
   );
@@ -179,6 +182,11 @@ const SliceHeaderControls = (
     state => state.dashboardInfo?.metadata?.email_verify_config,
   );
   const emailVerifyEnabled = emailVerifyConfig?.enabled === true;
+
+  const settlementConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['settlement_config']>(
+    state => state.dashboardInfo?.metadata?.settlement_config,
+  );
+  const settlementEnabled = settlementConfig?.enabled === true;
 
   const selectedRows = useSelector<RootState, any[]>(
     state =>
@@ -298,6 +306,16 @@ const SliceHeaderControls = (
       }
       case MenuKeys.SendVerificationEmail: {
         setSendVerifyModalOpen(true);
+        break;
+      }
+      case MenuKeys.HoldFunds: {
+        setPendingSettlementAction('hold');
+        setSettlementModalOpen(true);
+        break;
+      }
+      case MenuKeys.ReleaseFunds: {
+        setPendingSettlementAction('release');
+        setSettlementModalOpen(true);
         break;
       }
       default:
@@ -474,6 +492,36 @@ const SliceHeaderControls = (
         </>
       )}
 
+      {settlementEnabled && hasRowsSelected && (
+        <>
+          <Menu.Item
+            key={MenuKeys.HoldFunds}
+            data-test="hold-funds-menu-item"
+          >
+            <Icons.LockOutlined
+              css={css`
+                margin-right: 8px;
+                color: #fa8c16;
+              `}
+            />
+            {t('Hold Funds')}
+          </Menu.Item>
+          <Menu.Item
+            key={MenuKeys.ReleaseFunds}
+            data-test="release-funds-menu-item"
+          >
+            <Icons.UnlockOutlined
+              css={css`
+                margin-right: 8px;
+                color: #52c41a;
+              `}
+            />
+            {t('Release Funds')}
+          </Menu.Item>
+          <Menu.Divider />
+        </>
+      )}
+
       {supersetCanShare && (
         <ShareMenuItems
           dashboardId={dashboardId}
@@ -585,6 +633,18 @@ const SliceHeaderControls = (
           chartId={slice.slice_id}
           selectedRows={selectedRows}
           onClose={() => setSendVerifyModalOpen(false)}
+        />
+      )}
+
+      {settlementEnabled && (
+        <SettlementModal
+          visible={settlementModalOpen}
+          action={pendingSettlementAction}
+          dashboardId={dashboardId}
+          chartId={slice.slice_id}
+          selectedRows={selectedRows}
+          settlementConfig={settlementConfig || { enabled: true }}
+          onClose={() => setSettlementModalOpen(false)}
         />
       )}
 

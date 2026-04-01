@@ -186,7 +186,7 @@ SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 
-CUSTOM_SECURITY_MANAGER = CustomSsoSecurityManager
+CUSTOM_SECURITY_MANAGER = None
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------------------------------------------------------
 
@@ -353,7 +353,7 @@ FAB_API_SWAGGER_UI = True
 # AUTH_DB : Is for database (username/password)
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
-AUTH_TYPE = AUTH_OAUTH
+AUTH_TYPE = AUTH_DB
 # AUTH_TYPE = AUTH_REMOTE_USER
 
 OAUTH_PROVIDERS = [
@@ -399,6 +399,7 @@ AUTH_ROLE_PUBLIC = 'Public'
 # "Developer": ["Alpha","Gamma"],
 # "superset_admins": ["Admin"]
 # }
+
 
 
 # def get_dynamic_role_mapping():
@@ -1648,7 +1649,38 @@ EMAIL_VERIFY_PROVIDER = "smtp"
 EMAIL_VERIFY_SENDGRID_API_KEY = ""
 # Override the From address for verification emails.
 # Falls back to SMTP_MAIL_FROM if not set.
-EMAIL_VERIFY_FROM_ADDRESS = "data@pesapal.com"
+EMAIL_VERIFY_FROM_ADDRESS = os.environ.get("EMAIL_VERIFY_FROM_ADDRESS")
+
+# Settlement (Hold Funds / Release Funds)
+
+# Global kill switch
+SETTLEMENT_ENABLED = True
+
+# Settlement API (
+SETTLEMENT_BASE_URL: str = os.environ.get("SETTLEMENT_BASE_URL", "")
+SETTLEMENT_API_EMAIL: str = os.environ.get("SETTLEMENT_API_EMAIL", "")
+SETTLEMENT_API_PASSWORD: str = os.environ.get("SETTLEMENT_API_PASSWORD", "")  # noqa: S105
+
+# Fixed payload constants (per API contract)
+SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID: int = 1
+SETTLEMENT_FREQUENCY: str = "One Off"
+
+# Superset Database connection ID used to look up enrichment data.
+SETTLEMENT_DB_CONNECTION_ID: int | None = None
+
+# Parameterised enrichment query.
+# Uses SQLAlchemy text() with a :confirmation_code bind parameter.
+SETTLEMENT_LOOKUP_QUERY: str = """
+    select 
+      dtd.MerchantId,
+      dtd.Currency,
+      dtd.TargetAmount as Amount,
+      dtd.Country,
+      dtd.TargetConfirmationCode as Reference
+    from pesapal_ke_compliance_dw.dbo.Dw_TransactionDetails dtd 
+    where dtd.TargetConfirmationCode = :confirmation_code
+    limit 1
+"""
 
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like

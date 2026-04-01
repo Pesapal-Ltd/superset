@@ -162,6 +162,13 @@ const EmailVerifyAuditLog = lazy(
       /* webpackChunkName: "EmailVerifyAuditLog" */ 'src/views/EmailVerify/AuditLog'
     ),
 );
+
+const SettlementAuditLog = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "SettlementAuditLog" */ 'src/views/Settlement/AuditLog'
+    ),
+);
 type Routes = {
   path: string;
   Component: ComponentType;
@@ -273,6 +280,10 @@ export const routes: Routes = [
   {
     path: '/emailverify/templates/list/',
     Component: EmailVerifyTemplateList,
+  },
+  {
+    path: '/settlement/logs/',
+    Component: SettlementAuditLog,
   },
 ];
 

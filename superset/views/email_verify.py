@@ -47,6 +47,7 @@ from superset.superset_typing import FlaskResponse
 from superset.utils import json
 from superset.utils.core import get_user_id
 from superset.utils.email_verify_mailer import render_template, send_verification_email
+from superset.views.base import BaseSupersetView
 from superset.views.base_api import BaseSupersetApi
 
 logger = logging.getLogger(__name__)
@@ -54,9 +55,7 @@ logger = logging.getLogger(__name__)
 # Regex that matches Jinja2-style {{ variable_name }} placeholders
 _VAR_REGEX = re.compile(r"\{\{\s*(\w+)\s*\}\}")
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 
 def _extract_variables(text: str) -> list[str]:
@@ -126,9 +125,29 @@ def _get_email_verify_config(
     return None
 
 
-# ---------------------------------------------------------------------------
+# Views
+
+
+class EmailVerifyView(BaseSupersetView):
+    """View – Merchant Email Verification UI."""
+
+    route_base = "/emailverify"
+    allow_browser_login = True
+
+    @expose("/templates/list/")
+    @protect("can_manage_email_templates")
+    def templates_list(self) -> FlaskResponse:
+        """Render the email verification template manager UI."""
+        return self.render_app_template()
+
+    @expose("/logs/")
+    @protect("can_manage_email_templates")
+    def logs(self) -> FlaskResponse:
+        """Render the email verification audit log UI."""
+        return self.render_app_template()
+
+
 # API class
-# ---------------------------------------------------------------------------
 
 
 class EmailVerifyRestApi(BaseSupersetApi):
@@ -150,9 +169,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
         "send_email",
         "list_logs",
     }
-    # -----------------------------------------------------------------
+    
     # Templates
-    # -----------------------------------------------------------------
 
     @expose("/templates", methods=("GET",))
     @protect("can_read")
@@ -406,9 +424,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
             },
         )
 
-    # -----------------------------------------------------------------
     # Dashboard / Chart email verify config
-    # -----------------------------------------------------------------
 
     @expose("/config", methods=("GET",))
     @protect()
@@ -511,9 +527,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
 
         return self.response(200, result={"chart_id": pk, "saved": True})
 
-    # -----------------------------------------------------------------
     # Send email
-    # -----------------------------------------------------------------
+
 
     @expose("/send", methods=("POST",))
     @protect("can_send_verification_email")
@@ -711,9 +726,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
             result={"success": False, "error": error_message, "log_id": log_id},
         )
 
-    # -----------------------------------------------------------------
     # Audit log
-    # -----------------------------------------------------------------
 
     @expose("/logs", methods=("GET",))
     @protect("can_manage_email_templates")
@@ -825,9 +838,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         )
 
 
-# ---------------------------------------------------------------------------
 # Validation helpers
-# ---------------------------------------------------------------------------
 
 
 def _validate_template_body(body: dict[str, Any]) -> str | None:

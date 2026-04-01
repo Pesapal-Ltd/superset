@@ -62,6 +62,9 @@ import { RootState, DatasourcesState } from 'src/dashboard/types';
 import EmailVerifyConfigPanel, {
   EmailVerifyConfig,
 } from 'src/dashboard/components/EmailVerifyConfig';
+import SettlementConfigPanel, {
+  SettlementConfig,
+} from 'src/dashboard/components/SettlementConfig';
 
 const StyledFormItem = styled(FormItem)`
   margin-bottom: 0;
@@ -314,6 +317,16 @@ const PropertiesModal = ({
     } catch (e) {
       // Fallback if parsing fails for some reason
       console.error('Failed to update jsonMetadata with email config', e);
+    }
+  };
+
+  const handleSettlementSaved = (config: SettlementConfig) => {
+    try {
+      const currentMetadata = jsonMetadata ? JSON.parse(jsonMetadata) : {};
+      currentMetadata.settlement_config = config;
+      setJsonMetadata(jsonStringify(currentMetadata));
+    } catch (e) {
+      console.error('Failed to update jsonMetadata with settlement config', e);
     }
   };
 
@@ -814,6 +827,17 @@ const PropertiesModal = ({
             dashboardId={dashboardId}
             onSaved={handleEmailVerifySaved}
             columnOptions={allColumns}
+          />
+        </Col>
+      </Row>
+
+      {/* Settlement (Hold Funds / Release Funds) — saves independently */}
+      <Row>
+        <Col xs={24} md={24}>
+          <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+          <SettlementConfigPanel
+            dashboardId={dashboardId}
+            onSaved={handleSettlementSaved}
           />
         </Col>
       </Row>

@@ -158,7 +158,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.sqllab.api import SqlLabRestApi
         from superset.sqllab.permalink.api import SqlLabPermalinkRestApi
         from superset.tags.api import TagRestApi
-        from superset.views.email_verify import EmailVerifyRestApi
+        from superset.views.email_verify import EmailVerifyRestApi, EmailVerifyView
+        from superset.views.settlement import SettlementRestApi, SettlementView
         from superset.views.alerts import AlertView, ReportView
         from superset.views.all_entities import TaggedObjectsModelView
         from superset.views.annotations import AnnotationLayerView
@@ -226,6 +227,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(SavedQueryRestApi)
         appbuilder.add_api(TagRestApi)
         appbuilder.add_api(EmailVerifyRestApi)
+        appbuilder.add_api(SettlementRestApi)
         appbuilder.add_api(SqlLabRestApi)
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)
@@ -352,6 +354,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_view_no_menu(ReportView)
         appbuilder.add_view_no_menu(RoleRestAPI)
         appbuilder.add_view_no_menu(UserInfoView)
+        appbuilder.add_view_no_menu(EmailVerifyView)
+        appbuilder.add_view_no_menu(SettlementView)
 
         #
         # Add links
@@ -395,6 +399,14 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             label=__("Email Verification Audit Log"),
             href=f"{app_root}/emailverify/logs/",
             icon="fa-history",
+            category="Manage",
+            category_label=__("Manage"),
+        )
+        appbuilder.add_link(
+            "Settlement Audit Log",
+            label=__("Settlement Audit Log"),
+            href=f"{app_root}/settlement/logs/",
+            icon="fa-exchange",
             category="Manage",
             category_label=__("Manage"),
         )
