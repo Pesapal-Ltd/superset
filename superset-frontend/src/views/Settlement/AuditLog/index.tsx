@@ -59,6 +59,9 @@ interface SettlementLogEntry {
   status: 'pending' | 'success' | 'failed';
   error_message: string | null;
   initiated_by_fk: number | null;
+  initiated_by: string | null;
+  request_payload: any | null;
+  response_snapshot: any | null;
   initiated_at: string;
   completed_at: string | null;
 }
@@ -92,9 +95,41 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
         <Descriptions.Item label={t('Reason')}>{record.reason}</Descriptions.Item>
         <Descriptions.Item label={t('Dashboard ID')}>{record.dashboard_id ?? '—'}</Descriptions.Item>
         <Descriptions.Item label={t('Chart ID')}>{record.chart_id ?? '—'}</Descriptions.Item>
+        <Descriptions.Item label={t('Initiated By')}>{record.initiated_by ?? 'System'}</Descriptions.Item>
+        <Descriptions.Item label={t('Completed At')}>
+          {record.completed_at ? new Date(record.completed_at).toLocaleString() : '—'}
+        </Descriptions.Item>
         <Descriptions.Item label={t('Task ID')} span={2}>
           {record.task_id ? <Text code>{record.task_id}</Text> : '—'}
         </Descriptions.Item>
+        {record.request_payload && (
+          <Descriptions.Item label={t('Request Body')} span={2}>
+            <pre style={{ 
+              backgroundColor: '#f5f5f5', 
+              padding: '8px', 
+              borderRadius: '4px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              fontSize: '12px'
+            }}>
+              {JSON.stringify(record.request_payload, null, 2)}
+            </pre>
+          </Descriptions.Item>
+        )}
+        {record.response_snapshot && (
+          <Descriptions.Item label={t('Response Body')} span={2}>
+            <pre style={{ 
+              backgroundColor: '#f5f5f5', 
+              padding: '8px', 
+              borderRadius: '4px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              fontSize: '12px'
+            }}>
+              {JSON.stringify(record.response_snapshot, null, 2)}
+            </pre>
+          </Descriptions.Item>
+        )}
         {record.error_message && (
           <Descriptions.Item label={t('Error')} span={2}>
             <Paragraph style={{ color: 'red', margin: 0 }}>{record.error_message}</Paragraph>
@@ -164,6 +199,12 @@ export default function SettlementAuditLog() {
       render: (d: string) => new Date(d).toLocaleString(),
       sorter: (a, b) => new Date(a.initiated_at).getTime() - new Date(b.initiated_at).getTime(),
       defaultSortOrder: 'descend',
+    },
+    {
+      title: t('Initiated By'),
+      dataIndex: 'initiated_by',
+      key: 'initiated_by',
+      render: (v: string | null) => v || 'System',
     },
     {
       title: t('Action'),

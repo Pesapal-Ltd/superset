@@ -53,8 +53,10 @@ class SettlementLog(Model):
     # "pending" | "success" | "failed"
     status = Column(String(20), nullable=False, default="pending")
     error_message = Column(Text, nullable=True)
-    # Raw  API response snapshot
+    # Raw API response snapshot
     response_snapshot = Column(JSON, nullable=True)
+    # Raw API request payload
+    request_payload = Column(JSON, nullable=True)
     initiated_by_fk = Column(Integer, ForeignKey("ab_user.id"), nullable=True)
     initiated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)

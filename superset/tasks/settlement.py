@@ -76,9 +76,10 @@ def _db_lookup(connection_id: int, confirmation_code: str) -> dict[str, Any]:
     if not query:
         raise ValueError("SETTLEMENT_LOOKUP_QUERY is not configured.")
 
-    with db_conn.get_sqla_engine().connect() as conn:
-        result = conn.execute(text(query), {"confirmation_code": confirmation_code})
-        row = result.mappings().fetchone()
+    with db_conn.get_sqla_engine() as engine:
+        with engine.connect() as conn:
+            result = conn.execute(text(query), {"confirmation_code": confirmation_code})
+            row = result.mappings().fetchone()
 
     if row is None:
         raise ValueError(
@@ -92,38 +93,14 @@ def _call_settlement_api(
     base_url: str,
     token: str,
     action: str,
-    confirmation_code: str,
-    merchant_id: Any,
-    currency: str,
-    country: str,
-    amount: Any,
-    reason: str,
+    payload: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Call the external Settlement Credit Recovery API.
-    action: "hold"    → POST /Api/SettlementCreditRecovery/Create  (status=1)
-    action: "release" → POST /Api/SettlementCreditRecovery/Update  (status=0)
+    Call the Settlement Credit Recovery API with a pre-constructed payload.
     """
-    withdrawal_type_id = current_app.config.get(
-        "SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID", 1
-    )
-    frequency = current_app.config.get("SETTLEMENT_FREQUENCY", "One Off")
-    status = 1 if action == "hold" else 0
     endpoint = (
         "Create" if action == "hold" else "Update"
     )
-
-    payload = {
-        "withdrawalAdjustmentTypeId": withdrawal_type_id,
-        "merchantId": merchant_id,
-        "currency": currency,
-        "country": country,
-        "frequency": frequency,
-        "amount": float(amount),
-        "status": status,
-        "reference": confirmation_code,
-        "description": reason,
-    }
 
     resp = requests.post(
         f"{base_url}/Api/SettlementCreditRecovery/{endpoint}",
@@ -131,7 +108,15 @@ def _call_settlement_api(
         headers={"Authorization": f"Bearer {token}"},
         timeout=30,
     )
-    resp.raise_for_status()
+    
+    if not resp.ok:
+        logger.error(
+            "Settlement API Error (status=%s): %s",
+            resp.status_code,
+            resp.text,
+        )
+        resp.raise_for_status()
+
     return resp.json()
 
 
@@ -165,6 +150,22 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
     log: SettlementLog | None = (
         db.session.query(SettlementLog).filter_by(id=log_id).one_or_none()
     )
+
+    # if log is not found (race condition or replication lag), retry.
+    if log is None:
+        if self.request.retries < self.max_retries:
+            logger.warning(
+                "SettlementLog(id=%s) not found. Retrying (attempt %s)...",
+                log_id,
+                self.request.retries + 1,
+            )
+            # Short exponential backoff or fixed delay
+            raise self.retry(countdown=5)
+        
+        # Still not found after all retries
+        err = f"SettlementLog(id={log_id}) not found after all retries. Aborting."
+        logger.error(err)
+        return {"success": False, "error": err}
 
     cfg = current_app.config
     base_url: str = cfg.get("SETTLEMENT_BASE_URL", "")
@@ -207,22 +208,37 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
             log.amount = amount
             db.session.commit()
 
+        # Construct payload
+        withdrawal_type_id = current_app.config.get(
+            "SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID", 1
+        )
+        frequency = current_app.config.get("SETTLEMENT_FREQUENCY", "One Off")
+        status = 1 if action == "hold" else 0
+
+        request_payload = {
+            "withdrawalAdjustmentTypeId": withdrawal_type_id,
+            "merchantId": merchant_id,
+            "currency": currency,
+            "country": country,
+            "frequency": frequency,
+            "amount": float(amount),
+            "status": status,
+            "reference": confirmation_code,
+            "description": reason,
+        }
+
         # Call settlement API
         response = _call_settlement_api(
             base_url=base_url,
             token=token,
             action=action,
-            confirmation_code=confirmation_code,
-            merchant_id=merchant_id,
-            currency=currency,
-            country=country,
-            amount=amount,
-            reason=reason,
+            payload=request_payload,
         )
 
         # Mark success
         if log:
             log.status = "success"
+            log.request_payload = request_payload
             log.response_snapshot = response
             log.completed_at = datetime.utcnow()
             db.session.commit()
@@ -240,14 +256,47 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
             exc,
         )
         
+        # Save the error details to the log immediately so it's visible while retrying
+        if log:
+            error_msg = str(exc)
+            # Use request_payload if it was successfully constructed
+            try:
+                # We can try to local-reference it, or use the locals() dict
+                if locals().get("request_payload"):
+                    log.request_payload = locals()["request_payload"]
+            except Exception: # pylint: disable=broad-except
+                pass
+
+            # If it's a requests error, try to get the response body
+            if hasattr(exc, "response") and exc.response is not None:
+                try:
+                    # Save the raw response text for debugging
+                    error_msg = f"{error_msg} - Body: {exc.response.text}"
+
+                    # Try to save the JSON if available
+                    log.response_snapshot = exc.response.json()
+                except Exception:  # pylint: disable=broad-except
+                    pass
+            
+            log.status = "failed" if self.request.retries >= self.max_retries else "pending"
+            log.error_message = error_msg
+            log.completed_at = datetime.utcnow() if self.request.retries >= self.max_retries else None
+            try:
+                db.session.commit()
+                # logger.info(f"Settlement log committed for code={confirmation_code} action={action}")
+            except Exception as e:
+                logger.exception(
+                    "Settlement task failed to commit log for code=%s action=%s: %s",
+                    confirmation_code,
+                    action,
+                    e,
+                )
+
         try:
             self.retry(exc=exc)
         except self.MaxRetriesExceededError:
-            if log:
-                log.status = "failed"
-                log.error_message = str(exc)
-                log.completed_at = datetime.utcnow()
-                db.session.commit()
+            # Task is now officially finished as failed
             return {"success": False, "error": str(exc)}
-        # If retry was scheduled, update status to "pending" (still retrying)
+        
+        # If retry was scheduled
         return {"success": False, "error": str(exc), "retrying": True}

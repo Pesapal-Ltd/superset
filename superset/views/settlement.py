@@ -36,6 +36,7 @@ from superset.models.settlement import SettlementLog
 from superset.superset_typing import FlaskResponse
 from superset.utils import json
 from superset.utils.core import get_user_id
+from flask_appbuilder.security.sqla.models import User
 from superset.views.base import BaseSupersetView
 from superset.views.base_api import BaseSupersetApi
 
@@ -258,6 +259,9 @@ class SettlementRestApi(BaseSupersetApi):
 
         task_ids: list[str] = []
         log_ids: list[int] = []
+        
+        # Prepare parameters for tasks
+        logs_to_dispatch: list[tuple[SettlementLog, str, str, str]] = []
 
         for row in rows:
             confirmation_code = str(row.get(code_column, "")).strip()
@@ -281,8 +285,14 @@ class SettlementRestApi(BaseSupersetApi):
                 initiated_at=datetime.utcnow(),
             )
             db.session.add(log)
-            db.session.flush()  # get log.id without committing yet
+            db.session.flush()  # get log.id
+            logs_to_dispatch.append((log, action, confirmation_code, reason))
 
+        # commit now to ensure records are visible to Celery workers 
+        # before we enqueue the tasks.
+        db.session.commit()
+
+        for log, action, confirmation_code, reason in logs_to_dispatch:
             task = execute_settlement_action.delay(
                 log_id=log.id,
                 action=action,
@@ -294,6 +304,7 @@ class SettlementRestApi(BaseSupersetApi):
             task_ids.append(task.id)
             log_ids.append(log.id)
 
+        # Commit task_ids
         db.session.commit()
 
         return self.response(
@@ -342,6 +353,8 @@ class SettlementRestApi(BaseSupersetApi):
                 "country": log.country,
                 "amount": str(log.amount) if log.amount is not None else None,
                 "error_message": log.error_message,
+                "request_payload": log.request_payload,
+                "response_snapshot": log.response_snapshot,
                 "completed_at": log.completed_at.isoformat() if log.completed_at else None,
             }
 
@@ -394,15 +407,17 @@ class SettlementRestApi(BaseSupersetApi):
         page = request.args.get("page", 0, type=int)
         page_size = min(request.args.get("page_size", 25, type=int), 100)
 
-        query = db.session.query(SettlementLog)
+        query = db.session.query(SettlementLog, User).outerjoin(
+            User, SettlementLog.initiated_by_fk == User.id
+        )
         if dashboard_id:
-            query = query.filter_by(dashboard_id=dashboard_id)
+            query = query.filter(SettlementLog.dashboard_id == dashboard_id)
         if action_filter in ("hold", "release"):
-            query = query.filter_by(action=action_filter)
+            query = query.filter(SettlementLog.action == action_filter)
         if status_filter in ("pending", "success", "failed"):
-            query = query.filter_by(status=status_filter)
+            query = query.filter(SettlementLog.status == status_filter)
         if code_filter:
-            query = query.filter_by(confirmation_code=code_filter)
+            query = query.filter(SettlementLog.confirmation_code == code_filter)
 
         total = query.count()
         logs = (
@@ -427,11 +442,14 @@ class SettlementRestApi(BaseSupersetApi):
                 "task_id": lg.task_id,
                 "status": lg.status,
                 "error_message": lg.error_message,
-                "initiated_by_fk": lg.initiated_by_fk,
+                 "initiated_by_fk": lg.initiated_by_fk,
+                "initiated_by": f"{u.first_name} {u.last_name}" if u else "System",
+                "request_payload": lg.request_payload,
+                "response_snapshot": lg.response_snapshot,
                 "initiated_at": lg.initiated_at.isoformat() if lg.initiated_at else None,
                 "completed_at": lg.completed_at.isoformat() if lg.completed_at else None,
             }
-            for lg in logs
+            for lg, u in logs
         ]
 
         return self.response(200, result=result, count=total, page=page, page_size=page_size)
