@@ -47,15 +47,10 @@ class SettlementLog(Model):
     country = Column(String(10), nullable=True)
     amount = Column(Numeric(18, 4), nullable=True)
     reason = Column(String(500), nullable=False)
-    # Celery task id (null for synchronous path)
     task_id = Column(String(255), nullable=True)
-
-    # "pending" | "success" | "failed"
     status = Column(String(20), nullable=False, default="pending")
     error_message = Column(Text, nullable=True)
-    # Raw API response snapshot
     response_snapshot = Column(JSON, nullable=True)
-    # Raw API request payload
     request_payload = Column(JSON, nullable=True)
     initiated_by_fk = Column(Integer, ForeignKey("ab_user.id"), nullable=True)
     initiated_at = Column(DateTime, default=datetime.utcnow, nullable=False)

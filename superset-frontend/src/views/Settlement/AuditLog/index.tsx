@@ -42,7 +42,7 @@ import { SupersetClient, t } from '@superset-ui/core';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Option } = Select;
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 interface SettlementLogEntry {
   id: number;
@@ -57,7 +57,7 @@ interface SettlementLogEntry {
   reason: string;
   task_id: string | null;
   status: 'pending' | 'success' | 'failed';
-  error_message: string | null;
+  // error_message: string | null;
   initiated_by_fk: number | null;
   initiated_by: string | null;
   request_payload: any | null;
@@ -67,9 +67,7 @@ interface SettlementLogEntry {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Expanded row — shows more details and errors
-// ─────────────────────────────────────────────────────────────────────────────
 
 function ExpandedRow({ record }: { record: SettlementLogEntry }) {
   return (
@@ -81,7 +79,7 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
           </Tag>
         </Descriptions.Item>
         <Descriptions.Item label={t('Status')}>
-           <Tag color={record.status === 'success' ? 'success' : record.status === 'failed' ? 'error' : 'processing'}>
+          <Tag color={record.status === 'success' ? 'success' : record.status === 'failed' ? 'error' : 'processing'}>
             {record.status.toUpperCase()}
           </Tag>
         </Descriptions.Item>
@@ -104,13 +102,15 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
         </Descriptions.Item>
         {record.request_payload && (
           <Descriptions.Item label={t('Request Body')} span={2}>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '8px', 
+            <pre style={{
+              backgroundColor: '#f5f5f5',
+              padding: '8px',
               borderRadius: '4px',
               maxHeight: '200px',
-              overflowY: 'auto',
-              fontSize: '12px'
+              overflow: 'auto',
+              fontSize: '11px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
             }}>
               {JSON.stringify(record.request_payload, null, 2)}
             </pre>
@@ -118,31 +118,45 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
         )}
         {record.response_snapshot && (
           <Descriptions.Item label={t('Response Body')} span={2}>
-            <pre style={{ 
-              backgroundColor: '#f5f5f5', 
-              padding: '8px', 
+            <pre style={{
+              backgroundColor: '#f5f5f5',
+              padding: '8px',
               borderRadius: '4px',
               maxHeight: '200px',
-              overflowY: 'auto',
-              fontSize: '12px'
+              overflow: 'auto',
+              fontSize: '11px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
             }}>
               {JSON.stringify(record.response_snapshot, null, 2)}
             </pre>
           </Descriptions.Item>
         )}
-        {record.error_message && (
+        {/* {record.error_message && (
           <Descriptions.Item label={t('Error')} span={2}>
-            <Paragraph style={{ color: 'red', margin: 0 }}>{record.error_message}</Paragraph>
-          </Descriptions.Item>
-        )}
+            <div style={{
+              backgroundColor: '#fff1f0',
+              border: '1px solid #ffa39e',
+              padding: '8px',
+              borderRadius: '4px',
+              maxHeight: '150px',
+              overflow: 'auto',
+              color: '#cf1322',
+              fontSize: '11px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              fontFamily: 'monospace',
+            }}>
+              {record.error_message}
+            </div>
+          </Descriptions.Item> */}
+        {/* )} */}
       </Descriptions>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Main component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function SettlementAuditLog() {
   const [logs, setLogs] = useState<SettlementLogEntry[]>([]);
@@ -244,10 +258,10 @@ export default function SettlementAuditLog() {
       ),
     },
     {
-       title: t('Reason'),
-       dataIndex: 'reason',
-       key: 'reason',
-       ellipsis: true,
+      title: t('Reason'),
+      dataIndex: 'reason',
+      key: 'reason',
+      ellipsis: true,
     }
   ];
 
@@ -270,7 +284,7 @@ export default function SettlementAuditLog() {
           style={{ width: 250 }}
           id="settlement-log-code-filter"
         />
-         <Select
+        <Select
           allowClear
           placeholder={t('Action')}
           value={actionFilter}
