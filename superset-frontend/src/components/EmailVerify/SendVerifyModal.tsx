@@ -290,7 +290,7 @@ export default function SendVerifyModal({
           success: failCount === 0,
           error:
             failCount > 0
-              ? t(`Sent ${successCount}, Failed ${failCount} (Ensure rows have at least one selected recipient email)`)
+              ? t(`Sent ${successCount}, Failed ${failCount} (Contact Admin for further assistance)`)
               : undefined,
         });
 

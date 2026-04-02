@@ -625,10 +625,15 @@ def get_dynamic_role_mapping():
     """
     # Special mapping to superset roles
     special_mapping = {
-        "DataEngineer": ["Admin"], "DataEngineerTech": ["Admin"],
+        "DataEngineer": ["Admin"], 
+        "DataEngineerTech": ["Admin"],
         "DeputyCTO": ["Admin"],
-        "TechExec": ["Admin"], "CTO": ["Admin"], "COO": ["Admin"], "CEO": ["Admin"],
-        "JuniorDev": ["Admin"], "superset_admins": ["Admin"]
+        "TechExec": ["Admin"],
+        "CTO": ["Admin"], 
+        "COO": ["Admin"], 
+        "CEO": ["Admin"],
+        "JuniorDev": ["Admin"],
+        "superset_admins": ["Admin"]
     }
 
     # Fetch all roles from SSO

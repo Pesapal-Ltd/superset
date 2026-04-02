@@ -393,6 +393,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             icon="fa-envelope",
             category="Manage",
             category_label=__("Manage"),
+            cond=lambda: self.config.get("EMAIL_VERIFY_ENABLED", False),
         )
         appbuilder.add_link(
             "Email Verification Audit Log",
@@ -401,6 +402,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             icon="fa-history",
             category="Manage",
             category_label=__("Manage"),
+            cond=lambda: self.config.get("EMAIL_VERIFY_ENABLED", False),
         )
         appbuilder.add_link(
             "Settlement Audit Log",
@@ -409,6 +411,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             icon="fa-exchange",
             category="Manage",
             category_label=__("Manage"),
+            cond=lambda: self.config.get("SETTLEMENT_ENABLED", False),
         )
 
         appbuilder.add_view(

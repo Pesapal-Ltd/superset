@@ -122,7 +122,10 @@ export type DashboardState = {
 export type DashboardInfo = {
   id: number;
   common: {
-    conf: JsonObject;
+    conf: JsonObject & {
+      EMAIL_VERIFY_ENABLED?: boolean;
+      SETTLEMENT_ENABLED?: boolean;
+    };
   };
   userId: string;
   dash_edit_perm: boolean;

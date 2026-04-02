@@ -181,12 +181,18 @@ const SliceHeaderControls = (
   const emailVerifyConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['email_verify_config']>(
     state => state.dashboardInfo?.metadata?.email_verify_config,
   );
-  const emailVerifyEnabled = emailVerifyConfig?.enabled === true;
+  const globalEmailVerifyEnabled = useSelector<RootState, boolean | undefined>(
+    state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
+  );
+  const emailVerifyEnabled = globalEmailVerifyEnabled && emailVerifyConfig?.enabled === true;
 
   const settlementConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['settlement_config']>(
     state => state.dashboardInfo?.metadata?.settlement_config,
   );
-  const settlementEnabled = settlementConfig?.enabled === true;
+  const globalSettlementEnabled = useSelector<RootState, boolean | undefined>(
+    state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
+  );
+  const settlementEnabled = globalSettlementEnabled && settlementConfig?.enabled === true;
 
   const selectedRows = useSelector<RootState, any[]>(
     state =>

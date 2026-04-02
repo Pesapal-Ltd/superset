@@ -134,6 +134,12 @@ const PropertiesModal = ({
   const datasources = useSelector<RootState, DatasourcesState>(
     state => state.datasources,
   );
+  const globalEmailVerifyEnabled = useSelector<RootState, boolean | undefined>(
+    state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
+  );
+  const globalSettlementEnabled = useSelector<RootState, boolean | undefined>(
+    state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
+  );
 
   const allColumns = useMemo(() => {
     const columnSet = new Set<string>();
@@ -820,27 +826,31 @@ const PropertiesModal = ({
       </AntdForm>
 
       {/* Email Verification — saves independently via its own Save button */}
-      <Row>
-        <Col xs={24} md={24}>
-          <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
-          <EmailVerifyConfigPanel
-            dashboardId={dashboardId}
-            onSaved={handleEmailVerifySaved}
-            columnOptions={allColumns}
-          />
-        </Col>
-      </Row>
+      {globalEmailVerifyEnabled && (
+        <Row>
+          <Col xs={24} md={24}>
+            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+            <EmailVerifyConfigPanel
+              dashboardId={dashboardId}
+              onSaved={handleEmailVerifySaved}
+              columnOptions={allColumns}
+            />
+          </Col>
+        </Row>
+      )}
 
       {/* Settlement (Hold Funds / Release Funds) — saves independently */}
-      <Row>
-        <Col xs={24} md={24}>
-          <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
-          <SettlementConfigPanel
-            dashboardId={dashboardId}
-            onSaved={handleSettlementSaved}
-          />
-        </Col>
-      </Row>
+      {globalSettlementEnabled && (
+        <Row>
+          <Col xs={24} md={24}>
+            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+            <SettlementConfigPanel
+              dashboardId={dashboardId}
+              onSaved={handleSettlementSaved}
+            />
+          </Col>
+        </Row>
+      )}
     </Modal>
   );
 };

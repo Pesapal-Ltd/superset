@@ -130,7 +130,7 @@ class SettlementRestApi(BaseSupersetApi):
         """
         dashboard_id = request.args.get("dashboard_id", type=int)
         if not dashboard_id:
-            return self.response_400(message="dashboard_id query param is required.")
+            return self.response(400, message="dashboard_id query param is required.")
 
         config = _get_settlement_config(dashboard_id)
         if config is None:
@@ -212,7 +212,7 @@ class SettlementRestApi(BaseSupersetApi):
         from superset.tasks.settlement import execute_settlement_action
 
         if not current_app.config.get("SETTLEMENT_ENABLED", True):
-            return self.response_403(message="Settlement feature is disabled.")
+            return self.response(403, message="Settlement feature is disabled.")
 
         body = request.get_json(force=True, silent=True) or {}
         action: str = str(body.get("action", "")).strip().lower()
@@ -224,16 +224,16 @@ class SettlementRestApi(BaseSupersetApi):
         reason: str = str(body.get("reason", "RiskVerification")).strip() or "RiskVerification"
 
         if action not in ("hold", "release"):
-            return self.response_400(message='action must be "hold" or "release".')
+            return self.response(400, message='action must be "hold" or "release".')
         if not rows:
-            return self.response_400(message="rows array is required and must not be empty.")
+            return self.response(400, message="rows array is required and must not be empty.")
         if not dashboard_id:
-            return self.response_400(message="dashboard_id is required.")
+            return self.response(400, message="dashboard_id is required.")
 
         # Auth: check dashboard settlement_config
         cfg = _get_settlement_config(dashboard_id)
         if not cfg or not cfg.get("enabled"):
-            return self.response_403(
+            return self.response(403,
                 message="Settlement is not enabled on this dashboard."
             )
 
@@ -241,7 +241,7 @@ class SettlementRestApi(BaseSupersetApi):
         if allowed_roles:
             user_roles = _user_role_names()
             if not set(user_roles).intersection(allowed_roles):
-                return self.response_403(
+                return self.response(403,
                     message="Your role is not permitted to execute settlement actions from this dashboard."
                 )
 

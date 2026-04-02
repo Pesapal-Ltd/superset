@@ -259,7 +259,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         body = request.get_json(force=True, silent=True) or {}
         error = _validate_template_body(body)
         if error:
-            return self.response_400(message=error)
+            return self.response(400, message=error)
 
         # Auto-detect variables from subject + html_body
         variables = _extract_variables(body["html_body"]) + _extract_variables(
@@ -319,7 +319,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         body = request.get_json(force=True, silent=True) or {}
         error = _validate_template_body(body)
         if error:
-            return self.response_400(message=error)
+            return self.response(400, message=error)
 
         variables = _extract_variables(body["html_body"]) + _extract_variables(
             body.get("subject", "")
@@ -413,7 +413,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 render_template(tpl.text_body, variables) if tpl.text_body else None
             )
         except ValueError as exc:
-            return self.response_400(message=str(exc))
+            return self.response(400, message=str(exc))
 
         return self.response(
             200,
@@ -449,7 +449,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         chart_id = request.args.get("chart_id", type=int)
 
         if not dashboard_id and not chart_id:
-            return self.response_400(
+            return self.response(400,
                 message="Either dashboard_id or chart_id query param is required."
             )
 
@@ -570,7 +570,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
 
         # Check global kill switch
         if not current_app.config.get("EMAIL_VERIFY_ENABLED", True):
-            return self.response_403(message="Email verification feature is disabled.")
+            return self.response(403, message="Email verification feature is disabled.")
 
         body = request.get_json(force=True, silent=True) or {}
 
@@ -587,15 +587,15 @@ class EmailVerifyRestApi(BaseSupersetApi):
         variables: dict[str, str] = dict(body.get("variables") or {})
 
         if not template_id:
-            return self.response_400(message="template_id is required.")
+            return self.response(400, message="template_id is required.")
         if not recipient_email:
-            return self.response_400(message="recipient_email is required.")
+            return self.response(400, message="recipient_email is required.")
 
         # Basic email format check — allow multiple comma/semicolon-separated emails
         recipients = [r.strip() for r in re.split(r"[,;]", recipient_email) if r.strip()]
         for r in recipients:
             if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", r):
-                return self.response_400(message=f"Invalid email address: {r}")
+                return self.response(400, message=f"Invalid email address: {r}")
 
         # 2. Load dashboard/chart config and perform role + type auth checks
         if dashboard_id or chart_id:
@@ -603,7 +603,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 dashboard_id=dashboard_id, chart_id=chart_id
             )
             if not ev_config or not ev_config.get("enabled"):
-                return self.response_403(
+                return self.response(403,
                     message="Email verification is not enabled on this dashboard/chart."
                 )
 
@@ -611,7 +611,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
             if allowed_roles:
                 user_roles = _user_role_names()
                 if not set(user_roles).intersection(allowed_roles):
-                    return self.response_403(
+                    return self.response(403,
                         message="Your role is not permitted to send emails from this dashboard."
                     )
 
@@ -638,7 +638,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         if dashboard_id or chart_id:
             allowed_types: list[str] = ev_config.get("allowed_types", [])  # type: ignore[assignment]
             if allowed_types and tpl.type not in allowed_types:
-                return self.response_400(
+                return self.response(400,
                     message=f"Template type '{tpl.type}' is not allowed on this dashboard."
                 )
 
@@ -646,7 +646,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         allowed_vars: set[str] = set(tpl.variables or [])
         extra_vars = set(variables.keys()) - allowed_vars
         if extra_vars:
-            return self.response_400(
+            return self.response(400,
                 message=f"Extra variables not declared in template: {sorted(extra_vars)}"
             )
 
@@ -658,7 +658,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 render_template(tpl.text_body, variables) if tpl.text_body else None
             )
         except ValueError as exc:
-            return self.response_400(message=str(exc))
+            return self.response(400, message=str(exc))
 
         # 8. Send email and write audit log (audit write is in try/except —
         #    a logging failure must NOT prevent the success response)
@@ -792,7 +792,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                     >= datetime.strptime(date_from, "%Y-%m-%d")
                 )
             except ValueError:
-                return self.response_400(message="Invalid date_from format. Use YYYY-MM-DD.")
+                return self.response(400, message="Invalid date_from format. Use YYYY-MM-DD.")
         if date_to:
             try:
                 query = query.filter(
