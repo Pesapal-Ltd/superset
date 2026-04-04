@@ -273,12 +273,32 @@ class SettlementRestApi(BaseSupersetApi):
                 )
                 continue
 
+            merchant_id = row.get("merchant_id") or row.get("MerchantId")
+            currency = row.get("currency") or row.get("Currency")
+            country = row.get("country") or row.get("Country")
+            amount_raw = row.get("amount") or row.get("Amount")
+            
+            amount = None
+            if amount_raw is not None:
+                try:
+                    from decimal import Decimal
+                    amount = Decimal(str(amount_raw))
+                except (ValueError, TypeError, NameError):
+                    try:
+                        amount = float(amount_raw)
+                    except:
+                        amount = None
+
             # Create a pending log entry before enqueuing
             log = SettlementLog(
                 dashboard_id=dashboard_id,
                 chart_id=chart_id,
                 action=action,
                 confirmation_code=confirmation_code,
+                merchant_id=str(merchant_id) if merchant_id is not None else None,
+                currency=str(currency) if currency is not None else None,
+                country=str(country) if country is not None else None,
+                amount=amount, 
                 reason=reason,
                 status="pending",
                 initiated_by_fk=user_id or None,

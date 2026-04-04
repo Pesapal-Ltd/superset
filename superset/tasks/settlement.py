@@ -190,23 +190,30 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
         # Auth
         token = _get_jwt_token(base_url, email, password)
 
-        # DB lookup
-        if connection_id is None:
-            raise ValueError("SETTLEMENT_DB_CONNECTION_ID is not configured.")
-        row_data = _db_lookup(connection_id, confirmation_code)
+        # Detail enrichment
+        if action == "hold":
+            if connection_id is None:
+                raise ValueError("SETTLEMENT_DB_CONNECTION_ID is not configured.")
+            row_data = _db_lookup(connection_id, confirmation_code)
 
-        merchant_id = row_data.get("MerchantId")
-        currency = row_data.get("Currency", "")
-        country = row_data.get("Country", "")
-        amount = row_data.get("Amount", 0)
+            merchant_id = row_data.get("MerchantId") or row_data.get("merchant_id")
+            currency = row_data.get("Currency") or row_data.get("currency") or ""
+            country = row_data.get("Country") or row_data.get("country") or ""
+            amount = row_data.get("Amount") or row_data.get("amount") or 0
 
-        # Persist enriched data on the log
-        if log:
-            log.merchant_id = str(merchant_id) if merchant_id is not None else None
-            log.currency = str(currency)
-            log.country = str(country)
-            log.amount = amount
-            db.session.commit()
+            # Persist enriched data on the log
+            if log:
+                log.merchant_id = str(merchant_id) if merchant_id is not None else None
+                log.currency = str(currency)
+                log.country = str(country)
+                log.amount = amount
+                db.session.commit()
+        else:
+            # "release" funds log is pre-populated
+            merchant_id = log.merchant_id if log else None
+            currency = log.currency if log else ""
+            country = log.country if log else ""
+            amount = log.amount if log else 0
 
         # Construct payload
         withdrawal_type_id = current_app.config.get(
@@ -221,11 +228,16 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
             "currency": currency,
             "country": country,
             "frequency": frequency,
-            "amount": float(amount),
+            "amount": float(amount) if amount is not None else 0,
             "status": status,
             "reference": confirmation_code,
             "description": reason,
         }
+
+        # Save request payload early
+        if log:
+            log.request_payload = request_payload
+            db.session.commit()
 
         # Call settlement API
         response = _call_settlement_api(
@@ -238,7 +250,6 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
         # Mark success
         if log:
             log.status = "success"
-            log.request_payload = request_payload
             log.response_snapshot = response
             log.completed_at = datetime.utcnow()
             db.session.commit()
