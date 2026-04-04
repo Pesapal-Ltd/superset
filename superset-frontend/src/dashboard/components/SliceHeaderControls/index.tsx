@@ -165,7 +165,7 @@ const SliceHeaderControls = (
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [sendVerifyModalOpen, setSendVerifyModalOpen] = useState(false);
   const [settlementModalOpen, setSettlementModalOpen] = useState(false);
-  const [pendingSettlementAction, setPendingSettlementAction] = useState<'hold' | 'release'>('hold');
+  const [pendingSettlementAction, setPendingSettlementAction] = useState<'hold'>('hold');
   const [openScopingModal, scopingModal] = useCrossFiltersScopingModal(
     props.slice.slice_id,
   );
@@ -316,11 +316,6 @@ const SliceHeaderControls = (
       }
       case MenuKeys.HoldFunds: {
         setPendingSettlementAction('hold');
-        setSettlementModalOpen(true);
-        break;
-      }
-      case MenuKeys.ReleaseFunds: {
-        setPendingSettlementAction('release');
         setSettlementModalOpen(true);
         break;
       }
@@ -511,18 +506,6 @@ const SliceHeaderControls = (
               `}
             />
             {t('Hold Funds')}
-          </Menu.Item>
-          <Menu.Item
-            key={MenuKeys.ReleaseFunds}
-            data-test="release-funds-menu-item"
-          >
-            <Icons.UnlockOutlined
-              css={css`
-                margin-right: 8px;
-                color: #52c41a;
-              `}
-            />
-            {t('Release Funds')}
           </Menu.Item>
           <Menu.Divider />
         </>

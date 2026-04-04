@@ -427,6 +427,21 @@ class SettlementRestApi(BaseSupersetApi):
             .all()
         )
 
+        # Check for released confirmation codes to prevent double release
+        codes = [lg.confirmation_code for lg, u in logs]
+        released_codes = set()
+        if codes:
+            released_entries = (
+                db.session.query(SettlementLog.confirmation_code)
+                .filter(
+                    SettlementLog.confirmation_code.in_(codes),
+                    SettlementLog.action == "release",
+                    SettlementLog.status == "success",
+                )
+                .all()
+            )
+            released_codes = {r[0] for r in released_entries}
+
         result = [
             {
                 "id": lg.id,
@@ -442,12 +457,13 @@ class SettlementRestApi(BaseSupersetApi):
                 "task_id": lg.task_id,
                 "status": lg.status,
                 # "error_message": lg.error_message,
-                 "initiated_by_fk": lg.initiated_by_fk,
+                "initiated_by_fk": lg.initiated_by_fk,
                 "initiated_by": f"{u.first_name} {u.last_name}" if u else "System",
                 "request_payload": lg.request_payload,
                 "response_snapshot": lg.response_snapshot,
                 "initiated_at": lg.initiated_at.isoformat() if lg.initiated_at else None,
                 "completed_at": lg.completed_at.isoformat() if lg.completed_at else None,
+                "is_released": lg.confirmation_code in released_codes,
             }
             for lg, u in logs
         ]

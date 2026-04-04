@@ -37,9 +37,10 @@ import {
   Descriptions,
   Typography,
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { SupersetClient, t } from '@superset-ui/core';
 import type { ColumnsType } from 'antd/es/table';
+import SettlementModal from 'src/components/Settlement/SettlementModal';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -64,6 +65,7 @@ interface SettlementLogEntry {
   response_snapshot: any | null;
   initiated_at: string;
   completed_at: string | null;
+  is_released?: boolean;
 }
 
 
@@ -172,6 +174,25 @@ export default function SettlementAuditLog() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
+  // Settlement Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<SettlementLogEntry | null>(null);
+  const [settlementConfig, setSettlementConfig] = useState<any>({ enabled: true });
+
+  const handleReleaseClick = async (record: SettlementLogEntry) => {
+    setSelectedRecord(record);
+    try {
+      const resp = await SupersetClient.get({
+        endpoint: `/api/v1/settlement/config?dashboard_id=${record.dashboard_id}`,
+      });
+      setSettlementConfig(resp.json.result || { enabled: true });
+    } catch {
+      setSettlementConfig({ enabled: true });
+    } finally {
+      setModalVisible(true);
+    }
+  };
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -258,10 +279,33 @@ export default function SettlementAuditLog() {
       ),
     },
     {
-      title: t('Reason'),
       dataIndex: 'reason',
       key: 'reason',
       ellipsis: true,
+    },
+    {
+      title: t('Actions'),
+      key: 'actions',
+      render: (_, record) => {
+        const canRelease =
+          record.action === 'hold' &&
+          record.status === 'success' &&
+          !record.is_released;
+
+        if (!canRelease) return null;
+
+        return (
+          <Button
+            type="link"
+            size="small"
+            icon={<PlayCircleOutlined />}
+            onClick={() => handleReleaseClick(record)}
+            style={{ color: '#52c41a', padding: 0 }}
+          >
+            {t('Release Funds')}
+          </Button>
+        );
+      }
     }
   ];
 
@@ -344,6 +388,24 @@ export default function SettlementAuditLog() {
           showTotal: (total: number) => t(`${total} entries total`),
         }}
       />
+
+      {selectedRecord && (
+        <SettlementModal
+          visible={modalVisible}
+          action="release"
+          dashboardId={selectedRecord.dashboard_id || 0}
+          chartId={selectedRecord.chart_id || 0}
+          onClose={() => {
+            setModalVisible(false);
+            fetchLogs();
+          }}
+          selectedRows={[{
+            ...selectedRecord,
+            [settlementConfig?.confirmation_code_column || 'ConfirmationCode']: selectedRecord.confirmation_code
+          }]}
+          settlementConfig={settlementConfig}
+        />
+      )}
     </div>
   );
 }
