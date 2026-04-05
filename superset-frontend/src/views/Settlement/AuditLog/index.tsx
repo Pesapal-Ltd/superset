@@ -193,6 +193,19 @@ export default function SettlementAuditLog() {
     }
   };
 
+  const handleRetryClick = async (record: SettlementLogEntry) => {
+    try {
+      await SupersetClient.post({
+        endpoint: `/api/v1/settlement/retry/${record.id}`,
+      });
+      message.success(t('Action re-enqueued successfully.'));
+      fetchLogs();
+    } catch (err: any) {
+      const msg = err?.message || t('Failed to retry action.');
+      message.error(msg);
+    }
+  };
+
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -292,18 +305,35 @@ export default function SettlementAuditLog() {
           record.status === 'success' &&
           !record.is_released;
 
-        if (!canRelease) return null;
+        const canRetry = record.status === 'failed';
+
+        if (!canRelease && !canRetry) return null;
 
         return (
-          <Button
-            type="link"
-            size="small"
-            icon={<PlayCircleOutlined />}
-            onClick={() => handleReleaseClick(record)}
-            style={{ color: '#52c41a', padding: 0 }}
-          >
-            {t('Release Funds')}
-          </Button>
+          <Space size="middle">
+            {canRelease && (
+              <Button
+                type="link"
+                size="small"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleReleaseClick(record)}
+                style={{ color: '#52c41a', padding: 0 }}
+              >
+                {t('Release Funds')}
+              </Button>
+            )}
+            {canRetry && (
+              <Button
+                type="link"
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={() => handleRetryClick(record)}
+                style={{ color: '#1890ff', padding: 0 }}
+              >
+                {t('Retry')}
+              </Button>
+            )}
+          </Space>
         );
       }
     }

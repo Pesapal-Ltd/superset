@@ -110,6 +110,7 @@ class SettlementRestApi(BaseSupersetApi):
         "execute",
         "list_logs",
         "task_status",
+        "retry",
     }
 
     # Config
@@ -489,3 +490,61 @@ class SettlementRestApi(BaseSupersetApi):
         ]
 
         return self.response(200, result=result, count=total, page=page, page_size=page_size)
+
+    @expose("/retry/<int:log_id>", methods=("POST",))
+    @protect("can_execute_settlement")
+    @safe
+    def retry(self, log_id: int) -> FlaskResponse:
+        """Retry a failed settlement task.
+        ---
+        post:
+          summary: Retry a failed settlement action
+          parameters:
+            - in: path
+              name: log_id
+              schema: {type: integer}
+          responses:
+            200:
+              description: Task re-enqueued
+            400:
+              description: Log entry not found or not in failed state
+        """
+        # pylint: disable=import-outside-toplevel
+        from superset.tasks.settlement import execute_settlement_action
+
+        log: SettlementLog | None = db.session.query(SettlementLog).filter_by(id=log_id).one_or_none()
+        if log is None:
+            return self.response_404()
+
+        if log.status != "failed":
+            return self.response(400, message="Only failed actions can be retried.")
+
+        # Rate limit
+        user_id = get_user_id() or 0
+        if not _check_rate_limit(user_id):
+            return self.response(
+                429,
+                message="Rate limit exceeded. Please wait before retrying.",
+            )
+
+        # Reset log status and metadata for the retry attempt
+        log.status = "pending"
+        log.error_message = None
+        log.task_id = None
+        log.completed_at = None
+        log.initiated_at = datetime.utcnow()
+        log.initiated_by_fk = user_id or None
+        db.session.commit()
+
+        # Re-enqueue the task
+        task = execute_settlement_action.delay(
+            log_id=log.id,
+            action=log.action,
+            confirmation_code=log.confirmation_code,
+            reason=log.reason,
+        )
+
+        log.task_id = task.id
+        db.session.commit()
+
+        return self.response(200, result={"log_id": log_id, "task_id": task.id, "retrying": True})
