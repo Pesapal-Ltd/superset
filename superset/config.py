@@ -186,7 +186,7 @@ SUPERSET_DASHBOARD_PERIODICAL_REFRESH_WARNING_MESSAGE = None
 
 SUPERSET_DASHBOARD_POSITION_DATA_LIMIT = 65535
 
-CUSTOM_SECURITY_MANAGER = None
+CUSTOM_SECURITY_MANAGER = CustomSsoSecurityManager
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 # ---------------------------------------------------------
 
@@ -353,7 +353,7 @@ FAB_API_SWAGGER_UI = True
 # AUTH_DB : Is for database (username/password)
 # AUTH_LDAP : Is for LDAP
 # AUTH_REMOTE_USER : Is for using REMOTE_USER from web server
-AUTH_TYPE = AUTH_DB
+AUTH_TYPE = AUTH_OAUTH
 # AUTH_TYPE = AUTH_REMOTE_USER
 
 OAUTH_PROVIDERS = [
@@ -1410,6 +1410,7 @@ class CeleryConfig:  # pylint: disable=too-few-public-methods
         "superset.tasks.thumbnails",
         "superset.tasks.cache",
         "superset.tasks.slack",
+        "superset.tasks.settlement",
     )
     # result_backend = "db+sqlite:///celery_results.sqlite"
     result_backend = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
@@ -1671,21 +1672,11 @@ SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID: int = 1
 SETTLEMENT_FREQUENCY: str = "One Off"
 
 # Superset Database connection ID used to look up enrichment data.
-SETTLEMENT_DB_CONNECTION_ID: int | None = None
+SETTLEMENT_DB_CONNECTION_ID: int = int(os.environ.get("SETTLEMENT_DB_CONNECTION_ID"))
 
 # Parameterised enrichment query.
 # Uses SQLAlchemy text() with a :confirmation_code bind parameter.
-SETTLEMENT_LOOKUP_QUERY: str = """
-    select 
-      dtd.MerchantId,
-      dtd.Currency,
-      dtd.TargetAmount as Amount,
-      dtd.Country,
-      dtd.TargetConfirmationCode as Reference
-    from pesapal_ke_compliance_dw.dbo.Dw_TransactionDetails dtd 
-    where dtd.TargetConfirmationCode = :confirmation_code
-    limit 1
-"""
+SETTLEMENT_LOOKUP_QUERY: str = os.environ.get("SETTLEMENT_LOOKUP_QUERY")
 
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
