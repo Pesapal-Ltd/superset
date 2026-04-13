@@ -58,7 +58,7 @@ interface SettlementLogEntry {
   reason: string;
   task_id: string | null;
   status: 'pending' | 'success' | 'failed';
-  // error_message: string | null;
+  error_message: string | null;
   initiated_by_fk: number | null;
   initiated_by: string | null;
   request_payload: any | null;
@@ -134,7 +134,6 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
             </pre>
           </Descriptions.Item>
         )}
-        {/* {record.error_message && (
           <Descriptions.Item label={t('Error')} span={2}>
             <div style={{
               backgroundColor: '#fff1f0',
@@ -151,8 +150,7 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
             }}>
               {record.error_message}
             </div>
-          </Descriptions.Item> */}
-        {/* )} */}
+          </Descriptions.Item>
       </Descriptions>
     </div>
   );

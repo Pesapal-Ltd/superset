@@ -81,7 +81,7 @@ interface SettlementModalProps {
 interface TaskStatus {
   task_id: string;
   confirmation_code: string;
-  celery_state: string;       // PENDING | STARTED | SUCCESS | FAILURE | RETRY
+  celery_state: string;       
   status: 'pending' | 'success' | 'failed';
   merchant_id?: string;
   currency?: string;
@@ -93,9 +93,7 @@ interface TaskStatus {
 
 type Step = 'summary' | 'reason' | 'confirm' | 'progress';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -113,9 +111,7 @@ const TaskStatusIcon = ({ status }: { status: TaskStatus['status'] }) => {
   return <LoadingOutlined style={{ color: '#1890ff' }} />;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Component
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function SettlementModal({
   visible,
