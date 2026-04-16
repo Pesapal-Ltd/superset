@@ -890,6 +890,33 @@ def form_data_to_adhoc(form_data: dict[str, Any], clause: str) -> AdhocFilterCla
     return result
 
 
+def get_adhoc_filters_from_data_mask(data_mask: dict[str, Any], dashboard: Any = None) -> list[dict[str, Any]]:
+    """
+    Translates a dashboard dataMask into a list of adhoc_filters.
+    """
+    adhoc_filters: list[dict[str, Any]] = []
+    
+    for filter_state in data_mask.values():
+        extra_form_data = filter_state.get("extraFormData", {})
+        
+        # Handle regular column filters
+        if "filters" in extra_form_data:
+            for flt in extra_form_data["filters"]:
+                result = {
+                    "clause": "WHERE",
+                    "expressionType": "SIMPLE",
+                    "operator": flt.get("op"),
+                    "subject": flt.get("col"),
+                    "comparator": flt.get("val"),
+                    "isExtra": True,
+                }
+                # Add MD5 hash as filterOptionName to ensure matching in frontend
+                result["filterOptionName"] = md5_sha_from_dict(result)
+                adhoc_filters.append(result)
+    
+    return adhoc_filters
+
+
 def merge_extra_form_data(form_data: dict[str, Any]) -> None:  # noqa: C901
     """
     Merge extra form data (appends and overrides) into the main payload

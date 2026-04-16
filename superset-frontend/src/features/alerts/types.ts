@@ -92,6 +92,8 @@ export type DashboardState = {
   activeTabs?: Array<string>;
   dataMask?: Object;
   anchor?: string;
+  dashboard_id?: number;
+  dashboard_title?: string;
 };
 
 export type Extra = {

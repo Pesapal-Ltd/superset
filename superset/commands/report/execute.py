@@ -201,10 +201,73 @@ class BaseReportState:
         """
         force = "true" if self._report_schedule.force_screenshot else "false"
         if self._report_schedule.chart:
+            dashboard_state = (self._report_schedule.extra or {}).get("dashboard") or {}
+            data_mask = dashboard_state.get("dataMask") or {}
+            from superset.utils.core import get_adhoc_filters_from_data_mask
+
+            logger.info(
+                "Report execution: chart_id=%s, data_mask=%s",
+                self._report_schedule.chart_id,
+                data_mask,
+            )
+
+            adhoc_filters = get_adhoc_filters_from_data_mask(data_mask)
+
+            extra_form_data: dict[str, Any] = {}
+            for filter_state in data_mask.values():
+                filter_extra = filter_state.get("extraFormData", {})
+                for k, v in filter_extra.items():
+                    if k in ("filters", "adhoc_filters") and isinstance(v, list):
+                        extra_form_data.setdefault(k, []).extend(v)
+                    else:
+                        extra_form_data[k] = v
+
+            has_filters = bool(adhoc_filters or extra_form_data)
+
+            # Build merged form_data starting from the chart's full DB form_data.
+            # This is crucial: datasource, viz_type, metrics, etc. must all be present
+            # so the backend can correctly resolve the chart's data source.
+            chart = self._report_schedule.chart
+            merged_form_data: dict[str, Any] = chart.form_data.copy()
+
+            if adhoc_filters:
+                # Combine injected filters with any existing ones from the chart
+                existing = merged_form_data.get("adhoc_filters") or []
+                merged_form_data["adhoc_filters"] = existing + adhoc_filters
+
+            if extra_form_data:
+                # extra_form_data contains overrides like time_range, extra filters
+                merged_form_data["extra_form_data"] = extra_form_data
+                if "time_range" in extra_form_data:
+                    merged_form_data["time_range"] = extra_form_data["time_range"]
+                if "granularity_sqla" in extra_form_data:
+                    merged_form_data["granularity_sqla"] = extra_form_data[
+                        "granularity_sqla"
+                    ]
+
+            logger.info(
+                "Report URL generation: chart_id=%s, has_filters=%s, adhoc_filter_count=%s",
+                self._report_schedule.chart_id,
+                has_filters,
+                len(adhoc_filters),
+            )
+
             if result_format in {
                 ChartDataResultFormat.CSV,
                 ChartDataResultFormat.JSON,
             }:
+                if has_filters:
+                    # Pass the full merged form_data (with datasource) to explore_json.
+                    # The old Superset.explore_json view reads form_data from URL args via
+                    # get_form_data(), and with datasource present it resolves correctly.
+                    kwargs[result_format.value] = "true"
+                    return get_url_path(
+                        "Superset.explore_json",
+                        user_friendly=user_friendly,
+                        form_data=json.dumps(merged_form_data),
+                        force=force,
+                        **kwargs,
+                    )
                 return get_url_path(
                     "ChartDataRestApi.get_data",
                     pk=self._report_schedule.chart_id,
@@ -212,11 +275,55 @@ class BaseReportState:
                     type=ChartDataResultType.POST_PROCESSED.value,
                     force=force,
                 )
+
+            if has_filters:
+                # For screenshot URLs, passing form_data raw in the URL does NOT work.
+                # The React frontend calls GET api/v1/explore/?slice_id=... which ignores
+                # adhoc_filters/extra_form_data from URL params entirely and only loads
+                # the chart's DB-stored form_data.
+                #
+                # Fix: store the merged form_data in the explore cache and pass
+                # form_data_key so the frontend fetches the correct filtered state.
+                from superset.extensions import cache_manager
+                from superset.key_value.utils import random_key
+                from superset.commands.explore.form_data.state import (
+                    TemporaryExploreState,
+                )
+                from superset.utils.core import DatasourceType as _DatasourceType
+
+                form_data_key = random_key()
+                datasource_id = chart.datasource_id
+                datasource_type = chart.datasource_type or "table"
+
+                state: TemporaryExploreState = {
+                    "owner": None,
+                    "datasource_id": datasource_id,
+                    "datasource_type": _DatasourceType(datasource_type),
+                    "chart_id": self._report_schedule.chart_id,
+                    "form_data": json.dumps(merged_form_data),
+                }
+                cache_manager.explore_form_data_cache.set(form_data_key, state)
+                logger.info(
+                    "Cached filtered form_data with key=%s for chart_id=%s",
+                    form_data_key,
+                    self._report_schedule.chart_id,
+                )
+                return get_url_path(
+                    "ExploreView.root",
+                    user_friendly=user_friendly,
+                    form_data_key=form_data_key,
+                    force=force,
+                    standalone="true",
+                    **kwargs,
+                )
+
+            # No dashboard filters — use slice_id directly (no cache write needed)
             return get_url_path(
                 "ExploreView.root",
                 user_friendly=user_friendly,
-                form_data=json.dumps({"slice_id": self._report_schedule.chart_id}),
+                slice_id=self._report_schedule.chart_id,
                 force=force,
+                standalone="true",
                 **kwargs,
             )
         # If we need to render dashboard in a specific state, use stateful permalink

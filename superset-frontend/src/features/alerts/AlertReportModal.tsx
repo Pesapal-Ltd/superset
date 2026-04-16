@@ -695,7 +695,17 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       ),
       recipients,
       report_format: reportFormat || DEFAULT_NOTIFICATION_FORMAT,
-      extra: contentType === ContentType.Dashboard ? currentAlert?.extra : {},
+      extra:
+        contentType === ContentType.Chart && currentAlert?.dashboard?.value
+          ? {
+            ...currentAlert.extra,
+            dashboard: {
+              ...(currentAlert.extra?.dashboard || {}),
+              dashboard_id: currentAlert.dashboard.value,
+              dashboard_title: currentAlert.dashboard.label,
+            },
+          }
+          : currentAlert?.extra || {},
     };
 
     if (data.recipients && !data.recipients.length) {
@@ -1027,8 +1037,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
   const onCustomWidthChange = (value: number | string | null | undefined) => {
     const numValue =
       value === null ||
-      value === undefined ||
-      (typeof value === 'string' && Number.isNaN(Number(value)))
+        value === undefined ||
+        (typeof value === 'string' && Number.isNaN(Number(value)))
         ? null
         : Number(value);
     updateAlertState('custom_width', numValue);
@@ -1065,7 +1075,32 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
 
   const onDashboardChange = (dashboard: SelectValue) => {
     updateAlertState('dashboard', dashboard || undefined);
-    updateAlertState('chart', null);
+    if (contentType === ContentType.Dashboard) {
+      updateAlertState('chart', null);
+    } else if (dashboard?.value) {
+      // Fetch dashboard native filters when context is changed
+      SupersetClient.get({
+        endpoint: `/api/v1/dashboard/${dashboard.value}`,
+      }).then(({ json }) => {
+        const metadata = JSON.parse(json.result.json_metadata || '{}');
+        const nativeFilters = metadata.native_filter_configuration || [];
+        const dataMask: any = {};
+        nativeFilters.forEach((filter: any) => {
+          dataMask[filter.id] = {
+            id: filter.id,
+            extraFormData: filter.defaultDataMask?.extraFormData || {},
+            filterState: filter.defaultDataMask?.filterState || {},
+          };
+        });
+        updateAlertState('extra', {
+          ...currentAlert?.extra,
+          dashboard: {
+            ...(currentAlert?.extra?.dashboard || {}),
+            dataMask,
+          },
+        });
+      });
+    }
     if (tabsEnabled) {
       setTabOptions([]);
       updateAnchorState('');
@@ -1075,7 +1110,6 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
   const onChartChange = (chart: SelectValue) => {
     getChartVisualizationType(chart);
     updateAlertState('chart', chart || undefined);
-    updateAlertState('dashboard', null);
   };
 
   const onActiveSwitch = (checked: boolean) => {
@@ -1287,13 +1321,15 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
     ) {
       setCurrentAlert({
         ...defaultAlert,
+        ...(alert || {}),
+        id: undefined, // Ensure we are in create mode if !isEditMode
         owners: currentUser
           ? [
-              {
-                value: currentUser.userId,
-                label: `${currentUser.firstName} ${currentUser.lastName}`,
-              },
-            ]
+            {
+              value: currentUser.userId,
+              label: `${currentUser.firstName} ${currentUser.lastName}`,
+            },
+          ]
           : [],
       });
       setNotificationSettings([
@@ -1349,25 +1385,43 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       }
       setForceScreenshot(resource.force_screenshot);
 
+      // When this is a chart-type report, `resource.dashboard` is null.
+      // The context dashboard (for native filter propagation) is stored in
+      // `resource.extra.dashboard.dashboard_id` / `dashboard_title`.
+      // Reconstruct the {value, label} object so the select shows the name.
+      const contextDashboard = (() => {
+        if (!resource.chart) return undefined; // not a chart-type report
+        const extraDash = resource.extra?.dashboard as any;
+        const ctxId = extraDash?.dashboard_id;
+        if (!ctxId) return undefined;
+        const ctxTitle = extraDash?.dashboard_title;
+        return {
+          value: ctxId,
+          label: ctxTitle || `Dashboard ${ctxId}`,
+        };
+      })();
+
       setCurrentAlert({
         ...resource,
         chart: resource.chart
           ? getChartData(resource.chart) || {
-              value: (resource.chart as ChartObject).id,
-              label: (resource.chart as ChartObject).slice_name,
-            }
+            value: (resource.chart as ChartObject).id,
+            label: (resource.chart as ChartObject).slice_name,
+          }
           : undefined,
-        dashboard: resource.dashboard
-          ? getDashboardData(resource.dashboard) || {
+        dashboard: resource.chart
+          ? contextDashboard
+          : resource.dashboard
+            ? getDashboardData(resource.dashboard) || {
               value: (resource.dashboard as DashboardObject).id,
               label: (resource.dashboard as DashboardObject).dashboard_title,
             }
-          : undefined,
+            : undefined,
         database: resource.database
           ? getSourceData(resource.database) || {
-              value: (resource.database as DatabaseObject).id,
-              label: (resource.database as DatabaseObject).database_name,
-            }
+            value: (resource.database as DatabaseObject).id,
+            label: (resource.database as DatabaseObject).database_name,
+          }
           : undefined,
         owners: (alert?.owners || []).map(owner => ({
           value: (owner as MetaObject).value || owner.id,
@@ -1379,8 +1433,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
         validator_config_json:
           resource.validator_type === 'not null'
             ? {
-                op: 'not null',
-              }
+              op: 'not null',
+            }
             : validatorConfig,
       });
     }
@@ -1591,11 +1645,11 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                   placeholder={t('Select database')}
                   value={
                     currentAlert?.database?.label &&
-                    currentAlert?.database?.value
+                      currentAlert?.database?.value
                       ? {
-                          value: currentAlert.database.value,
-                          label: currentAlert.database.label,
-                        }
+                        value: currentAlert.database.value,
+                        label: currentAlert.database.label,
+                      }
                       : undefined
                   }
                   options={loadSourceOptions}
@@ -1714,9 +1768,9 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                   value={
                     currentAlert?.chart?.label && currentAlert?.chart?.value
                       ? {
-                          value: currentAlert.chart.value,
-                          label: currentAlert.chart.label,
-                        }
+                        value: currentAlert.chart.value,
+                        label: currentAlert.chart.label,
+                      }
                       : undefined
                   }
                   options={loadChartOptions}
@@ -1736,11 +1790,11 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                   name="dashboard"
                   value={
                     currentAlert?.dashboard?.label &&
-                    currentAlert?.dashboard?.value
+                      currentAlert?.dashboard?.value
                       ? {
-                          value: currentAlert.dashboard.value,
-                          label: currentAlert.dashboard.label,
-                        }
+                        value: currentAlert.dashboard.value,
+                        label: currentAlert.dashboard.label,
+                      }
                       : undefined
                   }
                   options={loadDashboardOptions}
@@ -1750,6 +1804,29 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
               </>
             )}
           </StyledInputContainer>
+          {contentType === ContentType.Chart && (
+            <StyledInputContainer>
+              <div className="control-label">
+                {t('Dashboard context (optional)')}
+              </div>
+              <AsyncSelect
+                ariaLabel={t('Dashboard context')}
+                name="dashboard"
+                value={
+                  currentAlert?.dashboard?.label &&
+                    currentAlert?.dashboard?.value
+                    ? {
+                      value: currentAlert.dashboard.value,
+                      label: currentAlert.dashboard.label,
+                    }
+                    : undefined
+                }
+                options={loadDashboardOptions}
+                onChange={onDashboardChange}
+                placeholder={t('Select dashboard to apply native filters')}
+              />
+            </StyledInputContainer>
+          )}
           <StyledInputContainer
             css={
               ['PDF', 'TEXT', 'CSV'].includes(reportFormat) && noMarginBottom
@@ -1769,15 +1846,15 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                   options={
                     contentType === ContentType.Dashboard
                       ? ['pdf', 'png'].map(
-                          key => FORMAT_OPTIONS[key as FORMAT_OPTIONS_KEY],
-                        )
+                        key => FORMAT_OPTIONS[key as FORMAT_OPTIONS_KEY],
+                      )
                       : /* If chart is of text based viz type: show text
                   format option */
-                        TEXT_BASED_VISUALIZATION_TYPES.includes(chartVizType)
+                      TEXT_BASED_VISUALIZATION_TYPES.includes(chartVizType)
                         ? Object.values(FORMAT_OPTIONS)
                         : ['pdf', 'png', 'csv'].map(
-                            key => FORMAT_OPTIONS[key as FORMAT_OPTIONS_KEY],
-                          )
+                          key => FORMAT_OPTIONS[key as FORMAT_OPTIONS_KEY],
+                        )
                   }
                   placeholder={t('Select format')}
                 />
