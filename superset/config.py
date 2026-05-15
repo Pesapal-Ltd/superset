@@ -1666,10 +1666,8 @@ SETTLEMENT_ENABLED = True
 SETTLEMENT_BASE_URL: str = os.environ.get("SETTLEMENT_BASE_URL", "")
 SETTLEMENT_API_EMAIL: str = os.environ.get("SETTLEMENT_API_EMAIL", "")
 SETTLEMENT_API_PASSWORD: str = os.environ.get("SETTLEMENT_API_PASSWORD", "")  # noqa: S105
-
-# Fixed payload constants (per API contract)
-SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID: int = 1
-SETTLEMENT_FREQUENCY: str = "One Off"
+SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID: int = int(os.environ.get("SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID"))
+SETTLEMENT_FREQUENCY: str = os.environ.get("SETTLEMENT_FREQUENCY", "")
 
 # Superset Database connection ID used to look up enrichment data.
 SETTLEMENT_DB_CONNECTION_ID: int = int(os.environ.get("SETTLEMENT_DB_CONNECTION_ID"))
