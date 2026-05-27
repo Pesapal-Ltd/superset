@@ -701,20 +701,31 @@ class EmailVerifyRestApi(BaseSupersetApi):
         # Load Pesapal Logo for inline embedding (CID: pesapal_logo)
         images = {}
         try:
-            # BASE_DIR points to the 'superset' package directory
-            logo_path = os.path.join(
-                current_app.config["BASE_DIR"],
-                "..",
-                "superset-frontend",
-                "src",
-                "assets",
-                "images",
-                "base_pesapal_logo.png",
-            )
-            if os.path.exists(logo_path):
-              logger.info("Loading Pesapal logo for email CID: %s", logo_path)
-              with open(logo_path, "rb") as f:
-                images["pesapal_logo"] = f.read()
+            # Check multiple potential paths for the logo (docker production vs local dev)
+            logo_paths = [
+                os.path.join(
+                    current_app.config["BASE_DIR"],
+                    "static",
+                    "assets",
+                    "images",
+                    "base_pesapal_logo.png",
+                ),
+                os.path.join(
+                    current_app.config["BASE_DIR"],
+                    "..",
+                    "superset-frontend",
+                    "src",
+                    "assets",
+                    "images",
+                    "base_pesapal_logo.png",
+                ),
+            ]
+            for path in logo_paths:
+                if os.path.exists(path):
+                    logger.info("Loading Pesapal logo for email CID from: %s", path)
+                    with open(path, "rb") as f:
+                        images["pesapal_logo"] = f.read()
+                    break
         except Exception as exc:  # pylint: disable=broad-except
             logger.warning("Failed to load Pesapal logo for email CID: %s", exc)
 
@@ -936,18 +947,30 @@ class EmailVerifyRestApi(BaseSupersetApi):
         # Load logo
         images: dict[str, bytes] = {}
         try:
-            logo_path = os.path.join(
-                current_app.config["BASE_DIR"],
-                "..",
-                "superset-frontend",
-                "src",
-                "assets",
-                "images",
-                "base_pesapal_logo.png",
-            )
-            if os.path.exists(logo_path):
-                with open(logo_path, "rb") as f:
-                    images["pesapal_logo"] = f.read()
+            # Check multiple potential paths for the logo (docker production vs local dev)
+            logo_paths = [
+                os.path.join(
+                    current_app.config["BASE_DIR"],
+                    "static",
+                    "assets",
+                    "images",
+                    "base_pesapal_logo.png",
+                ),
+                os.path.join(
+                    current_app.config["BASE_DIR"],
+                    "..",
+                    "superset-frontend",
+                    "src",
+                    "assets",
+                    "images",
+                    "base_pesapal_logo.png",
+                ),
+            ]
+            for path in logo_paths:
+                if os.path.exists(path):
+                    with open(path, "rb") as f:
+                        images["pesapal_logo"] = f.read()
+                    break
         except Exception:  # pylint: disable=broad-except
             pass
 

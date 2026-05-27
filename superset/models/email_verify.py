@@ -107,6 +107,8 @@ class EmailVerificationLog(Model):
     status = Column(String(10), nullable=False)
     error_message = Column(Text, nullable=True)
     sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    # ConfirmationCode extracted from variables at send time (used for dedup)
+    confirmation_code = Column(String(255), nullable=True, index=True)
 
     template = relationship("EmailVerificationTemplate", back_populates="logs")
     sent_by = relationship(
