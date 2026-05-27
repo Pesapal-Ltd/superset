@@ -172,6 +172,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         "save_dashboard_config",
         "save_chart_config",
         "send_email",
+        "resend_email",
         "list_logs",
     }
     
@@ -630,6 +631,33 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 f"{rate_limit} verification emails per hour.",
             )
 
+        # 3b. Idempotency — one successful send per (confirmation_code + template + recipient)
+        # This allows the same code to be sent via a different template or to a
+        # different recipient, but blocks exact duplicates.
+        confirmation_code: str | None = (
+            str(variables.get("ConfirmationCode", "")).strip() or None
+        )
+        if confirmation_code and template_id:
+            already_sent = (
+                db.session.query(EmailVerificationLog)
+                .filter(
+                    EmailVerificationLog.confirmation_code == confirmation_code,
+                    EmailVerificationLog.template_id == template_id,
+                    EmailVerificationLog.recipient_email == recipient_email,
+                    EmailVerificationLog.status == "sent",
+                )
+                .first()
+            )
+            if already_sent:
+                return self.response(
+                    409,
+                    message=(
+                        f"A verification email has already been sent for "
+                        f"ConfirmationCode '{confirmation_code}' using this template "
+                        f"to '{recipient_email}'. Duplicate sends are not allowed."
+                    ),
+                )
+
         # 4. Load template
         tpl = (
             db.session.query(EmailVerificationTemplate)
@@ -716,6 +744,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 status=status,
                 error_message=error_message,
                 sent_at=datetime.utcnow(),
+                confirmation_code=confirmation_code,
             )
             db.session.add(log)
             db.session.commit()
@@ -835,11 +864,135 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 "status": log.status,
                 "error_message": log.error_message,
                 "sent_at": log.sent_at.isoformat() if log.sent_at else None,
+                "confirmation_code": log.confirmation_code,
             }
             for log in logs
         ]
         return self.response(
             200, result=result, count=total, page=page, page_size=page_size
+        )
+
+    # Resend
+
+    @expose("/resend/<int:log_id>", methods=("POST",))
+    @protect("can_send_verification_email")
+    @safe
+    def resend_email(self, log_id: int) -> FlaskResponse:
+        """Resend a verification email from a previous log entry.
+        ---
+        post:
+          summary: Resend verification email
+          parameters:
+            - in: path
+              name: log_id
+              schema: {type: integer}
+          responses:
+            200:
+              description: Email resent
+            404:
+              $ref: '#/components/responses/404'
+        """
+        original = (
+            db.session.query(EmailVerificationLog).filter_by(id=log_id).one_or_none()
+        )
+        if original is None:
+            return self.response_404()
+
+        # Re-load the template (must still be active)
+        tpl = (
+            db.session.query(EmailVerificationTemplate)
+            .filter_by(id=original.template_id, is_active=True)
+            .one_or_none()
+        )
+        if tpl is None:
+            return self.response(
+                400,
+                message="The original template is no longer active and cannot be used for resend.",
+            )
+
+        # Rate limit still applies
+        user_id = get_user_id() or 0
+        rate_limit = int(
+            current_app.config.get("EMAIL_VERIFY_RATE_LIMIT", "20/hour").split("/")[0]
+        )
+        if not _check_rate_limit(user_id, limit=rate_limit):
+            return self.response(
+                429,
+                message=f"Rate limit exceeded. You may send at most {rate_limit} verification emails per hour.",
+            )
+
+        variables: dict[str, str] = dict(original.payload_snapshot or {})
+
+        # Render
+        try:
+            rendered_subject = render_template(tpl.subject, variables)
+            rendered_html = render_template(tpl.html_body, variables)
+            rendered_text = (
+                render_template(tpl.text_body, variables) if tpl.text_body else None
+            )
+        except ValueError as exc:
+            return self.response(400, message=str(exc))
+
+        # Load logo
+        images: dict[str, bytes] = {}
+        try:
+            logo_path = os.path.join(
+                current_app.config["BASE_DIR"],
+                "..",
+                "superset-frontend",
+                "src",
+                "assets",
+                "images",
+                "base_pesapal_logo.png",
+            )
+            if os.path.exists(logo_path):
+                with open(logo_path, "rb") as f:
+                    images["pesapal_logo"] = f.read()
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+        status = "failed"
+        error_message: str | None = None
+        try:
+            send_verification_email(
+                to_address=original.recipient_email,
+                subject=rendered_subject,
+                html_body=rendered_html,
+                text_body=rendered_text,
+                images=images,
+            )
+            status = "sent"
+        except Exception as exc:  # pylint: disable=broad-except
+            error_message = str(exc)
+            logger.exception("Resend failed for log_id=%s: %s", log_id, exc)
+
+        # Write a new log entry (preserves full audit trail — original is untouched)
+        new_log_id: int | None = None
+        try:
+            new_log = EmailVerificationLog(
+                template_id=original.template_id,
+                sent_by_fk=user_id,
+                recipient_email=original.recipient_email,
+                merchant_id=original.merchant_id,
+                dashboard_id=original.dashboard_id,
+                chart_id=original.chart_id,
+                payload_snapshot=variables,
+                status=status,
+                error_message=error_message,
+                sent_at=datetime.utcnow(),
+                confirmation_code=original.confirmation_code,
+            )
+            db.session.add(new_log)
+            db.session.commit()
+            new_log_id = new_log.id
+        except Exception as log_exc:  # pylint: disable=broad-except
+            logger.exception("Failed to write resend audit log: %s", log_exc)
+
+        if status == "sent":
+            return self.response(200, result={"success": True, "log_id": new_log_id})
+        return self.response(
+            200,
+            result={"success": False, "error": error_message, "log_id": new_log_id},
         )
 
 

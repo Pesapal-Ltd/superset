@@ -234,6 +234,7 @@ export default function SendVerifyModal({
       if (isBulk) {
         let successCount = 0;
         let failCount = 0;
+        let skipCount = 0; // already-sent duplicates
 
         for (const row of selectedRows) {
           const emails = [];
@@ -283,22 +284,37 @@ export default function SendVerifyModal({
               jsonPayload: payload,
             });
             successCount++;
-          } catch (e) {
-            failCount++;
+          } catch (e: any) {
+            // 409 = already sent for this confirmation code — not a real failure
+            if (e?.status === 409 || e?.statusCode === 409) {
+              skipCount++;
+            } else {
+              failCount++;
+            }
           }
         }
+
+        const parts: string[] = [];
+        if (successCount > 0) parts.push(t(`${successCount} sent`));
+        if (skipCount > 0) parts.push(t(`${skipCount} skipped (already sent)`));
+        if (failCount > 0) parts.push(t(`${failCount} failed`));
 
         setSendResult({
           success: failCount === 0,
           error:
             failCount > 0
-              ? t(`Sent ${successCount}, Failed ${failCount} (Contact Admin for further assistance)`)
+              ? t(`${parts.join(', ')}. Contact Admin for failed emails.`)
+              : skipCount > 0
+              ? t(`${parts.join(', ')}. Duplicate sends are not allowed.`)
               : undefined,
         });
 
-        if (failCount === 0) {
+        if (failCount === 0 && skipCount === 0) {
           message.success(t('Successfully sent all emails in bulk!'));
+        } else if (failCount === 0 && skipCount > 0) {
+          message.warning(t(`${successCount} sent, ${skipCount} skipped (already sent for those codes).`));
         }
+
       } else {
         const payload: Record<string, any> = {
           template_id: selectedTemplate?.id,

@@ -338,6 +338,27 @@ class SettlementRestApi(BaseSupersetApi):
                 )
                 continue
 
+            # Idempotency — one successful/pending hold per confirmation code.
+            # Releases are always allowed (they undo a hold).
+            if action == "hold":
+                existing = (
+                    db.session.query(SettlementLog)
+                    .filter(
+                        SettlementLog.confirmation_code == confirmation_code,
+                        SettlementLog.action == "hold",
+                        SettlementLog.status.in_(["success", "pending"]),
+                    )
+                    .first()
+                )
+                if existing:
+                    logger.warning(
+                        "Skipping duplicate hold for ConfirmationCode=%s (log_id=%s, status=%s)",
+                        confirmation_code,
+                        existing.id,
+                        existing.status,
+                    )
+                    continue
+
             merchant_id = row.get("merchant_id") or row.get("MerchantId")
             currency = row.get("currency") or row.get("Currency")
             country = row.get("country") or row.get("Country")

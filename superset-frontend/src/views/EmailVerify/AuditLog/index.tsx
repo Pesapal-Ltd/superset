@@ -37,8 +37,14 @@ import {
   message,
   Descriptions,
   Typography,
+  Tooltip,
+  Popconfirm,
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  ReloadOutlined,
+  SendOutlined,
+} from '@ant-design/icons';
 import { SupersetClient, t } from '@superset-ui/core';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -62,6 +68,7 @@ interface LogEntry {
   status: 'sent' | 'failed';
   error_message: string | null;
   sent_at: string;
+  confirmation_code: string | null;
 }
 
 interface LogResponse {
@@ -84,6 +91,16 @@ function ExpandedRow({ record }: { record: LogEntry }) {
         </Descriptions.Item>
         <Descriptions.Item label={t('Type')}>
           {record.template_type || '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('Confirmation Code')}>
+          {record.confirmation_code ? (
+            <Text code>{record.confirmation_code}</Text>
+          ) : (
+            '—'
+          )}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('Merchant ID')}>
+          {record.merchant_id || '—'}
         </Descriptions.Item>
         <Descriptions.Item label={t('Dashboard ID')}>
           {record.dashboard_id ?? '—'}
@@ -120,6 +137,7 @@ export default function EmailAuditLog() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [resendingId, setResendingId] = useState<number | null>(null);
 
   // Filters
   const [merchantId, setMerchantId] = useState('');
@@ -165,6 +183,34 @@ export default function EmailAuditLog() {
     fetchLogs();
   };
 
+  const handleResend = async (logId: number) => {
+    setResendingId(logId);
+    try {
+      const resp = await SupersetClient.post({
+        endpoint: `/api/v1/email-verify/resend/${logId}`,
+        jsonPayload: {},
+      });
+      const data: any = resp.json;
+      if (data?.result?.success) {
+        message.success(t('Email resent successfully.'));
+        // Refresh the log table so the new entry appears
+        fetchLogs();
+      } else {
+        message.error(
+          t(`Resend failed: ${data?.result?.error || 'Unknown error'}`),
+        );
+      }
+    } catch (e: any) {
+      const errMsg =
+        e?.responseJSON?.message ||
+        e?.message ||
+        t('Failed to resend email.');
+      message.error(errMsg);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const columns: ColumnsType<LogEntry> = [
     {
       title: t('Sent At'),
@@ -184,9 +230,17 @@ export default function EmailAuditLog() {
       title: t('Recipient'),
       dataIndex: 'recipient_email',
       key: 'recipient_email',
+      ellipsis: true,
     },
     {
-      title: t('Merchant ID'),
+      title: t('Confirmation Code'),
+      dataIndex: 'confirmation_code',
+      key: 'confirmation_code',
+      render: (v: string | null) =>
+        v ? <Text code style={{ fontSize: 12 }}>{v}</Text> : '—',
+    },
+    {
+      title: t('Merchant'),
       dataIndex: 'merchant_id',
       key: 'merchant_id',
       render: (v: string | null) => v || '—',
@@ -218,6 +272,37 @@ export default function EmailAuditLog() {
         <Tag color={status === 'sent' ? 'success' : 'error'}>
           {status === 'sent' ? t('Sent') : t('Failed')}
         </Tag>
+      ),
+    },
+    {
+      title: t('Actions'),
+      key: 'actions',
+      width: 100,
+      render: (_: unknown, record: LogEntry) => (
+        <Popconfirm
+          title={
+            <span>
+              {t('Resend verification email to')}{' '}
+              <strong>{record.recipient_email}</strong>
+              {t(' using the original template and variables?')}
+            </span>
+          }
+          okText={t('Yes, Resend')}
+          cancelText={t('Cancel')}
+          onConfirm={() => handleResend(record.id)}
+        >
+          <Tooltip title={t('Resend email')}>
+            <Button
+              size="small"
+              type="text"
+              icon={<SendOutlined />}
+              loading={resendingId === record.id}
+              id={`resend-btn-${record.id}`}
+            >
+              {t('Resend')}
+            </Button>
+          </Tooltip>
+        </Popconfirm>
       ),
     },
   ];
@@ -281,6 +366,7 @@ export default function EmailAuditLog() {
         expandable={{
           expandedRowRender: (record: LogEntry) => <ExpandedRow record={record} />,
         }}
+        scroll={{ x: 'max-content' }}
         pagination={{
           current: page + 1,
           pageSize,
