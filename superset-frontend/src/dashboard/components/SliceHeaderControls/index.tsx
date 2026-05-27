@@ -178,21 +178,12 @@ const SliceHeaderControls = (
     [],
   );
 
-  const emailVerifyConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['email_verify_config']>(
-    state => state.dashboardInfo?.metadata?.email_verify_config,
-  );
-  const globalEmailVerifyEnabled = useSelector<RootState, boolean | undefined>(
-    state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
-  );
-  const emailVerifyEnabled = globalEmailVerifyEnabled && emailVerifyConfig?.enabled === true;
+  // email_verify_enabled and settlement_enabled are injected into formData by Chart.jsx
+  // from the chart-level params (email_verify_config / settlement_config).
+  const emailVerifyEnabled = props.formData?.email_verify_enabled === true;
 
-  const settlementConfig = useSelector<RootState, RootState['dashboardInfo']['metadata']['settlement_config']>(
-    state => state.dashboardInfo?.metadata?.settlement_config,
-  );
-  const globalSettlementEnabled = useSelector<RootState, boolean | undefined>(
-    state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
-  );
-  const settlementEnabled = globalSettlementEnabled && settlementConfig?.enabled === true;
+  const settlementEnabled = props.formData?.settlement_enabled === true;
+  const settlementConfig = props.formData?.settlement_config;
 
   const selectedRows = useSelector<RootState, any[]>(
     state =>

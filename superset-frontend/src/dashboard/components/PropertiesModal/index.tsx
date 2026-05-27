@@ -52,19 +52,12 @@ import {
 } from 'src/utils/colorScheme';
 import getOwnerName from 'src/utils/getOwnerName';
 import Owner from 'src/types/Owner';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import {
   setColorScheme,
   setDashboardMetadata,
 } from 'src/dashboard/actions/dashboardState';
 import { areObjectsEqual } from 'src/reduxUtils';
-import { RootState, DatasourcesState } from 'src/dashboard/types';
-import EmailVerifyConfigPanel, {
-  EmailVerifyConfig,
-} from 'src/dashboard/components/EmailVerifyConfig';
-import SettlementConfigPanel, {
-  SettlementConfig,
-} from 'src/dashboard/components/SettlementConfig';
 
 const StyledFormItem = styled(FormItem)`
   margin-bottom: 0;
@@ -131,25 +124,7 @@ const PropertiesModal = ({
   const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
   const originalDashboardMetadata = useRef<Record<string, any>>({});
 
-  const datasources = useSelector<RootState, DatasourcesState>(
-    state => state.datasources,
-  );
-  const globalEmailVerifyEnabled = useSelector<RootState, boolean | undefined>(
-    state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
-  );
-  const globalSettlementEnabled = useSelector<RootState, boolean | undefined>(
-    state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
-  );
 
-  const allColumns = useMemo(() => {
-    const columnSet = new Set<string>();
-    Object.values(datasources).forEach(datasource => {
-      datasource.columns?.forEach(column => {
-        columnSet.add(column.column_name);
-      });
-    });
-    return Array.from(columnSet).sort();
-  }, [datasources]);
 
   const tagsAsSelectValues = useMemo(() => {
     const selectTags = tags.map((tag: { id: number; name: string }) => ({
@@ -314,27 +289,6 @@ const PropertiesModal = ({
   };
 
   const handleOnCancel = () => onHide();
-
-  const handleEmailVerifySaved = (config: EmailVerifyConfig) => {
-    try {
-      const currentMetadata = jsonMetadata ? JSON.parse(jsonMetadata) : {};
-      currentMetadata.email_verify_config = config;
-      setJsonMetadata(jsonStringify(currentMetadata));
-    } catch (e) {
-      // Fallback if parsing fails for some reason
-      console.error('Failed to update jsonMetadata with email config', e);
-    }
-  };
-
-  const handleSettlementSaved = (config: SettlementConfig) => {
-    try {
-      const currentMetadata = jsonMetadata ? JSON.parse(jsonMetadata) : {};
-      currentMetadata.settlement_config = config;
-      setJsonMetadata(jsonStringify(currentMetadata));
-    } catch (e) {
-      console.error('Failed to update jsonMetadata with settlement config', e);
-    }
-  };
 
   const onColorSchemeChange = (
     colorScheme = '',
@@ -824,33 +778,6 @@ const PropertiesModal = ({
           </Col>
         </Row>
       </AntdForm>
-
-      {/* Email Verification — saves independently via its own Save button */}
-      {globalEmailVerifyEnabled && (
-        <Row>
-          <Col xs={24} md={24}>
-            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
-            <EmailVerifyConfigPanel
-              dashboardId={dashboardId}
-              onSaved={handleEmailVerifySaved}
-              columnOptions={allColumns}
-            />
-          </Col>
-        </Row>
-      )}
-
-      {/* Settlement (Hold Funds / Release Funds) — saves independently */}
-      {globalSettlementEnabled && (
-        <Row>
-          <Col xs={24} md={24}>
-            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
-            <SettlementConfigPanel
-              dashboardId={dashboardId}
-              onSaved={handleSettlementSaved}
-            />
-          </Col>
-        </Row>
-      )}
     </Modal>
   );
 };

@@ -46,15 +46,41 @@ logger = logging.getLogger(__name__)
 # Helpers
 
 
-def _get_settlement_config(dashboard_id: int) -> dict[str, Any] | None:
-    dash = db.session.query(Dashboard).filter_by(id=dashboard_id).one_or_none()
-    if dash is None:
-        return None
-    try:
-        metadata = json.loads(dash.json_metadata or "{}")
-    except Exception:  # pylint: disable=broad-except
-        return None
-    return metadata.get("settlement_config")
+def _get_settlement_config(
+    dashboard_id: int | None = None, chart_id: int | None = None
+) -> dict[str, Any] | None:
+    """
+    Read settlement_config from the params JSON of a Slice (chart-level),
+    or fall back to the json_metadata of a Dashboard.
+
+    Chart-level config takes priority because configuration was migrated from
+    dashboard-level to chart-level via the Chart Properties Modal.
+    """
+    # Chart-level takes priority
+    if chart_id is not None:
+        from superset.models.slice import Slice
+        chart = db.session.query(Slice).filter_by(id=chart_id).one_or_none()
+        if chart is not None:
+            try:
+                params = json.loads(chart.params or "{}")
+            except Exception:  # pylint: disable=broad-except
+                params = {}
+            cfg = params.get("settlement_config")
+            if cfg is not None:
+                return cfg
+
+    # Fall back to dashboard-level (legacy)
+    if dashboard_id is not None:
+        dash = db.session.query(Dashboard).filter_by(id=dashboard_id).one_or_none()
+        if dash is None:
+            return None
+        try:
+            metadata = json.loads(dash.json_metadata or "{}")
+        except Exception:  # pylint: disable=broad-except
+            return None
+        return metadata.get("settlement_config")
+
+    return None
 
 
 def _user_role_names() -> list[str]:
@@ -107,6 +133,7 @@ class SettlementRestApi(BaseSupersetApi):
     include_route_methods = {
         "get_config",
         "save_dashboard_config",
+        "save_chart_config",
         "execute",
         "list_logs",
         "task_status",
@@ -118,23 +145,27 @@ class SettlementRestApi(BaseSupersetApi):
     @protect()
     @safe
     def get_config(self) -> FlaskResponse:
-        """Get settlement config for a dashboard.
+        """Get settlement config for a dashboard or chart.
         ---
         get:
-          summary: Get settlement config
-          parameters:
+            summary: Get settlement config
+            parameters:
             - in: query
               name: dashboard_id
               schema: {type: integer}
-          responses:
+            - in: query
+              name: chart_id
+              schema: {type: integer}
+            responses:
             200:
-              description: Settlement config
+                description: Settlement config
         """
         dashboard_id = request.args.get("dashboard_id", type=int)
-        if not dashboard_id:
-            return self.response(400, message="dashboard_id query param is required.")
+        chart_id = request.args.get("chart_id", type=int)
+        if not dashboard_id and not chart_id:
+            return self.response(400, message="Either dashboard_id or chart_id query param is required.")
 
-        config = _get_settlement_config(dashboard_id)
+        config = _get_settlement_config(dashboard_id=dashboard_id, chart_id=chart_id)
         if config is None:
             return self.response(200, result={"enabled": False, "allowed_roles": []})
         return self.response(200, result=config)
@@ -170,6 +201,39 @@ class SettlementRestApi(BaseSupersetApi):
         db.session.commit()
 
         return self.response(200, result={"dashboard_id": pk, "saved": True})
+
+    @expose("/config/chart/<int:pk>", methods=("PUT",))
+    @protect("can_configure_settlement")
+    @safe
+    def save_chart_config(self, pk: int) -> FlaskResponse:
+        """Save settlement config on a chart.
+        ---
+        put:
+          summary: Save chart settlement config
+          parameters:
+            - in: path
+              name: pk
+              schema: {type: integer}
+          responses:
+            200:
+              description: Config saved
+        """
+        from superset.models.slice import Slice
+        chart = db.session.query(Slice).filter_by(id=pk).one_or_none()
+        if chart is None:
+            return self.response_404()
+
+        body = request.get_json(force=True, silent=True) or {}
+        try:
+            params: dict[str, Any] = json.loads(chart.params or "{}")
+        except Exception:  # pylint: disable=broad-except
+            params = {}
+
+        params["settlement_config"] = dict(body)
+        chart.params = json.dumps(params)
+        db.session.commit()
+
+        return self.response(200, result={"chart_id": pk, "saved": True})
 
     # Execute — enqueue background tasks
 
@@ -229,14 +293,14 @@ class SettlementRestApi(BaseSupersetApi):
             return self.response(400, message='action must be "hold" or "release".')
         if not rows:
             return self.response(400, message="rows array is required and must not be empty.")
-        if not dashboard_id:
-            return self.response(400, message="dashboard_id is required.")
+        if not dashboard_id and not chart_id:
+            return self.response(400, message="Either dashboard_id or chart_id is required.")
 
-        # check dashboard settlement_config
-        cfg = _get_settlement_config(dashboard_id)
+        # check dashboard or chart settlement_config
+        cfg = _get_settlement_config(dashboard_id=dashboard_id, chart_id=chart_id)
         if not cfg or not cfg.get("enabled"):
             return self.response(403,
-                message="Settlement is not enabled on this dashboard."
+                message="Settlement is not enabled on this resource."
             )
 
         allowed_roles: list[str] = cfg.get("allowed_roles", [])
@@ -378,7 +442,6 @@ class SettlementRestApi(BaseSupersetApi):
                 "response_snapshot": log.response_snapshot,
                 "completed_at": log.completed_at.isoformat() if log.completed_at else None,
             }
-
         return self.response(
             200,
             result={

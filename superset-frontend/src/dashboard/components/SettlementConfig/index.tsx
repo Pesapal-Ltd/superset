@@ -57,7 +57,7 @@ export interface SettlementConfig {
 }
 
 interface SettlementConfigPanelProps {
-  dashboardId: number;
+  chartId: number;
   onSaved?: (config: SettlementConfig) => void;
 }
 
@@ -78,7 +78,7 @@ const DEFAULT_CONFIG: SettlementConfig = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function SettlementConfigPanel({
-  dashboardId,
+  chartId,
   onSaved,
 }: SettlementConfigPanelProps) {
   const [form] = Form.useForm();
@@ -89,13 +89,13 @@ export default function SettlementConfigPanel({
 
   // ── Load existing config + available roles on mount ──────────────────────
   useEffect(() => {
-    if (!dashboardId) return;
+    if (!chartId) return;
 
     const loadAll = async () => {
       setLoading(true);
       try {
         const configResp = await SupersetClient.get({
-          endpoint: `/api/v1/settlement/config?dashboard_id=${dashboardId}`,
+          endpoint: `/api/v1/settlement/config?chart_id=${chartId}`,
         });
         const existing: SettlementConfig =
           (configResp.json as any)?.result || DEFAULT_CONFIG;
@@ -128,7 +128,7 @@ export default function SettlementConfigPanel({
     };
 
     loadAll();
-  }, [dashboardId, form]);
+  }, [chartId, form]);
 
   // ── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -147,7 +147,7 @@ export default function SettlementConfigPanel({
 
       await SupersetClient.request({
         method: 'PUT',
-        endpoint: `/api/v1/settlement/config/dashboard/${dashboardId}`,
+        endpoint: `/api/v1/settlement/config/chart/${chartId}`,
         jsonPayload: payload,
       });
 
@@ -170,13 +170,21 @@ export default function SettlementConfigPanel({
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
             {t(
-              'Allow authorized users to Hold Funds or Release Funds for transactions directly from this dashboard.',
+              'Allow authorized users to Hold Funds or Release Funds for transactions directly from this chart.',
             )}
           </Text>
         </div>
       </div>
 
-      <Form form={form} layout="vertical">
+      <Form
+        form={form}
+        layout="vertical"
+        onValuesChange={(changedValues) => {
+          if (changedValues.enabled !== undefined) {
+            setEnabled(changedValues.enabled);
+          }
+        }}
+      >
         {/* Master toggle */}
         <Form.Item
           name="enabled"
@@ -186,7 +194,6 @@ export default function SettlementConfigPanel({
           <Switch
             checkedChildren={t('Enabled')}
             unCheckedChildren={t('Disabled')}
-            onChange={setEnabled}
           />
         </Form.Item>
 
@@ -255,7 +262,7 @@ export default function SettlementConfigPanel({
 
             <Paragraph style={{ fontSize: 12, color: '#888' }}>
               {t(
-                'Restrict which roles can execute Hold/Release actions on this dashboard. Leave empty to allow any user with the can_execute_settlement permission.',
+                'Restrict which roles can execute Hold/Release actions on this chart. Leave empty to allow any user with the can_execute_settlement permission.',
               )}
             </Paragraph>
 

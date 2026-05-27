@@ -172,8 +172,10 @@ export default function SendVerifyModal({
       setConfigLoading(true);
       try {
         const params = new URLSearchParams();
-        if (dashboardId) params.set('dashboard_id', String(dashboardId));
-        else if (chartId) params.set('chart_id', String(chartId));
+        // Prefer chart_id since config is now stored at chart level.
+        // Fall back to dashboard_id for legacy setups.
+        if (chartId) params.set('chart_id', String(chartId));
+        else if (dashboardId) params.set('dashboard_id', String(dashboardId));
 
         const resp = await SupersetClient.get({
           endpoint: `/api/v1/email-verify/config?${params.toString()}`,

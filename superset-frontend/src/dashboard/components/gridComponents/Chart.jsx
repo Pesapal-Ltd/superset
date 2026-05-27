@@ -309,12 +309,27 @@ const Chart = props => {
     ],
   );
 
-  const emailVerifyConfig = useSelector(
-    state => state.dashboardInfo?.metadata?.email_verify_config,
+  formData.dashboardId = dashboardInfo.id;
+
+  // email_verify_config and settlement_config are stored in the chart's params
+  // (via the Chart Properties Modal). They are surfaced in form_data as
+  // email_verify_config / settlement_config. We derive the enabled flags here
+  // so they are available to both the table plugin (for the checkbox column)
+  // and SliceHeaderControls (for the menu items).
+  const chartEmailVerifyConfig = chart.form_data?.email_verify_config;
+  const chartSettlementConfig = chart.form_data?.settlement_config;
+
+  const globalEmailVerifyEnabled = useSelector(
+    state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
+  );
+  const globalSettlementEnabled = useSelector(
+    state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
   );
 
-  formData.dashboardId = dashboardInfo.id;
-  formData.email_verify_enabled = emailVerifyConfig?.enabled === true;
+  formData.email_verify_enabled =
+    globalEmailVerifyEnabled === true && chartEmailVerifyConfig?.enabled === true;
+  formData.settlement_enabled =
+    globalSettlementEnabled === true && chartSettlementConfig?.enabled === true;
 
   // Dynamically override currency_format.symbol when a native filter named
   // "Currency" is in scope for this chart. When the filter is present but

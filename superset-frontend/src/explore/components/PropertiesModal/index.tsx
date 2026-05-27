@@ -42,6 +42,9 @@ import withToasts from 'src/components/MessageToasts/withToasts';
 import { loadTags } from 'src/components/Tags/utils';
 import { fetchTags, OBJECT_TYPES } from 'src/features/tags/tags';
 import TagType from 'src/types/TagType';
+import { useSelector } from 'react-redux';
+import EmailVerifyConfigPanel from 'src/dashboard/components/EmailVerifyConfig';
+import SettlementConfigPanel from 'src/dashboard/components/SettlementConfig';
 
 export type PropertiesModalProps = {
   slice: Slice;
@@ -80,6 +83,13 @@ function PropertiesModal({
   );
 
   const [tags, setTags] = useState<TagType[]>([]);
+
+  const globalEmailVerifyEnabled = useSelector(
+    (state: any) => state.explore?.common?.conf?.EMAIL_VERIFY_ENABLED || state.common?.conf?.EMAIL_VERIFY_ENABLED,
+  );
+  const globalSettlementEnabled = useSelector(
+    (state: any) => state.explore?.common?.conf?.SETTLEMENT_ENABLED || state.common?.conf?.SETTLEMENT_ENABLED,
+  );
 
   const tagsAsSelectValues = useMemo(() => {
     const selectTags = tags.map((tag: { id: number; name: string }) => ({
@@ -409,6 +419,30 @@ function PropertiesModal({
           </Col>
         </Row>
       </AntdForm>
+      
+      {/* Email Verification */}
+      {globalEmailVerifyEnabled && (
+        <Row>
+          <Col xs={24} md={24}>
+            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+            <EmailVerifyConfigPanel
+              chartId={slice.slice_id}
+            />
+          </Col>
+        </Row>
+      )}
+
+      {/* Settlement (Hold Funds / Release Funds) */}
+      {globalSettlementEnabled && (
+        <Row>
+          <Col xs={24} md={24}>
+            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+            <SettlementConfigPanel
+              chartId={slice.slice_id}
+            />
+          </Col>
+        </Row>
+      )}
     </Modal>
   );
 }

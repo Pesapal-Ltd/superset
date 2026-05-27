@@ -63,8 +63,8 @@ export interface EmailVerifyConfig {
 }
 
 interface EmailVerifyConfigPanelProps {
-  /** Superset dashboard ID being edited */
-  dashboardId: number;
+  /** Superset chart ID being edited */
+  chartId: number;
   /** Called after config is successfully saved so parent can reflect changes */
   onSaved?: (config: EmailVerifyConfig) => void;
   /** Available column names from dashboard datasets */
@@ -86,7 +86,7 @@ const DEFAULT_CONFIG: EmailVerifyConfig = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function EmailVerifyConfigPanel({
-  dashboardId,
+  chartId,
   onSaved,
   columnOptions = [],
 }: EmailVerifyConfigPanelProps) {
@@ -98,14 +98,14 @@ export default function EmailVerifyConfigPanel({
 
   // ── Load existing config + available roles on mount ──────────────────────
   useEffect(() => {
-    if (!dashboardId) return;
+    if (!chartId) return;
 
     const loadAll = async () => {
       setLoading(true);
       try {
-        // Load existing email_verify_config from the dashboard
+        // Load existing email_verify_config from the chart
         const configResp = await SupersetClient.get({
-          endpoint: `/api/v1/email-verify/config?dashboard_id=${dashboardId}`,
+          endpoint: `/api/v1/email-verify/config?chart_id=${chartId}`,
         });
         const existing: EmailVerifyConfig =
           (configResp.json as any)?.result || DEFAULT_CONFIG;
@@ -136,7 +136,7 @@ export default function EmailVerifyConfigPanel({
     };
 
     loadAll();
-  }, [dashboardId, form]);
+  }, [chartId, form]);
 
   // ── Save ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -154,7 +154,7 @@ export default function EmailVerifyConfigPanel({
 
       await SupersetClient.request({
         method: 'PUT',
-        endpoint: `/api/v1/email-verify/config/dashboard/${dashboardId}`,
+        endpoint: `/api/v1/email-verify/config/chart/${chartId}`,
         jsonPayload: payload,
       });
 
@@ -177,19 +177,26 @@ export default function EmailVerifyConfigPanel({
           <br />
           <Text type="secondary" style={{ fontSize: 12 }}>
             {t(
-              'Allow authorized users to send templated verification emails to merchants directly from charts on this dashboard.',
+              'Allow authorized users to send templated verification emails to merchants directly from this chart.',
             )}
           </Text>
         </div>
       </div>
 
-      <Form form={form} layout="vertical">
+      <Form
+        form={form}
+        layout="vertical"
+        onValuesChange={(changedValues) => {
+          if (changedValues.enabled !== undefined) {
+            setEnabled(changedValues.enabled);
+          }
+        }}
+      >
         {/* Master toggle */}
         <Form.Item name="enabled" valuePropName="checked" label={t('Enable email verification')}>
           <Switch
             checkedChildren={t('Enabled')}
             unCheckedChildren={t('Disabled')}
-            onChange={setEnabled}
           />
         </Form.Item>
 
@@ -199,7 +206,7 @@ export default function EmailVerifyConfigPanel({
             icon={<InfoCircleOutlined />}
             showIcon
             message={t(
-              'Email verification is disabled. Enable the toggle above to configure and expose the "Send verification email" button on charts within this dashboard.',
+              'Email verification is disabled. Enable the toggle above to configure and expose the "Send verification email" button on this chart.',
             )}
             style={{ marginBottom: 16 }}
           />
@@ -240,7 +247,7 @@ export default function EmailVerifyConfigPanel({
               name="allowed_roles"
               label={t('Allowed Roles')}
               tooltip={t(
-                'Only users with one of these roles can send verification emails from this dashboard. Leave empty to allow any user with the "can_send_verification_email" permission.',
+                'Only users with one of these roles can send verification emails from this chart. Leave empty to allow any user with the "can_send_verification_email" permission.',
               )}
             >
               <Select

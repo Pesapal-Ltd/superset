@@ -98,10 +98,25 @@ def _get_email_verify_config(
     dashboard_id: int | None = None, chart_id: int | None = None
 ) -> dict[str, Any] | None:
     """
-    Read email_verify_config from the json_metadata of a Dashboard,
-    or the params JSON of a Slice.
-    Returns the config dict or None if not configured.
+    Read email_verify_config from the params JSON of a Slice (chart-level),
+    or fall back to the json_metadata of a Dashboard.
+
+    Chart-level config takes priority because configuration was migrated from
+    dashboard-level to chart-level via the Chart Properties Modal.
     """
+    # Chart-level takes priority
+    if chart_id is not None:
+        chart = db.session.query(Slice).filter_by(id=chart_id).one_or_none()
+        if chart is not None:
+            try:
+                params = json.loads(chart.params or "{}")
+            except Exception:  # pylint: disable=broad-except
+                params = {}
+            cfg = params.get("email_verify_config")
+            if cfg is not None:
+                return cfg
+
+    # Fall back to dashboard-level (legacy)
     if dashboard_id is not None:
         dash = db.session.query(Dashboard).filter_by(id=dashboard_id).one_or_none()
         if dash is None:
@@ -111,16 +126,6 @@ def _get_email_verify_config(
         except Exception:  # pylint: disable=broad-except
             return None
         return metadata.get("email_verify_config")
-
-    if chart_id is not None:
-        chart = db.session.query(Slice).filter_by(id=chart_id).one_or_none()
-        if chart is None:
-            return None
-        try:
-            params = json.loads(chart.params or "{}")
-        except Exception:  # pylint: disable=broad-except
-            return None
-        return params.get("email_verify_config")
 
     return None
 
