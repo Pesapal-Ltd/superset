@@ -586,9 +586,14 @@ class CustomAppInitializer(SupersetAppInitializer):
             existing_roles = {role.name for role in sm.get_all_roles()}
             print(f"Found existing Superset roles: {existing_roles}")
 
-            special_mapping_keys = {"DataEngineer", "DataEngineerTech", "DeputyCTO",
-                                    "TechExec", "CTO", "COO", "CEO", "JuniorDev",
-                                    "superset_admins"}
+            special_mapping_keys = {
+                "DataEngineer",
+                "DataEngineerTech",
+                "DeputyCTO",
+                "CTO",
+                "JuniorDev",
+                "superset_admins"
+            }
             roles_to_create = sso_roles - existing_roles - special_mapping_keys
 
             if not roles_to_create:
@@ -628,10 +633,7 @@ def get_dynamic_role_mapping():
         "DataEngineer": ["Admin"], 
         "DataEngineerTech": ["Admin"],
         "DeputyCTO": ["Admin"],
-        "TechExec": ["Admin"],
-        "CTO": ["Admin"], 
-        "COO": ["Admin"], 
-        "CEO": ["Admin"],
+        "CTO": ["Admin"],
         "JuniorDev": ["Admin"],
         "superset_admins": ["Admin"]
     }
@@ -1351,7 +1353,7 @@ QUERY_LOGGER = custom_query_logger
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
 # Maximum number of rows returned for any analytical database query
-SQL_MAX_ROW = 10_000  # from 100k
+SQL_MAX_ROW = 1_000  # from 100k
 
 # Maximum number of rows for any query with Server Pagination in Table Viz type
 TABLE_VIZ_MAX_ROW_SERVER = 50000  # from 500k
@@ -1904,10 +1906,18 @@ ALERT_REPORTS_DEFAULT_CRON_VALUE = "0 0 * * *"  # every day
 ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
 # Max tries to run queries to prevent false errors caused by transient errors
 # being returned to users. Set to a value >1 to enable retries.
-ALERT_REPORTS_QUERY_EXECUTION_MAX_TRIES = 1
+ALERT_REPORTS_QUERY_EXECUTION_MAX_TRIES = 2
 # Custom width for screenshots
 ALERT_REPORTS_MIN_CUSTOM_SCREENSHOT_WIDTH = 600
 ALERT_REPORTS_MAX_CUSTOM_SCREENSHOT_WIDTH = 2400
+# Maximum number of rows returned by the CSV Query Attachment query.
+# This cap is applied via a SQL LIMIT before the query is executed so that
+# runaway queries don't produce excessively large attachments.
+ALERT_CSV_MAX_ROWS: int = 50_000
+# Maximum size (in megabytes) of a CSV attachment.  If the generated CSV
+# exceeds this limit the email is still sent but without the attachment and
+# a warning is written to the log.
+ALERT_CSV_MAX_ATTACHMENT_SIZE_MB: float = 10.0
 # Set a minimum interval threshold between executions (for each Alert/Report)
 # Value should be an integer i.e. int(timedelta(minutes=5).total_seconds())
 # You can also assign a function to the config that returns the expected integer
