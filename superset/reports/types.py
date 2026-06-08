@@ -14,10 +14,15 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 from superset.dashboards.permalink.types import DashboardPermalinkState
 
 
-class ReportScheduleExtra(TypedDict):
+class ReportScheduleExtra(TypedDict, total=False):
     dashboard: DashboardPermalinkState
+    # CSV Query Attachment fields — only present on alerts that have the
+    # feature enabled.  Stored in the existing extra JSON column so no
+    # database migration is required.
+    csv_enabled: bool  # whether CSV query attachment mode is active
+    csv_query: Optional[str]  # SQL query whose results are attached as CSV

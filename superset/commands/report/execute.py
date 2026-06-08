@@ -27,7 +27,12 @@ from superset.commands.base import BaseCommand
 from superset.commands.dashboard.permalink.create import CreateDashboardPermalinkCommand
 from superset.commands.exceptions import CommandException, UpdateFailedError
 from superset.commands.report.alert import AlertCommand
+from superset.commands.report.csv_query import AlertCsvQueryCommand
 from superset.commands.report.exceptions import (
+    AlertCsvAttachmentSizeError,
+    AlertCsvQueryEmptyError,
+    AlertCsvQueryError,
+    AlertCsvQueryTimeout,
     ReportScheduleAlertGracePeriodError,
     ReportScheduleClientErrorsException,
     ReportScheduleCsvFailedError,
@@ -200,6 +205,13 @@ class BaseReportState:
         Get the url for this report schedule: chart or dashboard
         """
         force = "true" if self._report_schedule.force_screenshot else "false"
+        # In CSV-only alert mode neither a chart nor a dashboard is configured;
+        # return None so callers can skip URL-dependent rendering gracefully.
+        if (
+            not self._report_schedule.chart
+            and not self._report_schedule.dashboard
+        ):
+            return None  # type: ignore[return-value]
         if self._report_schedule.chart:
             dashboard_state = (self._report_schedule.extra or {}).get("dashboard") or {}
             data_mask = dashboard_state.get("dataMask") or {}
@@ -560,6 +572,61 @@ class BaseReportState:
                 "Please try loading the chart and saving it again."
             ) from ex
 
+    def _get_alert_csv_attachment(self) -> Optional[bytes]:
+        """
+        Execute the optional CSV query attachment and return the result as
+        UTF-8 CSV bytes.
+
+        This method applies graceful degradation: if the query fails, returns
+        zero rows, times out, or exceeds the size limit the method logs a
+        warning and returns ``None`` so the caller can still send the email
+        without the attachment.
+
+        :return: CSV bytes on success, ``None`` on any recoverable failure.
+        """
+        try:
+            csv_bytes = AlertCsvQueryCommand(
+                self._report_schedule, self._execution_id
+            ).run()
+            logger.info(
+                "CSV attachment query succeeded for alert '%s' (%d bytes)",
+                self._report_schedule.name,
+                len(csv_bytes),
+            )
+            return csv_bytes
+        except AlertCsvQueryEmptyError:
+            logger.warning(
+                "CSV attachment query for alert '%s' returned no rows; "
+                "skipping attachment.",
+                self._report_schedule.name,
+            )
+        except AlertCsvQueryTimeout:
+            logger.warning(
+                "CSV attachment query for alert '%s' timed out; "
+                "skipping attachment.",
+                self._report_schedule.name,
+            )
+        except AlertCsvAttachmentSizeError:
+            logger.warning(
+                "CSV attachment for alert '%s' exceeded the size limit; "
+                "skipping attachment.",
+                self._report_schedule.name,
+            )
+        except AlertCsvQueryError as ex:
+            logger.error(
+                "CSV attachment query for alert '%s' failed: %s; "
+                "skipping attachment.",
+                self._report_schedule.name,
+                ex.message,
+            )
+        except Exception as ex:  # pylint: disable=broad-except
+            logger.exception(
+                "Unexpected error while generating CSV attachment for alert '%s': %s",
+                self._report_schedule.name,
+                str(ex),
+            )
+        return None
+
     def _get_log_data(self) -> HeaderDataType:
         chart_id = None
         dashboard_id = None
@@ -604,7 +671,17 @@ class BaseReportState:
         error_text = None
         header_data = self._get_log_data()
         url = self._get_url(user_friendly=True)
-        if (
+        # In CSV-only alert mode there is no chart or dashboard to render.
+        # Skip all screenshot / PDF / chart-CSV generation so we don't crash
+        # inside _get_screenshots() / _get_pdf() when they call _get_url()
+        # again, and avoid the spurious "Unexpected missing screenshot" error
+        # from blocking the email before the CSV attachment is produced.
+        csv_only_mode = (
+            self._report_schedule.type == ReportScheduleType.ALERT
+            and not self._report_schedule.chart
+            and not self._report_schedule.dashboard
+        )
+        if not csv_only_mode and (
             feature_flag_manager.is_feature_enabled("ALERTS_ATTACH_REPORTS")
             or self._report_schedule.type == ReportScheduleType.REPORT
         ):
@@ -637,6 +714,25 @@ class BaseReportState:
         ):
             embedded_data = self._get_embedded_data()
 
+        # CSV Query Attachment (alert-only, opt-in via extra.csv_enabled)
+        
+        # This path is completely independent of the chart-CSV path above.
+        # It executes a user-defined SQL query *after* the threshold has
+        # fired and attaches the results as a CSV to the outgoing email.
+        # Failures are handled with graceful degradation: the email is sent
+        # even when the CSV cannot be generated.
+        if (
+            self._report_schedule.type == ReportScheduleType.ALERT
+            and (extra := (self._report_schedule.extra or {}))
+            and extra.get("csv_enabled")
+            and extra.get("csv_query")
+        ):
+            alert_csv = self._get_alert_csv_attachment()
+            # Only override csv_data when not already populated by the
+            # standard chart-CSV path so the two paths remain independent.
+            if alert_csv is not None and csv_data is None:
+                csv_data = alert_csv
+
         if self._report_schedule.email_subject:
             name = self._report_schedule.email_subject
         else:
@@ -645,11 +741,14 @@ class BaseReportState:
                     f"{self._report_schedule.name}: "
                     f"{self._report_schedule.chart.slice_name}"
                 )
-            else:
+            elif self._report_schedule.dashboard:
                 name = (
                     f"{self._report_schedule.name}: "
                     f"{self._report_schedule.dashboard.dashboard_title}"
                 )
+            else:
+                # CSV-only alert: no chart or dashboard attached
+                name = self._report_schedule.name
 
         return NotificationContent(
             name=name,

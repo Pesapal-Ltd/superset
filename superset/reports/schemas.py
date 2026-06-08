@@ -120,6 +120,54 @@ class ValidatorConfigJSONSchema(Schema):
     threshold = fields.Float()
 
 
+class ReportScheduleExtraSchema(Schema):
+    """
+    Schema for the ``extra`` JSON column on ReportSchedule.
+
+    Captures the existing ``dashboard`` state alongside the new optional CSV
+    Query Attachment fields.  All fields are optional so that existing alerts
+    and reports are unaffected.
+    """
+
+    class Meta:  # pylint: disable=too-few-public-methods
+        # Ignore any keys we don't explicitly declare so that forward-compat
+        # with future extra fields is preserved.
+        unknown = EXCLUDE
+
+    # Existing field
+    dashboard = fields.Dict(
+        allow_none=True,
+        required=False,
+        metadata={"description": "Dashboard permalink state (tab anchors, data mask, etc.)"},
+    )
+
+    # CSV Query Attachment fields (alerts only)
+    csv_enabled = fields.Boolean(
+        allow_none=False,
+        required=False,
+        load_default=False,
+        metadata={
+            "description": (
+                "When True the CSV attachment query is executed after the alert "
+                "threshold fires and the results are attached to the email."
+            )
+        },
+    )
+    csv_query = fields.String(
+        allow_none=True,
+        required=False,
+        load_default=None,
+        metadata={
+            "description": (
+                "A SQL SELECT statement whose results are attached as a CSV file "
+                "to the alert email notification.  Only evaluated when "
+                "``csv_enabled`` is True and the alert threshold condition is met."
+            ),
+            "example": "SELECT id, amount, status FROM orders WHERE status = 'pending'",
+        },
+    )
+
+
 class ReportRecipientConfigJSONSchema(Schema):
     # TODO if email check validity
     target = fields.String()
@@ -229,8 +277,17 @@ class ReportSchedulePostSchema(Schema):
         dump_default=ReportDataFormat.PNG,
         validate=validate.OneOf(choices=tuple(key.value for key in ReportDataFormat)),
     )
-    extra = fields.Dict(
-        dump_default=None,
+    extra = fields.Nested(
+        ReportScheduleExtraSchema,
+        allow_none=True,
+        required=False,
+        load_default=None,
+        metadata={
+            "description": (
+                "Additional configuration for the report schedule.  For alerts "
+                "this includes optional CSV query attachment settings."
+            )
+        },
     )
     force_screenshot = fields.Boolean(dump_default=False)
     custom_width = fields.Integer(
@@ -368,7 +425,18 @@ class ReportSchedulePutSchema(Schema):
         dump_default=ReportDataFormat.PNG,
         validate=validate.OneOf(choices=tuple(key.value for key in ReportDataFormat)),
     )
-    extra = fields.Dict(dump_default=None)
+    extra = fields.Nested(
+        ReportScheduleExtraSchema,
+        allow_none=True,
+        required=False,
+        load_default=None,
+        metadata={
+            "description": (
+                "Additional configuration for the report schedule.  For alerts "
+                "this includes optional CSV query attachment settings."
+            )
+        },
+    )
     force_screenshot = fields.Boolean(dump_default=False)
 
     custom_width = fields.Integer(

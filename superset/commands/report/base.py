@@ -78,7 +78,12 @@ class BaseReportScheduleCommand(BaseCommand):
                 exceptions.append(DashboardNotFoundValidationError())
             self._properties["dashboard"] = dashboard
         elif not update:
-            exceptions.append(ReportScheduleEitherChartOrDashboardError())
+            # Skip the chart/dashboard requirement when the alert is configured
+            # to use the CSV Query Attachment feature as its sole content source.
+            extra = self._properties.get("extra") or {}
+            csv_enabled = extra.get("csv_enabled", False) if isinstance(extra, dict) else False
+            if not csv_enabled:
+                exceptions.append(ReportScheduleEitherChartOrDashboardError())
 
     def validate_report_frequency(
         self,

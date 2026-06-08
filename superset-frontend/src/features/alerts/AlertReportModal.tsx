@@ -376,6 +376,7 @@ export const TRANSLATIONS = {
   REPORT_CONTENTS_TITLE: t('Report contents'),
   SCHEDULE_TITLE: t('Schedule'),
   NOTIFICATION_TITLE: t('Notification method'),
+  CSV_QUERY_TITLE: t('CSV query attachment'),
   // Error text
   NAME_ERROR_TEXT: t('name'),
   OWNERS_ERROR_TEXT: t('owners'),
@@ -388,6 +389,7 @@ export const TRANSLATIONS = {
   RECIPIENTS_ERROR_TEXT: t('recipients'),
   EMAIL_SUBJECT_ERROR_TEXT: t('email subject'),
   EMAIL_VALIDATION_ERROR_TEXT: t('invalid email'),
+  CSV_QUERY_SQL_ERROR_TEXT: t('csv attachment query'),
   ERROR_TOOLTIP_MESSAGE: t(
     'Not all required fields are complete. Please provide the following:',
   ),
@@ -452,6 +454,10 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
   );
   const [forceScreenshot, setForceScreenshot] = useState<boolean>(false);
 
+  // ---- CSV Query Attachment state (alerts only) ----
+  const [csvAttachEnabled, setCsvAttachEnabled] = useState<boolean>(false);
+  const [csvQuery, setCsvQuery] = useState<string>('');
+
   const [isScreenshot, setIsScreenshot] = useState<boolean>(false);
   useEffect(() => {
     setIsScreenshot(reportFormat === 'PNG');
@@ -491,6 +497,11 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
     [Sections.Notification]: {
       hasErrors: false,
       name: TRANSLATIONS.NOTIFICATION_TITLE,
+      errors: [],
+    },
+    [Sections.CsvQuery]: {
+      hasErrors: false,
+      name: t('CSV query attachment'),
       errors: [],
     },
   });
@@ -699,13 +710,21 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
         contentType === ContentType.Chart && currentAlert?.dashboard?.value
           ? {
             ...currentAlert.extra,
+            // Merge CSV attachment fields
+            csv_enabled: !isReport ? csvAttachEnabled : undefined,
+            csv_query: !isReport && csvAttachEnabled ? csvQuery : undefined,
             dashboard: {
               ...(currentAlert.extra?.dashboard || {}),
               dashboard_id: currentAlert.dashboard.value,
               dashboard_title: currentAlert.dashboard.label,
             },
           }
-          : currentAlert?.extra || {},
+          : {
+            ...currentAlert?.extra,
+            // Merge CSV attachment fields
+            csv_enabled: !isReport ? csvAttachEnabled : undefined,
+            csv_query: !isReport && csvAttachEnabled ? csvQuery : undefined,
+          },
     };
 
     if (data.recipients && !data.recipients.length) {
@@ -1216,7 +1235,11 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
   };
   const validateContentSection = () => {
     const errors = [];
+    // When CSV attachment mode is active for an alert, a chart/dashboard is
+    // not required — the CSV query result IS the content.
+    const csvModeActive = !isReport && csvAttachEnabled;
     if (
+      !csvModeActive &&
       !(
         (contentType === ContentType.Dashboard && !!currentAlert?.dashboard) ||
         (contentType === ContentType.Chart && !!currentAlert?.chart)
@@ -1280,12 +1303,21 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
     updateValidationStatus(Sections.Notification, errors);
   };
 
+  const validateCsvQuerySection = () => {
+    const errors: string[] = [];
+    if (csvAttachEnabled && !csvQuery.trim()) {
+      errors.push(TRANSLATIONS.CSV_QUERY_SQL_ERROR_TEXT);
+    }
+    updateValidationStatus(Sections.CsvQuery, errors);
+  };
+
   const validateAll = () => {
     validateGeneralSection();
     validateContentSection();
     if (!isReport) validateAlertSection();
     validateScheduleSection();
     validateNotificationSection();
+    if (!isReport) validateCsvQuerySection();
   };
 
   const enforceValidation = () => {
@@ -1295,6 +1327,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
       isReport ? undefined : Sections.Alert,
       Sections.Schedule,
       Sections.Notification,
+      isReport ? undefined : Sections.CsvQuery,
     ];
 
     const hasErrors = sections.some(
@@ -1401,6 +1434,10 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
         };
       })();
 
+      // Hydrate CSV Query Attachment state
+      setCsvAttachEnabled(resource.extra?.csv_enabled ?? false);
+      setCsvQuery(resource.extra?.csv_query ?? '');
+
       setCurrentAlert({
         ...resource,
         chart: resource.chart
@@ -1459,6 +1496,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
     notificationSettings,
     conditionNotNull,
     emailError,
+    csvAttachEnabled,
+    csvQuery,
   ]);
   useEffect(() => {
     enforceValidation();
@@ -1731,9 +1770,14 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                   ? TRANSLATIONS.REPORT_CONTENTS_TITLE
                   : TRANSLATIONS.ALERT_CONTENTS_TITLE
               }
-              subtitle={t('Customize data source, filters, and layout.')}
+              subtitle={t(
+                !isReport && csvAttachEnabled
+                  ? 'Configure optional chart/dashboard context and CSV query attachment.'
+                  : 'Customize data source, filters, and layout.',
+              )}
               validateCheckStatus={
-                !validationStatus[Sections.Content].hasErrors
+                !validationStatus[Sections.Content].hasErrors &&
+                !validationStatus[Sections.CsvQuery].hasErrors
               }
               testId="contents-panel"
             />
@@ -1743,7 +1787,8 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
           <StyledInputContainer>
             <div className="control-label">
               {t('Content type')}
-              <span className="required">*</span>
+              {/* Required only when CSV attachment mode is off for alerts */}
+              {(!isReport || !csvAttachEnabled) && <span className="required">*</span>}
             </div>
             <Select
               ariaLabel={t('Select content type')}
@@ -1906,6 +1951,73 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                 {t('Ignore cache when generating report')}
               </StyledCheckbox>
             </div>
+          )}
+
+          {/* ---- CSV Query Attachment (alerts only, inside Alert contents) ---- */}
+          {!isReport && (
+            <>
+              <div
+                style={{
+                  marginTop: 12,
+                  borderTop: '1px solid #f0f0f0',
+                  paddingTop: 12,
+                }}
+              >
+                <StyledSwitchContainer>
+                  <Switch
+                    id="csv-attach-enabled-switch"
+                    checked={csvAttachEnabled}
+                    onChange={(checked: boolean) => {
+                      setCsvAttachEnabled(checked);
+                      if (!checked) {
+                        setCsvQuery('');
+                      }
+                    }}
+                  />
+                  <div className="switch-label">
+                    {t('Attach query results as CSV to alert email')}
+                  </div>
+                </StyledSwitchContainer>
+              </div>
+              {csvAttachEnabled && (
+                <StyledInputContainer
+                  css={css`
+                    margin-top: 12px;
+                  `}
+                >
+                  <div className="control-label">
+                    {t('CSV attachment SQL query')}
+                    <StyledTooltip
+                      tooltip={t(
+                        'This SELECT query runs after the threshold condition is met. ' +
+                        'The results are attached as a CSV file to the outgoing alert email. ' +
+                        'Row limit and attachment size limits apply (configurable via ' +
+                        'ALERT_CSV_MAX_ROWS and ALERT_CSV_MAX_ATTACHMENT_SIZE_MB).',
+                      )}
+                    />
+                    <span className="required">*</span>
+                  </div>
+                  <TextAreaControl
+                    name="csv_query"
+                    language="sql"
+                    offerEditInModal={false}
+                    minLines={10}
+                    maxLines={10}
+                    onChange={(value: string) => setCsvQuery(value || '')}
+                    readOnly={false}
+                    initialValue={csvQuery}
+                    key={`csv-query-${currentAlert?.id ?? 'new'}`}
+                    aria-required="true"
+                  />
+                  <span className="helper">
+                    {t(
+                      'Write a SELECT query. Results will be attached as a .csv file ' +
+                      'when the alert fires. Large result sets may be truncated or skipped.',
+                    )}
+                  </span>
+                </StyledInputContainer>
+              )}
+            </>
           )}
         </StyledPanel>
         <StyledPanel

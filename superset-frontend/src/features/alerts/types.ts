@@ -98,6 +98,13 @@ export type DashboardState = {
 
 export type Extra = {
   dashboard?: DashboardState;
+  /** When true, the CSV query attachment pipeline is active for this alert. */
+  csv_enabled?: boolean;
+  /**
+   * SQL SELECT statement executed after the threshold fires.
+   * Results are attached as a CSV file to the outgoing alert email.
+   */
+  csv_query?: string;
 };
 
 export type Operator = '<' | '>' | '<=' | '>=' | '==' | '!=' | 'not null';
@@ -187,9 +194,11 @@ export enum Sections {
   Alert = 'alertConditionSection',
   Schedule = 'scheduleSection',
   Notification = 'notificationSection',
+  CsvQuery = 'csvQuerySection',
 }
 
 export enum ContentType {
   Dashboard = 'dashboard',
   Chart = 'chart',
 }
+

@@ -253,6 +253,52 @@ class AlertQueryTimeout(CommandException):
     message = _("A timeout occurred while executing the query.")
 
 
+# CSV Query Attachment exceptions
+
+
+class AlertCsvQueryError(CommandException):
+    """
+    Raised when the CSV attachment query fails to execute (syntax error,
+    runtime error, connection issue, etc.).
+    """
+
+    status = 400
+    message = _("Alert CSV query encountered an error during execution.")
+
+
+class AlertCsvQueryEmptyError(CommandException):
+    """
+    Raised when the CSV attachment query returns zero rows.  This is treated
+    as a soft failure — the alert email is still delivered but without the
+    attachment.
+    """
+    
+    status = 200
+    message = _("Alert CSV query returned no rows; attachment will be skipped.")
+
+
+class AlertCsvQueryTimeout(CommandException):
+    """
+    Raised when the CSV attachment query exceeds the Celery soft time limit.
+    """
+
+    status = 408
+    message = _("A timeout occurred while executing the CSV attachment query.")
+
+
+class AlertCsvAttachmentSizeError(CommandException):
+    """
+    Raised when the generated CSV file exceeds the configured size limit
+    (ALERT_CSV_MAX_ATTACHMENT_SIZE_MB).  The email is still sent but the
+    attachment is omitted.
+    """
+
+    status = 413
+    message = _(
+        "The CSV attachment exceeds the maximum allowed size and will be skipped."
+    )
+
+
 class ReportScheduleScreenshotTimeout(CommandException):
     status = 408
     message = _("A timeout occurred while taking a screenshot.")
