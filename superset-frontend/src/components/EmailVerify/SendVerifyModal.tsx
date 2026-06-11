@@ -263,9 +263,6 @@ export default function SendVerifyModal({
           const targets = values.recipient_targets || ['merchant'];
           if (targets.includes('merchant') && row['MerchantEmail']) emails.push(row['MerchantEmail']);
           if (targets.includes('customer') && row['CustomerEmail']) emails.push(row['CustomerEmail']);
-          if (ccEmails.length) {
-            emails.push(...ccEmails);
-          }
 
           const uniqueEmails = Array.from(new Set(emails.map(e => String(e || '').trim()))).filter(Boolean);
           if (uniqueEmails.length === 0) {

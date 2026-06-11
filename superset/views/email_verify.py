@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
 """
 REST API for Merchant Email Verification.
 
@@ -578,7 +579,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
             429:
               description: Rate limit exceeded
         """
-        # 1. FAB permission check
+        #  FAB permission check
 
         # Check global kill switch
         if not current_app.config.get("EMAIL_VERIFY_ENABLED", True):
@@ -597,8 +598,9 @@ class EmailVerifyRestApi(BaseSupersetApi):
         chart_id_raw: Any = body.get("chart_id")
         chart_id: int | None = int(chart_id_raw) if chart_id_raw else None
         variables: dict[str, str] = dict(body.get("variables") or {})
-        cc_address: str = str(body.get("cc") or "").strip()
-        bcc_address: str = str(body.get("bcc") or "").strip()
+
+        cc_address: str = str(body.get("cc")).strip()
+        bcc_address: str = str(body.get("bcc")).strip()
 
         if not template_id:
             return self.response(400, message="template_id is required.")
@@ -611,7 +613,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
             if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", r):
                 return self.response(400, message=f"Invalid email address: {r}")
 
-        # 2. Load dashboard/chart config and perform role + type auth checks
+        # Load dashboard/chart config and perform role + type auth checks
         if dashboard_id or chart_id:
             ev_config = _get_email_verify_config(
                 dashboard_id=dashboard_id, chart_id=chart_id
@@ -629,7 +631,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                         message="Your role is not permitted to send emails from this dashboard."
                     )
 
-        # 3. Rate limit check
+        # Rate limit check
         user_id = get_user_id() or 0
         rate_limit = int(current_app.config.get("EMAIL_VERIFY_RATE_LIMIT", "20/hour").split("/")[0])
         if not _check_rate_limit(user_id, limit=rate_limit):
@@ -639,7 +641,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 f"{rate_limit} verification emails per hour.",
             )
 
-        # 3b. Idempotency — one successful send per (confirmation_code + template + recipient)
+        # Idempotency — one successful send per (confirmation_code + template + recipient)
         # This allows the same code to be sent via a different template or to a
         # different recipient, but blocks exact duplicates.
         confirmation_code: str | None = (
@@ -666,7 +668,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                     ),
                 )
 
-        # 4. Load template
+        # Load template
         tpl = (
             db.session.query(EmailVerificationTemplate)
             .filter_by(id=template_id, is_active=True)
@@ -675,7 +677,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         if tpl is None:
             return self.response_404()
 
-        # 5. Validate that template type is allowed for this dashboard/chart
+        # Validate that template type is allowed for this dashboard/chart
         if dashboard_id or chart_id:
             allowed_types: list[str] = ev_config.get("allowed_types", [])  # type: ignore[assignment]
             if allowed_types and tpl.type not in allowed_types:
@@ -683,7 +685,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                     message=f"Template type '{tpl.type}' is not allowed on this dashboard."
                 )
 
-        # 6. Validate variables — only keys declared in template.variables are accepted
+        #  Validate variables — only keys declared in template.variables are accepted
         allowed_vars: set[str] = set(tpl.variables or [])
         extra_vars = set(variables.keys()) - allowed_vars
         if extra_vars:
@@ -691,7 +693,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 message=f"Extra variables not declared in template: {sorted(extra_vars)}"
             )
 
-        # 7. Render the template
+        # Render the template
         try:
             rendered_subject = render_template(tpl.subject, variables)
             rendered_html = render_template(tpl.html_body, variables)
@@ -701,7 +703,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
         except ValueError as exc:
             return self.response(400, message=str(exc))
 
-        # 8. Send email and write audit log (audit write is in try/except —
+        # Send email and write audit log (audit write is in try/except —
         #    a logging failure must NOT prevent the success response)
         status = "failed"
         error_message: str | None = None
