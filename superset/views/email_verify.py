@@ -465,7 +465,13 @@ class EmailVerifyRestApi(BaseSupersetApi):
             return self.response(
                 200, result={"enabled": False, "allowed_types": [], "allowed_roles": []}
             )
-        return self.response(200, result=config)
+        # Expose from_address so the frontend can pre-populate the CC field
+        result = dict(config)
+        result.setdefault(
+            "from_address",
+            current_app.config.get("EMAIL_VERIFY_FROM_ADDRESS") or "",
+        )
+        return self.response(200, result=result)
 
     @expose("/config/dashboard/<int:pk>", methods=("PUT",))
     @protect("can_configure_email_verify")
@@ -591,6 +597,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
         chart_id_raw: Any = body.get("chart_id")
         chart_id: int | None = int(chart_id_raw) if chart_id_raw else None
         variables: dict[str, str] = dict(body.get("variables") or {})
+        cc_address: str = str(body.get("cc") or "").strip()
+        bcc_address: str = str(body.get("bcc") or "").strip()
 
         if not template_id:
             return self.response(400, message="template_id is required.")
@@ -736,6 +744,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 html_body=rendered_html,
                 text_body=rendered_text,
                 images=images,
+                cc=cc_address,
+                bcc=bcc_address,
             )
             status = "sent"
         except Exception as exc:  # pylint: disable=broad-except

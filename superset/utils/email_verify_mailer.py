@@ -77,6 +77,8 @@ def send_verification_email(
     html_body: str,
     text_body: str | None = None,
     images: dict[str, bytes] | None = None,
+    cc: str = "",
+    bcc: str = "",
 ) -> bool:
     """Dispatch a verification email through the configured provider.
 
@@ -86,6 +88,8 @@ def send_verification_email(
         html_body: HTML email body (already rendered).
         text_body: Optional plain-text fallback (already rendered).
         images: Optional dictionary of image content indexed by CID.
+        cc: Comma-separated CC email addresses.
+        bcc: Comma-separated BCC email addresses.
 
     Returns:
         True on success.
@@ -97,7 +101,7 @@ def send_verification_email(
     provider = config.get("EMAIL_VERIFY_PROVIDER", "smtp").lower()
 
     if provider == "smtp":
-        return _send_via_smtp(to_address, subject, html_body, text_body, images, config)
+        return _send_via_smtp(to_address, subject, html_body, text_body, images, config, cc=cc, bcc=bcc)
     if provider == "sendgrid":
         return _send_via_sendgrid(to_address, subject, html_body, text_body, config)
     if provider == "ses":
@@ -121,6 +125,8 @@ def _send_via_smtp(
     text_body: str | None,
     images: dict[str, bytes] | None,
     config: dict[str, Any],
+    cc: str = "",
+    bcc: str = "",
 ) -> bool:
     """Send via Superset's existing SMTP infrastructure."""
     # Import here to avoid circular imports at module load time
@@ -141,8 +147,8 @@ def _send_via_smtp(
         data=None,
         images=images,
         dryrun=False,
-        cc="",
-        bcc="",
+        cc=cc,
+        bcc=bcc,
         mime_subtype="mixed",
         from_address=from_address,
     )

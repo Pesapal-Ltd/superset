@@ -88,9 +88,7 @@ interface SendVerifyModalProps {
   onClose: () => void;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 export default function SendVerifyModal({
   visible,
@@ -106,6 +104,9 @@ export default function SendVerifyModal({
 
   const [config, setConfig] = useState<EmailVerifyConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
+  const [fromAddress, setFromAddress] = useState<string>('');
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -119,7 +120,7 @@ export default function SendVerifyModal({
     error?: string;
   } | null>(null);
 
-  // ── Access chart columns from Redux ──────────────────────────────────────
+  //  Access chart columns from Redux 
   const chart = useSelector<RootState, any>(
     state => state.charts[chartId || 0],
   );
@@ -156,7 +157,7 @@ export default function SendVerifyModal({
     return allCols;
   }, [datasetColumns, chart?.queriesResponse]);
 
-  // ── Load dashboard/chart config on open ──────────────────────────────────
+  //  Load dashboard/chart config on open 
   useEffect(() => {
     if (!visible) return;
 
@@ -164,6 +165,9 @@ export default function SendVerifyModal({
     setSendResult(null);
     setSelectedType(undefined);
     setSelectedTemplate(null);
+    setShowCc(false);
+    setShowBcc(false);
+    setFromAddress('');
 
     if (!isBulk && defaultRecipient) form.setFieldsValue({ recipient_email: defaultRecipient });
     if (!isBulk && defaultMerchantId) form.setFieldsValue({ merchant_id: defaultMerchantId });
@@ -181,7 +185,11 @@ export default function SendVerifyModal({
           endpoint: `/api/v1/email-verify/config?${params.toString()}`,
         });
         const data: any = resp.json;
-        setConfig(data?.result || null);
+        const resultConfig = data?.result || null;
+        setConfig(resultConfig);
+        // Store from_address silently for background injection into CC
+        const addr: string = resultConfig?.from_address || '';
+        setFromAddress(addr);
       } catch {
         message.error(t('Could not load email verification configuration.'));
       } finally {
@@ -192,7 +200,7 @@ export default function SendVerifyModal({
     loadConfig();
   }, [visible, dashboardId, chartId, defaultRecipient, defaultMerchantId, form]);
 
-  // ── Load templates when feature is enabled ───────────────────────────────
+  //  Load templates when feature is enabled 
   useEffect(() => {
     if (!config?.enabled) return;
 
@@ -224,12 +232,26 @@ export default function SendVerifyModal({
     loadTemplates();
   }, [config, selectedType]);
 
-  // ── Send ─────────────────────────────────────────────────────────────────
+  //  Send 
   const handleSend = async () => {
     try {
       const values = await form.validateFields();
       setSending(true);
       setSendResult(null);
+
+      // Parse comma/semicolon-separated CC and BCC text inputs into arrays
+      const parseEmailList = (raw: string | undefined): string[] =>
+        (raw || '')
+          .split(/[,;]/)
+          .map((e: string) => e.trim())
+          .filter(Boolean);
+
+      const ccEmails = parseEmailList(values.additional_recipients);
+      // Always silently include the from_address in CC
+      if (fromAddress && !ccEmails.includes(fromAddress)) {
+        ccEmails.unshift(fromAddress);
+      }
+      const bccEmails = parseEmailList(values.bcc_recipients);
 
       if (isBulk) {
         let successCount = 0;
@@ -238,11 +260,11 @@ export default function SendVerifyModal({
 
         for (const row of selectedRows) {
           const emails = [];
-          const targets = values.recipient_targets || ['merchant', 'customer'];
+          const targets = values.recipient_targets || ['merchant'];
           if (targets.includes('merchant') && row['MerchantEmail']) emails.push(row['MerchantEmail']);
           if (targets.includes('customer') && row['CustomerEmail']) emails.push(row['CustomerEmail']);
-          if (values.additional_recipients?.length) {
-            emails.push(...values.additional_recipients);
+          if (ccEmails.length) {
+            emails.push(...ccEmails);
           }
 
           const uniqueEmails = Array.from(new Set(emails.map(e => String(e || '').trim()))).filter(Boolean);
@@ -256,6 +278,8 @@ export default function SendVerifyModal({
             recipient_email: uniqueEmails.join(','),
             merchant_id: row['MerchantName'] || '',
             variables: {},
+            cc: ccEmails.join(','),
+            bcc: bccEmails.join(','),
           };
           if (dashboardId) payload.dashboard_id = dashboardId;
           if (chartId) payload.chart_id = chartId;
@@ -305,8 +329,8 @@ export default function SendVerifyModal({
             failCount > 0
               ? t(`${parts.join(', ')}. Contact Admin for failed emails.`)
               : skipCount > 0
-              ? t(`${parts.join(', ')}. Duplicate sends are not allowed.`)
-              : undefined,
+                ? t(`${parts.join(', ')}. Duplicate sends are not allowed.`)
+                : undefined,
         });
 
         if (failCount === 0 && skipCount === 0) {
@@ -321,6 +345,8 @@ export default function SendVerifyModal({
           recipient_email: values.recipient_email,
           merchant_id: values.merchant_id,
           variables: {},
+          cc: ccEmails.join(','),
+          bcc: bccEmails.join(','),
         };
         if (dashboardId) payload.dashboard_id = dashboardId;
         if (chartId) payload.chart_id = chartId;
@@ -358,7 +384,7 @@ export default function SendVerifyModal({
     }
   };
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  //  Helpers 
   const typeLabel = (type: string) =>
     type === 'transaction_verification' ? t('Transaction Verification') : t('Merchant Verification');
 
@@ -370,7 +396,7 @@ export default function SendVerifyModal({
     ? config.allowed_types
     : ['transaction_verification', 'merchant_verification'];
 
-  // ── Render ───────────────────────────────────────────────────────────────
+  //  Render 
   if (!configLoading && config && !config.enabled) {
     return null; // Not configured — don't show the button at all
   }
@@ -447,7 +473,7 @@ export default function SendVerifyModal({
               <Form.Item
                 name="recipient_targets"
                 label={t('Send To')}
-                initialValue={['merchant', 'customer']}
+                initialValue={['merchant']}
                 rules={[{ required: true, message: t('Please select at least one recipient type.') }]}
               >
                 <Checkbox.Group
@@ -457,15 +483,59 @@ export default function SendVerifyModal({
                   ]}
                 />
               </Form.Item>
-
-              <Form.Item
-                name="additional_recipients"
-                label={t('Additional Recipients (CC)')}
-                help={t('These emails will be added as recipients for all bulk emails sent.')}
-              >
-                <Select mode="tags" placeholder={t('Enter additional emails...')} />
-              </Form.Item>
             </>
+          )}
+
+          {/* CC / BCC toggle links */}
+          <div style={{ marginBottom: 12, display: 'flex', gap: 16 }}>
+            {!showCc && (
+              <a
+                onClick={() => setShowCc(true)}
+                style={{ fontSize: 13 }}
+                id="send-verify-add-cc"
+              >
+                <MailOutlined style={{ marginRight: 4 }} />
+                {t('Add CC Recipients')}
+              </a>
+            )}
+            {!showBcc && (
+              <a
+                onClick={() => setShowBcc(true)}
+                style={{ fontSize: 13 }}
+                id="send-verify-add-bcc"
+              >
+                <MailOutlined style={{ marginRight: 4 }} />
+                {t('Add BCC Recipients')}
+              </a>
+            )}
+          </div>
+
+          {showCc && (
+            <Form.Item
+              name="additional_recipients"
+              label={t('CC')}
+              help={t('Separate multiple addresses with commas or semicolons.')}
+            >
+              <Input.TextArea
+                rows={2}
+                placeholder={t('e.g. omollo@example.com; kang@example.com')}
+                id="send-verify-cc"
+              />
+            </Form.Item>
+          )}
+
+          {showBcc && (
+            <Form.Item
+              name="bcc_recipients"
+              label={t('BCC')}
+              help={t('Separate multiple addresses with commas or semicolons.')}
+            >
+              <Input.TextArea
+                rows={2}
+                placeholder={t('e.g. compliance@example.com')}
+                id="send-verify-bcc"
+              />
+            </Form.Item>
           )}
 
           <Form.Item label={t('Email Type')}>
