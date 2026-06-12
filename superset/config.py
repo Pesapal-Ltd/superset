@@ -1352,7 +1352,7 @@ QUERY_LOGGER = custom_query_logger
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
 # Maximum number of rows returned for any analytical database query
-SQL_MAX_ROW = 1_000  # from 100k
+SQL_MAX_ROW = 10_000  # from 100k
 
 # Maximum number of rows for any query with Server Pagination in Table Viz type
 TABLE_VIZ_MAX_ROW_SERVER = 50000  # from 500k
