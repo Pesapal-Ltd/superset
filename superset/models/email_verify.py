@@ -109,6 +109,9 @@ class EmailVerificationLog(Model):
     sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     # ConfirmationCode extracted from variables at send time (used for dedup)
     confirmation_code = Column(String(255), nullable=True, index=True)
+    # CC / BCC addresses recorded at send time for full auditability
+    cc_address = Column(Text, nullable=True)
+    bcc_address = Column(Text, nullable=True)
 
     template = relationship("EmailVerificationTemplate", back_populates="logs")
     sent_by = relationship(

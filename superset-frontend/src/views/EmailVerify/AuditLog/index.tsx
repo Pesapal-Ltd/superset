@@ -69,6 +69,8 @@ interface LogEntry {
   error_message: string | null;
   sent_at: string;
   confirmation_code: string | null;
+  cc_address: string;
+  bcc_address: string;
 }
 
 interface LogResponse {
@@ -83,6 +85,12 @@ interface LogResponse {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ExpandedRow({ record }: { record: LogEntry }) {
+  // Parse comma/semicolon-separated email strings into individual chips
+  const emailTags = (raw: string) =>
+    raw
+      ? raw.split(/[,;]\s*/).map(e => e.trim()).filter(Boolean)
+      : [];
+
   return (
     <div style={{ padding: '8px 16px' }}>
       <Descriptions size="small" column={2} bordered>
@@ -106,6 +114,37 @@ function ExpandedRow({ record }: { record: LogEntry }) {
           {record.dashboard_id ?? '—'}
         </Descriptions.Item>
         <Descriptions.Item label={t('Chart ID')}>{record.chart_id ?? '—'}</Descriptions.Item>
+
+        {/* CC recipients */}
+        <Descriptions.Item label={t('CC')} span={2}>
+          {emailTags(record.cc_address).length > 0 ? (
+            <Space wrap>
+              {emailTags(record.cc_address).map(addr => (
+                <Tag key={addr} color="blue" style={{ fontFamily: 'monospace' }}>
+                  {addr}
+                </Tag>
+              ))}
+            </Space>
+          ) : (
+            <Text type="secondary">{t('None')}</Text>
+          )}
+        </Descriptions.Item>
+
+        {/* BCC recipients */}
+        <Descriptions.Item label={t('BCC')} span={2}>
+          {emailTags(record.bcc_address).length > 0 ? (
+            <Space wrap>
+              {emailTags(record.bcc_address).map(addr => (
+                <Tag key={addr} color="purple" style={{ fontFamily: 'monospace' }}>
+                  {addr}
+                </Tag>
+              ))}
+            </Space>
+          ) : (
+            <Text type="secondary">{t('None')}</Text>
+          )}
+        </Descriptions.Item>
+
         <Descriptions.Item label={t('Payload Variables')} span={2}>
           {Object.entries(record.payload_snapshot || {}).length > 0 ? (
             <ul style={{ margin: 0, paddingLeft: 16 }}>

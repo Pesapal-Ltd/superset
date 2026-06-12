@@ -599,9 +599,9 @@ class EmailVerifyRestApi(BaseSupersetApi):
         chart_id: int | None = int(chart_id_raw) if chart_id_raw else None
         variables: dict[str, str] = dict(body.get("variables") or {})
 
-        cc_address: str = str(body.get("cc")).strip()
-        bcc_address: str = str(body.get("bcc")).strip()
-
+        cc_address: str = str(body.get("cc") or "").strip()
+        bcc_address: str = str(body.get("bcc") or "").strip()
+ 
         if not template_id:
             return self.response(400, message="template_id is required.")
         if not recipient_email:
@@ -768,6 +768,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 error_message=error_message,
                 sent_at=datetime.utcnow(),
                 confirmation_code=confirmation_code,
+                cc_address=cc_address or None,
+                bcc_address=bcc_address or None,
             )
             db.session.add(log)
             db.session.commit()
@@ -888,6 +890,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 "error_message": log.error_message,
                 "sent_at": log.sent_at.isoformat() if log.sent_at else None,
                 "confirmation_code": log.confirmation_code,
+                "cc_address": log.cc_address or "",
+                "bcc_address": log.bcc_address or "",
             }
             for log in logs
         ]
@@ -946,9 +950,10 @@ class EmailVerifyRestApi(BaseSupersetApi):
 
         variables: dict[str, str] = dict(original.payload_snapshot or {})
 
-        # Render
+        # Render — subject gets a "Polite Reminder" prefix for resends
         try:
             rendered_subject = render_template(tpl.subject, variables)
+            reminder_subject = f"[Polite Reminder] {rendered_subject}"
             rendered_html = render_template(tpl.html_body, variables)
             rendered_text = (
                 render_template(tpl.text_body, variables) if tpl.text_body else None
@@ -988,13 +993,18 @@ class EmailVerifyRestApi(BaseSupersetApi):
 
         status = "failed"
         error_message: str | None = None
+        # Re-use the original CC / BCC recipients
+        cc_address: str = original.cc_address or ""
+        bcc_address: str = original.bcc_address or ""
         try:
             send_verification_email(
                 to_address=original.recipient_email,
-                subject=rendered_subject,
+                subject=reminder_subject,
                 html_body=rendered_html,
                 text_body=rendered_text,
                 images=images,
+                cc=cc_address,
+                bcc=bcc_address,
             )
             status = "sent"
         except Exception as exc:  # pylint: disable=broad-except
@@ -1016,6 +1026,8 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 error_message=error_message,
                 sent_at=datetime.utcnow(),
                 confirmation_code=original.confirmation_code,
+                cc_address=cc_address or None,
+                bcc_address=bcc_address or None,
             )
             db.session.add(new_log)
             db.session.commit()
