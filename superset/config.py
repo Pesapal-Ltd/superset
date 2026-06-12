@@ -602,23 +602,22 @@ class CustomAppInitializer(SupersetAppInitializer):
 
             print(f"New roles to be created: {roles_to_create}")
 
-            gamma_role = sm.find_role('Gamma')
-            if not gamma_role:
-                print("Could not find 'Gamma' role. Cannot use it as a template.")
+            public_role = sm.find_role('Public')
+            if not public_role:
+                print("Could not find 'Public' role. Cannot use it as a template.")
                 return
 
-            gamma_permissions = gamma_role.permissions
+            public_permissions = public_role.permissions
 
             try:
                 for role_name in roles_to_create:
                     logger.info(f"Creating role: '{role_name}'")
-                    sm.add_role(name=role_name, permissions=gamma_permissions)
+                    sm.add_role(name=role_name, permissions=public_permissions)
                 db.session.commit()  # We need to explicitly commit the session
                 logger.info("Successfully committed new roles to the database.")
             except Exception as e:
                 logger.error(f"An error occurred while creating roles: {e}")
                 db.session.rollback()
-
 
 # Point APP_INITIALIZER to our new custom class
 APP_INITIALIZER = CustomAppInitializer
@@ -660,7 +659,7 @@ AUTH_ROLES_MAPPING = get_dynamic_role_mapping()
 AUTH_USER_REGISTRATION = True
 
 # The default user self registration role
-AUTH_USER_REGISTRATION_ROLE = "Gamma"
+AUTH_USER_REGISTRATION_ROLE = "DefaultRole"
 
 AUTH_ROLES_SYNC_AT_LOGIN = False
 # message
