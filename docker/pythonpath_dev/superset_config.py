@@ -73,6 +73,12 @@ CACHE_CONFIG = {
 DATA_CACHE_CONFIG = CACHE_CONFIG
 THUMBNAIL_CACHE_CONFIG = CACHE_CONFIG
 
+SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_size": 20,  # >= number of Gunicorn threads
+    "max_overflow": 20,  # Additional connections allowed beyond pool_size
+    "pool_timeout": 30,
+    "pool_recycle": 3600,
+}
 
 class CeleryConfig:
     broker_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
