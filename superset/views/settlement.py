@@ -157,7 +157,7 @@ class SettlementRestApi(BaseSupersetApi):
               name: chart_id
               schema: {type: integer}
             responses:
-            200:
+              200:
                 description: Settlement config
         """
         dashboard_id = request.args.get("dashboard_id", type=int)
