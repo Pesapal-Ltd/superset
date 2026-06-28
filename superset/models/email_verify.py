@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from flask_appbuilder import Model
 from sqlalchemy import (
@@ -39,6 +40,86 @@ from sqlalchemy import JSON
 
 TEMPLATE_TYPES = ("transaction_verification", "merchant_verification")
 EMAIL_VERIFY_STATUSES = ("sent", "failed")
+
+
+class ZohoDeskToken(Model):
+    """Single-row cache for the Zoho Desk OAuth access token.
+
+    Only one row is ever stored (keyed by ``service = 'zoho_desk'``).
+    ``get_valid_token()`` returns a cached token when it still has more than
+    ``buffer_seconds`` of lifetime remaining; otherwise it returns ``None``
+    so the caller knows to refresh.
+
+    The token is stored in plain text because it is a short-lived bearer token
+    (typically 1 hour) with no long-term security value beyond its TTL.
+    """
+
+    __tablename__ = "zoho_desk_token_cache"
+
+    id = Column(Integer, primary_key=True)
+    # Logical key — allows multiple services to share this table in future
+    service = Column(String(50), nullable=False, unique=True, default="zoho_desk")
+    access_token = Column(Text, nullable=False)
+    # UTC datetime at which the token actually expires (as reported by Zoho)
+    expires_at = Column(DateTime, nullable=False)
+    # When this row was last written
+    refreshed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    @classmethod
+    def get_valid_token(
+        cls, session: Any, buffer_seconds: int = 60
+    ) -> str | None:
+        """Return a cached access token that still has ``buffer_seconds`` of
+        life remaining, or ``None`` if the cache is empty / stale.
+
+        Args:
+            session: SQLAlchemy DB session.
+            buffer_seconds: Refresh this many seconds *before* the token
+                actually expires (guards against clock skew and network
+                latency).  Defaults to 60 s.
+
+        Returns:
+            A valid access-token string, or ``None`` when a refresh is needed.
+        """
+        row: ZohoDeskToken | None = (
+            session.query(cls).filter_by(service="zoho_desk").one_or_none()
+        )
+        if row is None:
+            return None
+        remaining = (row.expires_at - datetime.utcnow()).total_seconds()
+        if remaining > buffer_seconds:
+            return row.access_token
+        return None
+
+    @classmethod
+    def upsert(
+        cls,
+        session: Any,
+        access_token: str,
+        expires_at: datetime,
+    ) -> None:
+        """Insert or update the single cached token row.
+
+        Args:
+            session: SQLAlchemy DB session.
+            access_token: The freshly obtained access token string.
+            expires_at: UTC datetime when the token expires.
+        """
+        row: ZohoDeskToken | None = (
+            session.query(cls).filter_by(service="zoho_desk").one_or_none()
+        )
+        if row is None:
+            row = cls(service="zoho_desk")
+            session.add(row)
+        row.access_token = access_token
+        row.expires_at = expires_at
+        row.refreshed_at = datetime.utcnow()
+        session.commit()
+
+    def __repr__(self) -> str:
+        return f"ZohoDeskToken<expires_at={self.expires_at}>"
+
+
 
 
 class EmailVerificationTemplate(Model):
@@ -112,6 +193,9 @@ class EmailVerificationLog(Model):
     # CC / BCC addresses recorded at send time for full auditability
     cc_address = Column(Text, nullable=True)
     bcc_address = Column(Text, nullable=True)
+    # EMAIL_VERIFY_NOTIFY_MODE = "zoho_ticket".  NULL when mode is "cc" or
+    # when ticket creation failed (failure is non-fatal and only logged).
+    zoho_ticket_id = Column(String(255), nullable=True)
 
     template = relationship("EmailVerificationTemplate", back_populates="logs")
     sent_by = relationship(

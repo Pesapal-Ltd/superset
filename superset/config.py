@@ -1657,8 +1657,34 @@ EMAIL_VERIFY_SENDGRID_API_KEY = ""
 # Override the From address for verification emails.
 # Falls back to SMTP_MAIL_FROM if not set.
 EMAIL_VERIFY_FROM_ADDRESS = os.environ.get("EMAIL_VERIFY_FROM_ADDRESS")
+# Controls what happens after a verification email is sent successfully.
+#   "cc"          – EMAIL_VERIFY_FROM_ADDRESS is appended to the CC list of every
+#                   outgoing email (original behaviour, kept as default).
+#   "zoho_ticket" – A Zoho Desk support ticket is opened instead of CC-ing the
+#                   address.
+EMAIL_VERIFY_NOTIFY_MODE: str = os.environ.get("EMAIL_VERIFY_NOTIFY_MODE", "cc")
 
-# Settlement (Hold Funds / Release Funds)
+# Zoho Desk integration
+ZOHO_DESK_BASE_URL: str = os.environ.get("ZOHO_DESK_BASE_URL")
+ZOHO_DESK_URL: str = os.environ.get("ZOHO_DESK_URL", "")
+ZOHO_DESK_ORG_ID: str = os.environ.get("ORG_ID", "")
+ZOHO_DESK_DEPT_ID: str = os.environ.get("DEPT_ID", "")
+ZOHO_DESK_CLIENT_ID: str = os.environ.get("ZOHO_CLIENT_ID", "")
+ZOHO_DESK_CLIENT_SECRET: str = os.environ.get("ZOHO_CLIENT_SECRET", "")
+ZOHO_DESK_REFRESH_TOKEN: str = os.environ.get("ZOHO_REFRESH_TOKEN", "")
+# ticket status
+ZOHO_DESK_STATUS: str = os.environ.get("ZOHO_DESK_STATUS", "")
+ZOHO_DESK_COUNTRY: str = os.environ.get("ZOHO_DESK_COUNTRY", "")
+ZOHO_DESK_CLASS: str = os.environ.get("ZOHO_DESK_CLASS", "")
+ZOHO_DESK_SUBCATEGORY: str = os.environ.get("ZOHO_DESK_SUBCATEGORY", "")
+# Default contact used when opening a Zoho ticket
+ZOHO_DESK_DEFAULT_CONTACT: dict = {
+    "email": os.environ.get("EMAIL_VERIFY_FROM_ADDRESS"),
+    "lastName": os.environ.get("ZOHO_DESK_CONTACT_NAME"),
+    "phone": int(os.environ.get("ZOHO_DESK_CONTACT_PHONE")),
+}
+
+# Settlement
 
 # Global kill switch
 SETTLEMENT_ENABLED = True

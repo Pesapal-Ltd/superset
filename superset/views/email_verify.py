@@ -466,11 +466,16 @@ class EmailVerifyRestApi(BaseSupersetApi):
             return self.response(
                 200, result={"enabled": False, "allowed_types": [], "allowed_roles": []}
             )
-        # Expose from_address so the frontend can pre-populate the CC field
+        # Expose from_address and notify_mode so the frontend can adapt its UI.
+        # from_address is still returned for display purposes; CC injection is
+        # now handled server-side, not by the frontend.
         result = dict(config)
         result.setdefault(
             "from_address",
             current_app.config.get("EMAIL_VERIFY_FROM_ADDRESS") or "",
+        )
+        result["notify_mode"] = current_app.config.get(
+            "EMAIL_VERIFY_NOTIFY_MODE", "cc"
         )
         return self.response(200, result=result)
 
@@ -601,6 +606,16 @@ class EmailVerifyRestApi(BaseSupersetApi):
 
         cc_address: str = str(body.get("cc") or "").strip()
         bcc_address: str = str(body.get("bcc") or "").strip()
+
+        # Server-side CC injection — when notify_mode is "cc" we append
+        # EMAIL_VERIFY_FROM_ADDRESS to every outgoing email's CC list.
+        # This logic was previously on the frontend; centralising it here
+        # makes it reliable regardless of which client calls the API.
+        notify_mode: str = current_app.config.get("EMAIL_VERIFY_NOTIFY_MODE", "cc")
+        if notify_mode == "cc":
+            from_addr: str = current_app.config.get("EMAIL_VERIFY_FROM_ADDRESS") or ""
+            if from_addr and from_addr not in cc_address:
+                cc_address = ",".join(filter(None, [cc_address, from_addr]))
  
         if not template_id:
             return self.response(400, message="template_id is required.")
@@ -754,6 +769,36 @@ class EmailVerifyRestApi(BaseSupersetApi):
             error_message = str(exc)
             logger.exception("Failed to send verification email to %s", recipient_email)
 
+        # Post-send notification — open a Zoho Desk ticket when configured.
+        # Ticket creation is always non-fatal: failures are logged but never
+        # bubble up to the caller.
+        zoho_ticket_id: str | None = None
+        if status == "sent" and notify_mode == "zoho_ticket":
+            try:
+                from superset.utils.zoho_desk import open_zoho_ticket  # pylint: disable=import-outside-toplevel
+
+                ticket_result = open_zoho_ticket(
+                    subject=rendered_subject,
+                    description=rendered_html,
+                )
+                if ticket_result.get("Code") == 200:
+                    zoho_ticket_id = str(
+                        ticket_result.get("data", {}).get("ticketNumber", "id")
+                    ) or None
+                    logger.info(
+                        "ZohoTicket Opened ticket. Ticket number- %s",
+                        zoho_ticket_id
+                    )
+                else:
+                    logger.warning(
+                        "ZohoTicket Non-200 response: %s", ticket_result
+                    )
+            except Exception as zoho_exc:  # pylint: disable=broad-except
+                logger.warning(
+                    "[ZohoTicket] Failed to open ticket: %s",
+                    zoho_exc,
+                )
+
         log_id: int | None = None
         try:
             log = EmailVerificationLog(
@@ -770,6 +815,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 confirmation_code=confirmation_code,
                 cc_address=cc_address or None,
                 bcc_address=bcc_address or None,
+                zoho_ticket_id=zoho_ticket_id,
             )
             db.session.add(log)
             db.session.commit()
@@ -779,7 +825,14 @@ class EmailVerifyRestApi(BaseSupersetApi):
             logger.exception("Failed to write email verify audit log: %s", log_exc)
 
         if status == "sent":
-            return self.response(200, result={"success": True, "log_id": log_id})
+            return self.response(
+                200,
+                result={
+                    "success": True,
+                    "log_id": log_id,
+                    "zoho_ticket_id": zoho_ticket_id,
+                },
+            )
         return self.response(
             200,
             result={"success": False, "error": error_message, "log_id": log_id},
@@ -892,6 +945,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 "confirmation_code": log.confirmation_code,
                 "cc_address": log.cc_address or "",
                 "bcc_address": log.bcc_address or "",
+                "zoho_ticket_id": log.zoho_ticket_id or "",
             }
             for log in logs
         ]
@@ -996,6 +1050,14 @@ class EmailVerifyRestApi(BaseSupersetApi):
         # Re-use the original CC / BCC recipients
         cc_address: str = original.cc_address or ""
         bcc_address: str = original.bcc_address or ""
+
+        # Server-side CC injection on resend — same logic as send_email
+        notify_mode: str = current_app.config.get("EMAIL_VERIFY_NOTIFY_MODE", "cc")
+        if notify_mode == "cc":
+            from_addr: str = current_app.config.get("EMAIL_VERIFY_FROM_ADDRESS") or ""
+            if from_addr and from_addr not in cc_address:
+                cc_address = ",".join(filter(None, [cc_address, from_addr]))
+
         try:
             send_verification_email(
                 to_address=original.recipient_email,
@@ -1010,6 +1072,34 @@ class EmailVerifyRestApi(BaseSupersetApi):
         except Exception as exc:  # pylint: disable=broad-except
             error_message = str(exc)
             logger.exception("Resend failed for log_id=%s: %s", log_id, exc)
+
+        # Post-send Zoho ticket (same pattern as send_email)
+        zoho_ticket_id: str | None = None
+        if status == "sent" and notify_mode == "zoho_ticket":
+            try:
+                from superset.utils.zoho_desk import open_zoho_ticket  # pylint: disable=import-outside-toplevel
+
+                ticket_result = open_zoho_ticket(
+                    subject=reminder_subject,
+                    description=rendered_html,
+                )
+                if ticket_result.get("Code") == 200:
+                    zoho_ticket_id = str(
+                        ticket_result.get("data", {}).get("ticketNumber", "id")
+                    ) or None
+                    logger.info(
+                        "ZohoTicket Resend — opened ticket %s ",
+                        zoho_ticket_id,
+                    )
+                else:
+                    logger.warning(
+                        "ZohoTicket Resend non-200 response: %s", ticket_result
+                    )
+            except Exception as zoho_exc:  # pylint: disable=broad-except
+                logger.warning(
+                    " Resend — failed to open ticket: %s",
+                    zoho_exc,
+                )
 
         # Write a new log entry (preserves full audit trail — original is untouched)
         new_log_id: int | None = None
@@ -1028,6 +1118,7 @@ class EmailVerifyRestApi(BaseSupersetApi):
                 confirmation_code=original.confirmation_code,
                 cc_address=cc_address or None,
                 bcc_address=bcc_address or None,
+                zoho_ticket_id=zoho_ticket_id,
             )
             db.session.add(new_log)
             db.session.commit()
@@ -1036,7 +1127,14 @@ class EmailVerifyRestApi(BaseSupersetApi):
             logger.exception("Failed to write resend audit log: %s", log_exc)
 
         if status == "sent":
-            return self.response(200, result={"success": True, "log_id": new_log_id})
+            return self.response(
+                200,
+                result={
+                    "success": True,
+                    "log_id": new_log_id,
+                    "zoho_ticket_id": zoho_ticket_id,
+                },
+            )
         return self.response(
             200,
             result={"success": False, "error": error_message, "log_id": new_log_id},

@@ -104,7 +104,6 @@ export default function SendVerifyModal({
 
   const [config, setConfig] = useState<EmailVerifyConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
-  const [fromAddress, setFromAddress] = useState<string>('');
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
 
@@ -167,7 +166,6 @@ export default function SendVerifyModal({
     setSelectedTemplate(null);
     setShowCc(false);
     setShowBcc(false);
-    setFromAddress('');
 
     if (!isBulk && defaultRecipient) form.setFieldsValue({ recipient_email: defaultRecipient });
     if (!isBulk && defaultMerchantId) form.setFieldsValue({ merchant_id: defaultMerchantId });
@@ -187,9 +185,6 @@ export default function SendVerifyModal({
         const data: any = resp.json;
         const resultConfig = data?.result || null;
         setConfig(resultConfig);
-        // Store from_address silently for background injection into CC
-        const addr: string = resultConfig?.from_address || '';
-        setFromAddress(addr);
       } catch {
         message.error(t('Could not load email verification configuration.'));
       } finally {
@@ -247,10 +242,8 @@ export default function SendVerifyModal({
           .filter(Boolean);
 
       const ccEmails = parseEmailList(values.additional_recipients);
-      // Always silently include the from_address in CC
-      if (fromAddress && !ccEmails.includes(fromAddress)) {
-        ccEmails.unshift(fromAddress);
-      }
+      // Note: EMAIL_VERIFY_FROM_ADDRESS is now injected into CC server-side
+      // when EMAIL_VERIFY_NOTIFY_MODE="cc". No client-side injection needed.
       const bccEmails = parseEmailList(values.bcc_recipients);
 
       if (isBulk) {
