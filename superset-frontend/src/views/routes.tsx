@@ -169,6 +169,13 @@ const SettlementAuditLog = lazy(
       /* webpackChunkName: "SettlementAuditLog" */ 'src/views/Settlement/AuditLog'
     ),
 );
+
+const BlockedFingerprintList = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "BlockedFingerprintList" */ 'src/views/DeviceFingerprint/BlockedList'
+    ),
+);
 type Routes = {
   path: string;
   Component: ComponentType;
@@ -284,6 +291,10 @@ export const routes: Routes = [
   {
     path: '/settlement/logs/',
     Component: SettlementAuditLog,
+  },
+  {
+    path: '/device-fingerprint/logs/',
+    Component: BlockedFingerprintList,
   },
 ];
 

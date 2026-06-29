@@ -45,6 +45,7 @@ import TagType from 'src/types/TagType';
 import { useSelector } from 'react-redux';
 import EmailVerifyConfigPanel from 'src/dashboard/components/EmailVerifyConfig';
 import SettlementConfigPanel from 'src/dashboard/components/SettlementConfig';
+import DeviceFingerprintConfigPanel from 'src/dashboard/components/DeviceFingerprintConfig';
 
 export type PropertiesModalProps = {
   slice: Slice;
@@ -89,6 +90,9 @@ function PropertiesModal({
   );
   const globalSettlementEnabled = useSelector(
     (state: any) => state.explore?.common?.conf?.SETTLEMENT_ENABLED || state.common?.conf?.SETTLEMENT_ENABLED,
+  );
+  const globalDeviceFingerprintBlockEnabled = useSelector(
+    (state: any) => state.explore?.common?.conf?.DEVICE_FINGERPRINT_BLOCK_ENABLED || state.common?.conf?.DEVICE_FINGERPRINT_BLOCK_ENABLED,
   );
 
   const tagsAsSelectValues = useMemo(() => {
@@ -438,6 +442,18 @@ function PropertiesModal({
           <Col xs={24} md={24}>
             <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
             <SettlementConfigPanel
+              chartId={slice.slice_id}
+            />
+          </Col>
+        </Row>
+      )}
+
+      {/* Device Fingerprint Blocking */}
+      {globalDeviceFingerprintBlockEnabled && (
+        <Row>
+          <Col xs={24} md={24}>
+            <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
+            <DeviceFingerprintConfigPanel
               chartId={slice.slice_id}
             />
           </Col>

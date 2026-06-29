@@ -281,6 +281,8 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     serverPageLength,
     slice_id,
     emailVerifyEnabled,
+    settlementEnabled,
+    deviceFingerprintBlockEnabled,
     customState,
   } = props;
   const comparisonColumns = [
@@ -1222,6 +1224,9 @@ export default function TableChart<D extends DataRecord = DataRecord>(
     [setDataMask],
   );
 
+  const rowSelectionEnabled =
+    emailVerifyEnabled || settlementEnabled || deviceFingerprintBlockEnabled;
+
   return (
     <Styles>
       <DataTable<D>
@@ -1258,7 +1263,7 @@ export default function TableChart<D extends DataRecord = DataRecord>(
         manualSearch={serverPagination}
         onSearchChange={debouncedSearch}
         searchOptions={searchOptions}
-        emailVerifyEnabled={emailVerifyEnabled}
+        emailVerifyEnabled={rowSelectionEnabled}
         onRowSelectionChange={handleRowSelectionChange}
         customState={customState}
       />

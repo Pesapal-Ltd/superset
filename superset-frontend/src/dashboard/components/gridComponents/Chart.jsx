@@ -318,6 +318,7 @@ const Chart = props => {
   // and SliceHeaderControls (for the menu items).
   const chartEmailVerifyConfig = chart.form_data?.email_verify_config;
   const chartSettlementConfig = chart.form_data?.settlement_config;
+  const chartDeviceFingerprintConfig = chart.form_data?.device_fingerprint_config;
 
   const globalEmailVerifyEnabled = useSelector(
     state => state.dashboardInfo?.common?.conf?.EMAIL_VERIFY_ENABLED,
@@ -325,11 +326,17 @@ const Chart = props => {
   const globalSettlementEnabled = useSelector(
     state => state.dashboardInfo?.common?.conf?.SETTLEMENT_ENABLED,
   );
+  const globalDeviceFingerprintBlockEnabled = useSelector(
+    state => state.dashboardInfo?.common?.conf?.DEVICE_FINGERPRINT_BLOCK_ENABLED,
+  );
 
   formData.email_verify_enabled =
     globalEmailVerifyEnabled === true && chartEmailVerifyConfig?.enabled === true;
   formData.settlement_enabled =
     globalSettlementEnabled === true && chartSettlementConfig?.enabled === true;
+  formData.device_fingerprint_block_enabled =
+    globalDeviceFingerprintBlockEnabled === true && chartDeviceFingerprintConfig?.enabled === true;
+  formData.device_fingerprint_config = chartDeviceFingerprintConfig;
 
   // Dynamically override currency_format.symbol when a native filter named
   // "Currency" is in scope for this chart. When the filter is present but

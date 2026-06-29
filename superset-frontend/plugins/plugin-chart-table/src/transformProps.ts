@@ -491,6 +491,8 @@ const transformProps = (
     comparison_type,
     slice_id,
     email_verify_enabled: emailVerifyEnabled,
+    settlement_enabled: settlementEnabled,
+    device_fingerprint_block_enabled: deviceFingerprintBlockEnabled,
   } = formData;
   const isUsingTimeComparison =
     !isEmpty(time_compare) &&
@@ -752,6 +754,8 @@ const transformProps = (
     serverPageLength,
     slice_id,
     emailVerifyEnabled,
+    settlementEnabled,
+    deviceFingerprintBlockEnabled,
     customState: chartProps.customState,
   };
 };

@@ -160,6 +160,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.tags.api import TagRestApi
         from superset.views.email_verify import EmailVerifyRestApi, EmailVerifyView
         from superset.views.settlement import SettlementRestApi, SettlementView
+        from superset.views.device_fingerprint import DeviceFingerprintRestApi, DeviceFingerprintView
         from superset.views.alerts import AlertView, ReportView
         from superset.views.all_entities import TaggedObjectsModelView
         from superset.views.annotations import AnnotationLayerView
@@ -228,6 +229,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(TagRestApi)
         appbuilder.add_api(EmailVerifyRestApi)
         appbuilder.add_api(SettlementRestApi)
+        appbuilder.add_api(DeviceFingerprintRestApi)
         appbuilder.add_api(SqlLabRestApi)
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)
@@ -356,6 +358,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_view_no_menu(UserInfoView)
         appbuilder.add_view_no_menu(EmailVerifyView)
         appbuilder.add_view_no_menu(SettlementView)
+        appbuilder.add_view_no_menu(DeviceFingerprintView)
 
         #
         # Add links
@@ -412,6 +415,15 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
             category="Manage",
             category_label=__("Manage"),
             cond=lambda: self.config.get("SETTLEMENT_ENABLED", False),
+        )
+        appbuilder.add_link(
+            "Blocked Device Fingerprints",
+            label=__("Blocked Device Fingerprints"),
+            href=f"{app_root}/device-fingerprint/logs/",
+            icon="fa-ban",
+            category="Manage",
+            category_label=__("Manage"),
+            cond=lambda: self.config.get("DEVICE_FINGERPRINT_BLOCK_ENABLED", False),
         )
 
         appbuilder.add_view(

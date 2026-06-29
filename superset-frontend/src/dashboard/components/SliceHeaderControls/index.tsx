@@ -58,6 +58,7 @@ import { usePermissions } from 'src/hooks/usePermissions';
 import Button from 'src/components/Button';
 import SendVerifyModal from 'src/components/EmailVerify/SendVerifyModal';
 import SettlementModal from 'src/components/Settlement/SettlementModal';
+import DeviceFingerprintBlockModal from 'src/components/DeviceFingerprint/DeviceFingerprintBlockModal';
 import { useCrossFiltersScopingModal } from '../nativeFilters/FilterBar/CrossFilters/ScopingModal/useCrossFiltersScopingModal';
 import { ViewResultsModalTrigger } from './ViewResultsModalTrigger';
 
@@ -165,6 +166,7 @@ const SliceHeaderControls = (
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [sendVerifyModalOpen, setSendVerifyModalOpen] = useState(false);
   const [settlementModalOpen, setSettlementModalOpen] = useState(false);
+  const [deviceFingerprintModalOpen, setDeviceFingerprintModalOpen] = useState(false);
   const [pendingSettlementAction, setPendingSettlementAction] = useState<'hold'>('hold');
   const [openScopingModal, scopingModal] = useCrossFiltersScopingModal(
     props.slice.slice_id,
@@ -184,6 +186,9 @@ const SliceHeaderControls = (
 
   const settlementEnabled = props.formData?.settlement_enabled === true;
   const settlementConfig = props.formData?.settlement_config;
+
+  const deviceFingerprintBlockEnabled = props.formData?.device_fingerprint_block_enabled === true;
+  const deviceFingerprintConfig = props.formData?.device_fingerprint_config;
 
   const selectedRows = useSelector<RootState, any[]>(
     state =>
@@ -308,6 +313,10 @@ const SliceHeaderControls = (
       case MenuKeys.HoldFunds: {
         setPendingSettlementAction('hold');
         setSettlementModalOpen(true);
+        break;
+      }
+      case MenuKeys.BlockDeviceFingerprint: {
+        setDeviceFingerprintModalOpen(true);
         break;
       }
       default:
@@ -502,6 +511,24 @@ const SliceHeaderControls = (
         </>
       )}
 
+      {deviceFingerprintBlockEnabled && hasRowsSelected && (
+        <>
+          <Menu.Item
+            key={MenuKeys.BlockDeviceFingerprint}
+            data-test="block-device-fingerprint-menu-item"
+          >
+            <Icons.WarningOutlined
+              css={css`
+                margin-right: 8px;
+                color: #ff4d4f;
+              `}
+            />
+            {t('Block Device Fingerprint')}
+          </Menu.Item>
+          <Menu.Divider />
+        </>
+      )}
+
       {supersetCanShare && (
         <ShareMenuItems
           dashboardId={dashboardId}
@@ -625,6 +652,17 @@ const SliceHeaderControls = (
           selectedRows={selectedRows}
           settlementConfig={settlementConfig || { enabled: true }}
           onClose={() => setSettlementModalOpen(false)}
+        />
+      )}
+
+      {deviceFingerprintBlockEnabled && (
+        <DeviceFingerprintBlockModal
+          visible={deviceFingerprintModalOpen}
+          dashboardId={dashboardId}
+          chartId={slice.slice_id}
+          selectedRows={selectedRows}
+          deviceFingerprintConfig={deviceFingerprintConfig || { enabled: true }}
+          onClose={() => setDeviceFingerprintModalOpen(false)}
         />
       )}
 

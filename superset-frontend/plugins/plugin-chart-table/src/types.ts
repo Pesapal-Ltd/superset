@@ -98,6 +98,8 @@ export type TableChartFormData = QueryFormData & {
   column_config?: Record<string, TableColumnConfig>;
   allow_rearrange_columns?: boolean;
   email_verify_enabled?: boolean;
+  settlement_enabled?: boolean;
+  device_fingerprint_block_enabled?: boolean;
   dashboardId?: number;
 };
 
@@ -181,6 +183,8 @@ export interface TableChartTransformedProps<D extends DataRecord = DataRecord> {
   serverPageLength: number;
   slice_id: number;
   emailVerifyEnabled?: boolean;
+  settlementEnabled?: boolean;
+  deviceFingerprintBlockEnabled?: boolean;
   customState?: any;
 }
 

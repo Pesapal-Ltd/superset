@@ -125,6 +125,7 @@ export type DashboardInfo = {
     conf: JsonObject & {
       EMAIL_VERIFY_ENABLED?: boolean;
       SETTLEMENT_ENABLED?: boolean;
+      DEVICE_FINGERPRINT_BLOCK_ENABLED?: boolean;
     };
   };
   userId: string;
@@ -305,4 +306,5 @@ export enum MenuKeys {
   SendVerificationEmail = 'send_verification_email',
   HoldFunds = 'hold_funds',
   ReleaseFunds = 'release_funds',
+  BlockDeviceFingerprint = 'block_device_fingerprint',
 }
