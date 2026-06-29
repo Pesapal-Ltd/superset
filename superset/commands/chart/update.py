@@ -74,16 +74,17 @@ class UpdateChartCommand(UpdateMixin, BaseCommand):
             try:
                 new_params = std_json.loads(self._properties["params"] or "{}")
                 old_params = std_json.loads(self._model.params or "{}")
-                
+
                 modified = False
-                if "email_verify_config" in old_params and "email_verify_config" not in new_params:
-                    new_params["email_verify_config"] = old_params["email_verify_config"]
-                    modified = True
-                
-                if "settlement_config" in old_params and "settlement_config" not in new_params:
-                    new_params["settlement_config"] = old_params["settlement_config"]
-                    modified = True
-                    
+                for config_key in (
+                    "email_verify_config",
+                    "settlement_config",
+                    "device_fingerprint_config",
+                ):
+                    if config_key in old_params and config_key not in new_params:
+                        new_params[config_key] = old_params[config_key]
+                        modified = True
+
                 if modified:
                     self._properties["params"] = std_json.dumps(new_params)
             except Exception:

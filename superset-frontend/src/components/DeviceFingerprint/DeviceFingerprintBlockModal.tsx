@@ -55,7 +55,7 @@ export default function DeviceFingerprintBlockModal({
     error?: string;
   } | null>(null);
 
-  const fingerprintColumn = deviceFingerprintConfig.fingerprint_column || 'DeviceFingerprint';
+  const fingerprintColumn = deviceFingerprintConfig.fingerprint_column || 'DeviceFingerPrint';
 
   // Extract unique, non-empty fingerprints from selected rows
   const fingerprints = Array.from(
@@ -143,7 +143,7 @@ export default function DeviceFingerprintBlockModal({
           <Alert
             message={t('Warning')}
             description={t(
-              'Blocking a device fingerprint will restrict authentication/transactions associated with that device across the system.',
+              'Blocking a device fingerprint will restrict transactions associated with that device accross the system.',
             )}
             type="warning"
             showIcon
@@ -174,7 +174,7 @@ export default function DeviceFingerprintBlockModal({
             <Title level={5}>{t('Reason for Blocking')}</Title>
             <TextArea
               rows={4}
-              placeholder={t('Enter the reason for blocking this device fingerprint (free text)...')}
+              placeholder={t('Enter the reason for blocking this device fingerprint...')}
               value={blockReason}
               onChange={e => setBlockReason(e.target.value)}
             />
@@ -185,7 +185,7 @@ export default function DeviceFingerprintBlockModal({
       {step === 'submitting' && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin size="large" />
-          <Paragraph style={{ marginTop: 16 }}>{t('Persisting blocked fingerprints to database...')}</Paragraph>
+          <Paragraph style={{ marginTop: 16 }}>{t('Saving the Device Fingerprint...')}</Paragraph>
         </div>
       )}
 
@@ -211,6 +211,7 @@ export default function DeviceFingerprintBlockModal({
               </Space>
             </>
           )}
+
         </div>
       )}
     </Modal>

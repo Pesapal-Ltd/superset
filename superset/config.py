@@ -1703,6 +1703,7 @@ SETTLEMENT_DB_CONNECTION_ID: int = int(os.environ.get("SETTLEMENT_DB_CONNECTION_
 # Uses SQLAlchemy text() with a :confirmation_code bind parameter.
 SETTLEMENT_LOOKUP_QUERY: str = os.environ.get("SETTLEMENT_LOOKUP_QUERY")
 
+DEVICE_FINGERPRINT_BLOCK_ENABLED=True
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
 # permission management

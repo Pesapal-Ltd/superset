@@ -137,6 +137,12 @@ export default function DeviceFingerprintConfigPanel({
         form={form}
         layout="vertical"
         initialValues={DEFAULT_CONFIG}
+        preserve={false}
+        onValuesChange={changedValues => {
+          if (changedValues.enabled !== undefined) {
+            setEnabled(changedValues.enabled);
+          }
+        }}
       >
         <Form.Item
           name="enabled"
@@ -145,7 +151,6 @@ export default function DeviceFingerprintConfigPanel({
         >
           <Switch
             disabled={loading || saving}
-            onChange={v => setEnabled(v)}
             checkedChildren={t('Enabled')}
             unCheckedChildren={t('Disabled')}
           />

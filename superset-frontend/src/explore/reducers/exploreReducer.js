@@ -338,6 +338,24 @@ export default function exploreReducer(state = {}, action) {
           };
     },
     [actions.SLICE_UPDATED]() {
+      let extraFormData = {};
+      try {
+        if (action.slice.params) {
+          const params = JSON.parse(action.slice.params);
+          if (params.device_fingerprint_config) {
+            extraFormData.device_fingerprint_config = params.device_fingerprint_config;
+          }
+          if (params.email_verify_config) {
+            extraFormData.email_verify_config = params.email_verify_config;
+          }
+          if (params.settlement_config) {
+            extraFormData.settlement_config = params.settlement_config;
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+
       return {
         ...state,
         slice: {
@@ -353,6 +371,10 @@ export default function exploreReducer(state = {}, action) {
           owners: action.slice.owners
             ? action.slice.owners.map(owner => owner.label)
             : null,
+        },
+        form_data: {
+          ...state.form_data,
+          ...extraFormData,
         },
       };
     },

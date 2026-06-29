@@ -431,6 +431,19 @@ function PropertiesModal({
             <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
             <EmailVerifyConfigPanel
               chartId={slice.slice_id}
+              onSaved={config => {
+                try {
+                  const params = JSON.parse((slice as any).params || '{}');
+                  params.email_verify_config = config;
+                  const updatedSlice = {
+                    ...slice,
+                    params: JSON.stringify(params),
+                  };
+                  onSave(updatedSlice as any);
+                } catch (e) {
+                  // ignore
+                }
+              }}
             />
           </Col>
         </Row>
@@ -443,6 +456,19 @@ function PropertiesModal({
             <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
             <SettlementConfigPanel
               chartId={slice.slice_id}
+              onSaved={config => {
+                try {
+                  const params = JSON.parse((slice as any).params || '{}');
+                  params.settlement_config = config;
+                  const updatedSlice = {
+                    ...slice,
+                    params: JSON.stringify(params),
+                  };
+                  onSave(updatedSlice as any);
+                } catch (e) {
+                  // ignore
+                }
+              }}
             />
           </Col>
         </Row>
@@ -455,6 +481,19 @@ function PropertiesModal({
             <hr style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
             <DeviceFingerprintConfigPanel
               chartId={slice.slice_id}
+              onSaved={config => {
+                try {
+                  const params = JSON.parse((slice as any).params || '{}');
+                  params.device_fingerprint_config = config;
+                  const updatedSlice = {
+                    ...slice,
+                    params: JSON.stringify(params),
+                  };
+                  onSave(updatedSlice as any);
+                } catch (e) {
+                  // ignore
+                }
+              }}
             />
           </Col>
         </Row>
