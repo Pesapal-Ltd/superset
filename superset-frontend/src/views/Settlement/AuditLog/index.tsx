@@ -51,6 +51,7 @@ interface SettlementLogEntry {
   chart_id: number | null;
   action: 'hold' | 'release';
   confirmation_code: string;
+  merchant_recovery_guid?: string | null;
   merchant_id: string | null;
   currency: string | null;
   country: string | null;
@@ -58,6 +59,7 @@ interface SettlementLogEntry {
   reason: string;
   task_id: string | null;
   status: 'pending' | 'success' | 'failed';
+  error_type?: string | null;
   error_message: string | null;
   initiated_by_fk: number | null;
   initiated_by: string | null;
@@ -89,6 +91,11 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
           <Text copyable>{record.confirmation_code}</Text>
         </Descriptions.Item>
         <Descriptions.Item label={t('Merchant ID')}>{record.merchant_id ?? '—'}</Descriptions.Item>
+        {record.merchant_recovery_guid && (
+          <Descriptions.Item label={t('Recovery GUID')} span={2}>
+            <Text copyable code>{record.merchant_recovery_guid}</Text>
+          </Descriptions.Item>
+        )}
         <Descriptions.Item label={t('Amount')}>
           {record.amount ? `${record.currency ?? ''} ${record.amount}` : '—'}
         </Descriptions.Item>
@@ -134,7 +141,8 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
             </pre>
           </Descriptions.Item>
         )}
-          <Descriptions.Item label={t('Error')} span={2}>
+        {(record.error_message || record.error_type) && (
+          <Descriptions.Item label={t('Error Details')} span={2}>
             <div style={{
               backgroundColor: '#fff1f0',
               border: '1px solid #ffa39e',
@@ -148,9 +156,17 @@ function ExpandedRow({ record }: { record: SettlementLogEntry }) {
               wordBreak: 'break-word',
               fontFamily: 'monospace',
             }}>
-              {record.error_message}
+              {record.error_type && (
+                <div style={{ fontWeight: 'bold', marginBottom: record.error_message ? '4px' : '0' }}>
+                  {t('Error Type:')} {record.error_type}
+                </div>
+              )}
+              {record.error_message && (
+                <div>{record.error_message}</div>
+              )}
             </div>
           </Descriptions.Item>
+        )}
       </Descriptions>
     </div>
   );

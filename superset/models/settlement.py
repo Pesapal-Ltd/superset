@@ -49,6 +49,8 @@ class SettlementLog(Model):
     reason = Column(String(500), nullable=False)
     task_id = Column(String(255), nullable=True)
     status = Column(String(20), nullable=False, default="pending")
+    merchant_recovery_guid = Column(String(255), nullable=True)
+    error_type = Column(String(255), nullable=True)
     error_message = Column(Text, nullable=True)
     response_snapshot = Column(JSON, nullable=True)
     request_payload = Column(JSON, nullable=True)
@@ -58,3 +60,4 @@ class SettlementLog(Model):
 
     def __repr__(self) -> str:
         return f"SettlementLog<{self.id}:{self.action}:{self.confirmation_code}:{self.status}>"
+

@@ -89,19 +89,127 @@ def _db_lookup(connection_id: int, confirmation_code: str) -> dict[str, Any]:
     return dict(row)
 
 
+def parse_settlement_response(
+    raw_response: Any,
+    status_code: int = 200,
+) -> dict[str, Any]:
+    """
+    Parse and destructure Settlement API response for success, duplicate error, or system exception.
+
+    """
+    parsed: dict[str, Any] = {
+        "is_success": False,
+        "merchant_recovery_guid": None,
+        "error_type": None,
+        "error_message": None,
+        "merchant_id": None,
+        "currency": None,
+        "country": None,
+        "amount": None,
+    }
+
+    if not isinstance(raw_response, dict):
+        parsed["error_message"] = str(raw_response) if raw_response is not None else "Empty response body"
+        if status_code >= 400:
+            parsed["error_type"] = f"HTTP_{status_code}"
+        return parsed
+
+    def get_key(d: dict[str, Any], *keys: str) -> Any:
+        for k in keys:
+            if k in d:
+                return d[k]
+            for dk in d:
+                if dk.lower() == k.lower():
+                    return d[dk]
+        return None
+
+    # Check for result object (Success case)
+    result = get_key(raw_response, "result", "Result")
+    if isinstance(result, dict):
+        guid = get_key(result, "MerchantRecoveryGuid", "merchantRecoveryGuid", "guid")
+        res_status = get_key(result, "Status", "status")
+        if guid or res_status is not None:
+            parsed["is_success"] = status_code < 400
+            parsed["merchant_recovery_guid"] = str(guid) if guid else None
+            parsed["merchant_id"] = (
+                str(get_key(result, "MerchantId", "merchantId"))
+                if get_key(result, "MerchantId", "merchantId") is not None
+                else None
+            )
+            parsed["currency"] = get_key(result, "Currency", "currency")
+            parsed["country"] = get_key(result, "Country", "country")
+            amt = get_key(result, "Amount", "amount")
+            if amt is not None:
+                try:
+                    parsed["amount"] = float(amt)
+                except (ValueError, TypeError):
+                    pass
+            return parsed
+
+    # Check top-level MerchantRecoveryGuid if present outside "result"
+    guid = get_key(raw_response, "MerchantRecoveryGuid", "merchantRecoveryGuid")
+    if guid and status_code < 400:
+        parsed["is_success"] = True
+        parsed["merchant_recovery_guid"] = str(guid)
+        parsed["merchant_id"] = (
+            str(get_key(raw_response, "MerchantId", "merchantId"))
+            if get_key(raw_response, "MerchantId", "merchantId") is not None
+            else None
+        )
+        parsed["currency"] = get_key(raw_response, "Currency", "currency")
+        parsed["country"] = get_key(raw_response, "Country", "country")
+        amt = get_key(raw_response, "Amount", "amount")
+        if amt is not None:
+            try:
+                parsed["amount"] = float(amt)
+            except (ValueError, TypeError):
+                pass
+        return parsed
+
+    # Check error cases:
+    msg = get_key(raw_response, "Message", "message")
+    exc_msg = get_key(raw_response, "ExceptionMessage", "exceptionMessage")
+    exc_type = get_key(raw_response, "ExceptionType", "exceptionType")
+    err_code = get_key(raw_response, "Error", "error", "ErrorCode", "errorCode")
+
+    parsed["is_success"] = False
+
+    if exc_type:
+        parsed["error_type"] = str(exc_type)
+    elif err_code:
+        parsed["error_type"] = str(err_code)
+    elif status_code >= 400:
+        parsed["error_type"] = f"HTTP_{status_code}"
+
+    error_parts = []
+    if msg and str(msg).strip():
+        error_parts.append(str(msg).strip())
+    if exc_msg and str(exc_msg).strip() and str(exc_msg).strip() not in error_parts:
+        error_parts.append(f"Exception: {str(exc_msg).strip()}")
+
+    if error_parts:
+        parsed["error_message"] = " ".join(error_parts)
+    elif exc_type or err_code:
+        parsed["error_message"] = f"Error: {exc_type or err_code}"
+    else:
+        parsed["error_message"] = f"API request failed with status code {status_code}"
+
+    return parsed
+
+
 def _call_settlement_api(
     base_url: str,
     token: str,
     action: str,
     payload: dict[str, Any],
-) -> dict[str, Any]:
+) -> tuple[int, Any]:
     """
     Call the Settlement Credit Recovery API with a pre-constructed payload.
+    Returns tuple of (status_code, response_data).
     """
     endpoint = (
-        "Create" if action == "hold" else "Update"
+        "CreateRecovery" if action == "hold" else "Update"
     )
-
     resp = requests.post(
         f"{base_url}/Api/SettlementCreditRecovery/{endpoint}",
         json=payload,
@@ -109,15 +217,19 @@ def _call_settlement_api(
         timeout=30,
     )
     
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"raw_text": resp.text}
+
     if not resp.ok:
         logger.error(
             "Settlement API Error (status=%s): %s",
             resp.status_code,
             resp.text,
         )
-        resp.raise_for_status()
 
-    return resp.json()
+    return resp.status_code, data
 
 
 @celery_app.task(
@@ -178,6 +290,7 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
         logger.error(err)
         if log:
             log.status = "failed"
+            log.error_type = "ConfigurationError"
             log.error_message = err
             log.completed_at = datetime.utcnow()
             db.session.commit()
@@ -217,9 +330,12 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
 
         # Construct payload
         withdrawal_type_id = current_app.config.get(
-            "SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID", 1
+            "SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID", ""
         )
-        frequency = current_app.config.get("SETTLEMENT_FREQUENCY", "One Off")
+        frequency = current_app.config.get("SETTLEMENT_FREQUENCY", "")
+
+        if not all([withdrawal_type_id, frequency]):
+            raise ValueError("SETTLEMENT_FREQUENCY or SETTLEMENT_WITHDRAWAL_ADJUSTMENT_TYPE_ID is not configured.")
         status = 1 if action == "hold" else 0
 
         request_payload = {
@@ -240,23 +356,44 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
             db.session.commit()
 
         # Call settlement API
-        response = _call_settlement_api(
+        status_code, response_data = _call_settlement_api(
             base_url=base_url,
             token=token,
             action=action,
             payload=request_payload,
         )
 
-        # Mark success
+        parsed = parse_settlement_response(response_data, status_code)
+
         if log:
-            log.status = "success"
-            log.response_snapshot = response
+            log.response_snapshot = response_data
             log.completed_at = datetime.utcnow()
+
+            if parsed["is_success"]:
+                log.status = "success"
+                log.merchant_recovery_guid = parsed["merchant_recovery_guid"]
+                log.error_type = None
+                log.error_message = None
+                if parsed["merchant_id"]:
+                    log.merchant_id = parsed["merchant_id"]
+                if parsed["currency"]:
+                    log.currency = parsed["currency"]
+                if parsed["country"]:
+                    log.country = parsed["country"]
+                if parsed["amount"] is not None:
+                    log.amount = parsed["amount"]
+            else:
+                log.status = "failed"
+                log.merchant_recovery_guid = parsed["merchant_recovery_guid"]
+                log.error_type = parsed["error_type"]
+                log.error_message = parsed["error_message"]
+
             db.session.commit()
 
         return {
-            "success": True,
-            "response": response
+            "success": parsed["is_success"],
+            "response": response_data,
+            "error": parsed["error_message"] if not parsed["is_success"] else None,
         }
 
     except Exception as exc:  # pylint: disable=broad-except
@@ -270,9 +407,9 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
         # Save the error details to the log immediately so it's visible while retrying
         if log:
             error_msg = str(exc)
+            error_type = type(exc).__name__
             # Use request_payload if it was successfully constructed
             try:
-                # We can try to local-reference it, or use the locals() dict
                 if locals().get("request_payload"):
                     log.request_payload = locals()["request_payload"]
             except Exception: # pylint: disable=broad-except
@@ -281,20 +418,22 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
             # If it's a requests error, try to get the response body
             if hasattr(exc, "response") and exc.response is not None:
                 try:
-                    # Save the raw response text for debugging
                     error_msg = f"{error_msg} - Body: {exc.response.text}"
-
-                    # Try to save the JSON if available
                     log.response_snapshot = exc.response.json()
+                    parsed = parse_settlement_response(log.response_snapshot, getattr(exc.response, "status_code", 500))
+                    if parsed.get("error_type"):
+                        error_type = parsed["error_type"]
+                    if parsed.get("error_message"):
+                        error_msg = parsed["error_message"]
                 except Exception:  # pylint: disable=broad-except
                     pass
             
             log.status = "failed" if self.request.retries >= self.max_retries else "pending"
+            log.error_type = error_type
             log.error_message = error_msg
             log.completed_at = datetime.utcnow() if self.request.retries >= self.max_retries else None
             try:
                 db.session.commit()
-                # logger.info(f"Settlement log committed for code={confirmation_code} action={action}")
             except Exception as e:
                 logger.exception(
                     "Settlement task failed to commit log for code=%s action=%s: %s",
@@ -306,8 +445,7 @@ def execute_settlement_action(  # pylint: disable=too-many-locals
         try:
             self.retry(exc=exc)
         except self.MaxRetriesExceededError:
-            # Task is now officially finished as failed
             return {"success": False, "error": str(exc)}
         
-        # If retry was scheduled
         return {"success": False, "error": str(exc), "retrying": True}
+
