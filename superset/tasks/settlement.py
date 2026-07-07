@@ -208,7 +208,7 @@ def _call_settlement_api(
     Returns tuple of (status_code, response_data).
     """
     endpoint = (
-        "CreateRecovery" if action == "hold" else "Update"
+        "CreateRecovery" if action == "hold" else "#"
     )
     resp = requests.post(
         f"{base_url}/Api/SettlementCreditRecovery/{endpoint}",
