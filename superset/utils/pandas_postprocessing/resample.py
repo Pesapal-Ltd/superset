@@ -22,6 +22,12 @@ from flask_babel import gettext as _
 from superset.exceptions import InvalidPostProcessingError
 from superset.utils.pandas_postprocessing.utils import RESAMPLE_METHOD
 
+# Upper bound on the number of rows a resample may project. ``rule`` arrives
+# through the post-processing ``options`` dict, which is not schema-validated;
+# without a cap, upsampling a multi-day span to e.g. ``1ns`` projects ~1e14
+# rows from a single request.
+MAX_RESAMPLE_ROWS = 1_000_000
+
 
 def resample(
     df: pd.DataFrame,
@@ -46,6 +52,32 @@ def resample(
             _("Resample method should be in ") + ", ".join(RESAMPLE_METHOD) + "."
         )
 
+    if len(df):
+        try:
+            step = pd.Timedelta(pd.tseries.frequencies.to_offset(rule))
+        except ValueError:
+            # Non-fixed frequencies (month, quarter, year) have no fixed
+            # Timedelta; their projected row count is bounded by the span in
+            # days and needs no cap. Invalid rules fail in ``df.resample``.
+            step = None
+        if step is not None and step.value > 0:
+            span = df.index.max() - df.index.min()
+            # pandas snaps the first resample bin to the nearest frequency
+            # multiple at or before the observed span (and may extend the
+            # last bin similarly), so the actual bin count can exceed a
+            # naive span/step projection by one. Add a margin so the check
+            # cannot under-count due to that alignment.
+            projected_rows = span.value // step.value + 2
+            if projected_rows > MAX_RESAMPLE_ROWS:
+                raise InvalidPostProcessingError(
+                    _(
+                        "Resample rule would project %(rows)s rows, "
+                        "exceeding the limit of %(max)s rows",
+                        rows=projected_rows,
+                        max=MAX_RESAMPLE_ROWS,
+                    )
+                )
+
     if method == "asfreq" and fill_value is not None:
         _df = df.resample(rule).asfreq(fill_value=fill_value)
         _df = _df.fillna(fill_value)
@@ -54,5 +86,5 @@ def resample(
     else:
         _df = getattr(df.resample(rule), method)()
         if method in ("ffill", "bfill"):
-            _df = _df.fillna(method=method)
+            _df = getattr(_df, method)()
     return _df

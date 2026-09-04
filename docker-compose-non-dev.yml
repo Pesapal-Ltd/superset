@@ -33,16 +33,13 @@ x-common-build: &common-build
   context: .
   target: dev
   cache_from:
-    - apache/superset-cache:3.10-slim-trixie
+    - apache/superset-cache:3.11-slim-trixie
 
 services:
-
   redis:
     image: redis:7
     container_name: superset_cache
     restart: unless-stopped
-    ports:
-      - 6379:6379
     volumes:
       - redis:/data
 
@@ -52,7 +49,7 @@ services:
         required: true
       - path: docker/.env-local # optional override
         required: false
-    image: postgres:15
+    image: postgres:17
     container_name: superset_db
     restart: unless-stopped
     volumes:
