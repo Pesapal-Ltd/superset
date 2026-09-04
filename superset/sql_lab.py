@@ -18,6 +18,7 @@
 import dataclasses
 import logging
 import sys
+import traceback
 import uuid
 from contextlib import closing
 from datetime import datetime
@@ -27,11 +28,10 @@ from typing import Any, cast, Optional, TYPE_CHECKING, TypeVar, Union
 import backoff
 import msgpack
 from celery.exceptions import SoftTimeLimitExceeded
-from flask import current_app
+from flask import current_app as app, has_app_context
 from flask_babel import gettext as __
 
 from superset import (
-    app,
     db,
     is_feature_enabled,
     results_backend,
@@ -46,6 +46,7 @@ from superset.errors import ErrorLevel, SupersetError, SupersetErrorType
 from superset.exceptions import (
     OAuth2RedirectError,
     SupersetDisallowedSQLFunctionException,
+    SupersetDisallowedSQLTableException,
     SupersetDMLNotAllowedException,
     SupersetErrorException,
     SupersetErrorsException,
@@ -56,6 +57,7 @@ from superset.exceptions import (
 from superset.extensions import celery_app, event_logger
 from superset.models.sql_lab import Query
 from superset.result_set import SupersetResultSet
+from superset.sql.execution.executor import build_statement_blocks
 from superset.sql.parse import BaseSQLStatement, CTASMethod, SQLScript, Table
 from superset.sqllab.limiting_factor import LimitingFactor
 from superset.sqllab.utils import write_ipc_buffer
@@ -65,6 +67,7 @@ from superset.utils.core import (
     QuerySource,
     zlib_compress,
 )
+from superset.utils.database import warm_and_release_connection
 from superset.utils.dates import now_as_float
 from superset.utils.decorators import stats_timing
 from superset.utils.rls import apply_rls
@@ -72,13 +75,6 @@ from superset.utils.rls import apply_rls
 if TYPE_CHECKING:
     from superset.models.core import Database
 
-config = app.config
-stats_logger = config["STATS_LOGGER"]
-SQLLAB_TIMEOUT = config["SQLLAB_ASYNC_TIME_LIMIT_SEC"]
-SQLLAB_HARD_TIMEOUT = SQLLAB_TIMEOUT + 60
-SQL_MAX_ROW = config["SQL_MAX_ROW"]
-SQLLAB_CTAS_NO_LIMIT = config["SQLLAB_CTAS_NO_LIMIT"]
-log_query = config["QUERY_LOGGER"]
 logger = logging.getLogger(__name__)
 BYTES_IN_MB = 1024 * 1024
 
@@ -119,7 +115,9 @@ def handle_query_error(
     elif isinstance(ex, SupersetErrorsException):
         errors = ex.errors
     else:
-        errors = query.database.db_engine_spec.extract_errors(str(ex))
+        errors = query.database.db_engine_spec.extract_errors(
+            str(ex), database_name=query.database.unique_name
+        )
 
     errors_payload = [dataclasses.asdict(error) for error in errors]
     if errors:
@@ -127,23 +125,27 @@ def handle_query_error(
 
     db.session.commit()
     payload.update({"status": query.status, "error": msg, "errors": errors_payload})
-    if troubleshooting_link := config["TROUBLESHOOTING_LINK"]:
+    if app.config.get("SHOW_STACKTRACE"):
+        if stacktrace := traceback.format_exc():
+            payload["stacktrace"] = stacktrace
+    if troubleshooting_link := app.config["TROUBLESHOOTING_LINK"]:
         payload["link"] = troubleshooting_link
     return payload
 
 
 def get_query_backoff_handler(details: dict[Any, Any]) -> None:
+    stats_logger = app.config["STATS_LOGGER"]
     query_id = details["kwargs"]["query_id"]
-    logger.error(
-        "Query with id `%s` could not be retrieved", str(query_id), exc_info=True
-    )
     stats_logger.incr(f"error_attempting_orm_query_{details['tries'] - 1}")
-    logger.error(
-        "Query %s: Sleeping for a sec before retrying...", str(query_id), exc_info=True
+    logger.warning(
+        "Query with id `%s` could not be retrieved, sleeping for a sec before retrying",
+        str(query_id),
+        exc_info=True,
     )
 
 
 def get_query_giveup_handler(_: Any) -> None:
+    stats_logger = app.config["STATS_LOGGER"]
     stats_logger.incr("error_failed_at_getting_orm_query")
 
 
@@ -160,13 +162,26 @@ def get_query(query_id: int) -> Query:
     try:
         return db.session.query(Query).filter_by(id=query_id).one()
     except Exception as ex:
+        # roll back so a poisoned session (e.g. PendingRollbackError after a
+        # failed flush) doesn't fail every subsequent backoff retry identically.
+        # Swallow rollback failures so a session/connection too broken to roll
+        # back doesn't replace the original exception with one the backoff
+        # decorator won't retry on.
+        try:
+            db.session.rollback()
+        except Exception:  # pylint: disable=broad-except
+            logger.warning("Failed to roll back session in get_query", exc_info=True)
         raise SqlLabException("Failed at getting query") from ex
 
 
+# Default timeouts from config.py:
+# SQLLAB_TIMEOUT = 30 seconds
+# SQLLAB_ASYNC_TIME_LIMIT_SEC = 6 hours
+# SQLLAB_HARD_TIMEOUT = SQLLAB_ASYNC_TIME_LIMIT_SEC + 60
 @celery_app.task(
     name="sql_lab.get_sql_results",
-    time_limit=SQLLAB_HARD_TIMEOUT,
-    soft_time_limit=SQLLAB_TIMEOUT,
+    time_limit=21660,  # 6 hours + 60 seconds
+    soft_time_limit=21600,  # 6 hours
 )
 def get_sql_results(  # pylint: disable=too-many-arguments
     query_id: int,
@@ -179,7 +194,7 @@ def get_sql_results(  # pylint: disable=too-many-arguments
     log_params: Optional[dict[str, Any]] = None,
 ) -> Optional[dict[str, Any]]:
     """Executes the sql query returns the results."""
-    with current_app.test_request_context():
+    with app.test_request_context():
         with override_user(security_manager.find_user(username)):
             try:
                 return execute_sql_statements(
@@ -192,7 +207,8 @@ def get_sql_results(  # pylint: disable=too-many-arguments
                     log_params=log_params,
                 )
             except Exception as ex:  # pylint: disable=broad-except
-                logger.debug("Query %d: %s", query_id, ex)
+                logger.exception("Query %d: %s", query_id, ex)
+                stats_logger = app.config["STATS_LOGGER"]
                 stats_logger.incr("error_sqllab_unhandled")
                 query = get_query(query_id=query_id)
                 return handle_query_error(ex, query)
@@ -225,14 +241,17 @@ def apply_limit(query: Query, parsed_statement: BaseSQLStatement[Any]) -> None:
     """
     Apply limit to the SQL statement.
     """
+    sqllab_ctas_no_limit = app.config["SQLLAB_CTAS_NO_LIMIT"]
+    sql_max_row = app.config["SQL_MAX_ROW"]
+
     # Do not apply limit to the CTA queries when SQLLAB_CTAS_NO_LIMIT is set to true
     if parsed_statement.is_mutating() or (
-        query.select_as_cta_used and SQLLAB_CTAS_NO_LIMIT
+        query.select_as_cta_used and sqllab_ctas_no_limit
     ):
         return
 
-    if SQL_MAX_ROW and (not query.limit or query.limit > SQL_MAX_ROW):
-        query.limit = SQL_MAX_ROW
+    if sql_max_row and (not query.limit or query.limit > sql_max_row):
+        query.limit = sql_max_row
 
     if query.limit:
         parsed_statement.set_limit_value(
@@ -252,6 +271,7 @@ def execute_query(  # pylint: disable=too-many-statements, too-many-locals  # no
     db_engine_spec = database.db_engine_spec
 
     try:
+        log_query = app.config["QUERY_LOGGER"]
         if log_query:
             log_query(
                 query.database.sqlalchemy_uri,
@@ -262,11 +282,20 @@ def execute_query(  # pylint: disable=too-many-statements, too-many-locals  # no
                 log_params,
             )
         db.session.commit()
+        # Eagerly reload query attributes so no lazy-load triggers a new
+        # metadata DB connection during the (potentially long) cursor
+        # execution. With NullPool each lazy-load opens a fresh connection
+        # that stays idle for the query duration; if the query runs longer
+        # than the DB's idle_in_transaction_session_timeout the connection
+        # is killed, leaving the query stuck in "running" state forever.
+        db.session.refresh(query)
+        warm_and_release_connection(query, "database")
         with event_logger.log_context(
             action="execute_sql",
             database=database,
             object_ref=__name__,
         ):
+            stats_logger = app.config["STATS_LOGGER"]
             with stats_timing("sqllab.query.time_executing_query", stats_logger):
                 db_engine_spec.execute_with_cursor(cursor, query.executed_sql, query)
 
@@ -293,7 +322,7 @@ def execute_query(  # pylint: disable=too-many-statements, too-many-locals  # no
                 message=__(
                     "The query was killed after %(sqllab_timeout)s seconds. It might "
                     "be too complex, or the database might be under heavy load.",
-                    sqllab_timeout=SQLLAB_TIMEOUT,
+                    sqllab_timeout=app.config["SQLLAB_ASYNC_TIME_LIMIT_SEC"],
                 ),
                 error_type=SupersetErrorType.SQLLAB_TIMEOUT_ERROR,
                 level=ErrorLevel.ERROR,
@@ -338,9 +367,14 @@ def _serialize_and_expand_data(
     expanded_columns: list[Any]
 
     if use_msgpack:
-        with stats_timing(
-            "sqllab.query.results_backend_pa_serialization", stats_logger
-        ):
+        if has_app_context():
+            stats_logger = app.config["STATS_LOGGER"]
+            with stats_timing(
+                "sqllab.query.results_backend_pa_serialization", stats_logger
+            ):
+                data = write_ipc_buffer(result_set.pa_table).to_pybytes()
+        else:
+            # No app context, skip stats timing
             data = write_ipc_buffer(result_set.pa_table).to_pybytes()
 
         # expand when loading data from results backend
@@ -373,6 +407,7 @@ def execute_sql_statements(  # noqa: C901
     """Executes the sql query returns the results."""
     if store_results and start_time:
         # only asynchronous queries
+        stats_logger = app.config["STATS_LOGGER"]
         stats_logger.timing("sqllab.query.time_pending", now_as_float() - start_time)
 
     query = get_query(query_id=query_id)
@@ -391,7 +426,7 @@ def execute_sql_statements(  # noqa: C901
 
     parsed_script = SQLScript(rendered_query, engine=db_engine_spec.engine)
 
-    disallowed_functions = current_app.config["DISALLOWED_SQL_FUNCTIONS"].get(
+    disallowed_functions = app.config["DISALLOWED_SQL_FUNCTIONS"].get(
         db_engine_spec.engine,
         set(),
     )
@@ -400,13 +435,38 @@ def execute_sql_statements(  # noqa: C901
     ):
         raise SupersetDisallowedSQLFunctionException(disallowed_functions)
 
+    disallowed_tables = app.config["DISALLOWED_SQL_TABLES"].get(
+        db_engine_spec.engine,
+        set(),
+    )
+    rls_enabled = is_feature_enabled("RLS_IN_SQLLAB")
+
+    # Resolve the effective per-query schema once and share it between the
+    # denylist check and RLS injection, but only when a control below needs it.
+    # Going through the query-aware ``get_default_schema_for_query`` (rather than
+    # the static ``get_default_schema``) resolves an unqualified reference to the
+    # schema the engine actually uses at runtime -- engines without dynamic-schema
+    # support ignore the request's selected schema -- so both controls match the
+    # execution path instead of a schema that may never apply.
+    effective_schema = ""
+    if disallowed_tables or rls_enabled:
+        effective_schema = database.get_default_schema_for_query(query)
+
+    if disallowed_tables:
+        # Report only the denylisted tables actually referenced in the query,
+        # honoring schema-qualified entries (e.g. ``information_schema.tables``).
+        found_tables = parsed_script.get_disallowed_tables(
+            disallowed_tables, effective_schema
+        )
+        if found_tables:
+            raise SupersetDisallowedSQLTableException(found_tables)
+
     if parsed_script.has_mutation() and not database.allow_dml:
         raise SupersetDMLNotAllowedException()
 
-    if is_feature_enabled("RLS_IN_SQLLAB"):
-        default_schema = query.database.get_default_schema_for_query(query)
+    if rls_enabled:
         for statement in parsed_script.statements:
-            apply_rls(query.database, query.catalog, default_schema, statement)
+            apply_rls(query.database, query.catalog, effective_schema, statement)
 
     if query.select_as_cta:
         # CTAS is valid when the last statement is a SELECT, while CVAS is valid when
@@ -431,16 +491,13 @@ def execute_sql_statements(  # noqa: C901
     for statement in parsed_script.statements:
         apply_limit(query, statement)
 
-    # some databases (like BigQuery and Kusto) do not persist state across mmultiple
-    # statements if they're run separately (especially when using `NullPool`), so we run
-    # the query as a single block.
-    if db_engine_spec.run_multiple_statements_as_one:
-        blocks = [parsed_script.format(comments=db_engine_spec.allows_sql_comments)]
-    else:
-        blocks = [
-            statement.format(comments=db_engine_spec.allows_sql_comments)
-            for statement in parsed_script.statements
-        ]
+    # Build the execution blocks, applying `SQL_QUERY_MUTATOR` per
+    # `MUTATE_AFTER_SPLIT` (shared with the async path in `celery_task` so the
+    # `run_multiple_statements_as_one` × `MUTATE_AFTER_SPLIT` matrix behaves
+    # identically in both).
+    parsed_script, blocks = build_statement_blocks(
+        parsed_script, db_engine_spec, database
+    )
 
     with database.get_raw_connection(
         catalog=query.catalog,
@@ -474,8 +531,15 @@ def execute_sql_statements(  # noqa: C901
             query.set_extra_json_key("progress", msg)
             db.session.commit()
 
-            # Hook to allow environment-specific mutation (usually comments) to the SQL
-            query.executed_sql = database.mutate_sql_based_on_config(block)
+            # Hook to allow environment-specific mutation (usually comments) to the SQL.
+            # `is_split` reflects whether this block is an individual statement: when
+            # the engine runs everything as one block the SQL is not split, otherwise
+            # each block is a single split-out statement. This lets `MUTATE_AFTER_SPLIT`
+            # decide correctly whether the mutator fires here.
+            query.executed_sql = database.mutate_sql_based_on_config(
+                block,
+                is_split=not db_engine_spec.run_multiple_statements_as_one,
+            )
 
             try:
                 result_set = execute_query(query, cursor, log_params)
@@ -538,6 +602,7 @@ def execute_sql_statements(  # noqa: C901
         logger.info(
             "Query %s: Storing results in results backend, key: %s", str(query_id), key
         )
+        stats_logger = app.config["STATS_LOGGER"]
         with stats_timing("sqllab.query.results_backend_write", stats_logger):
             with stats_timing(
                 "sqllab.query.results_backend_write_serialization", stats_logger
@@ -547,7 +612,7 @@ def execute_sql_statements(  # noqa: C901
                 )
 
                 # Check the size of the serialized payload
-                if sql_lab_payload_max_mb := config.get("SQLLAB_PAYLOAD_MAX_MB"):
+                if sql_lab_payload_max_mb := app.config.get("SQLLAB_PAYLOAD_MAX_MB"):
                     serialized_payload_size = sys.getsizeof(serialized_payload)
                     max_bytes = sql_lab_payload_max_mb * BYTES_IN_MB
 
@@ -563,17 +628,57 @@ def execute_sql_statements(  # noqa: C901
 
             cache_timeout = database.cache_timeout
             if cache_timeout is None:
-                cache_timeout = config["CACHE_DEFAULT_TIMEOUT"]
+                cache_timeout = app.config["CACHE_DEFAULT_TIMEOUT"]
 
             compressed = zlib_compress(serialized_payload)
             logger.debug(
                 "*** serialized payload size: %i", getsizeof(serialized_payload)
             )
             logger.debug("*** compressed payload size: %i", getsizeof(compressed))
-            results_backend.set(key, compressed, cache_timeout)
-        query.results_key = key
 
-    query.status = QueryStatus.SUCCESS
+            # Store results in backend and check if write succeeded
+            write_success = results_backend.set(key, compressed, cache_timeout)
+            if not write_success:
+                # Backend write failed - log error and don't set results_key
+                logger.error(
+                    "Query %s: Failed to store results in backend, key: %s",
+                    str(query_id),
+                    key,
+                )
+                stats_logger.incr("sqllab.results_backend.write_failure")
+                # Don't set results_key to prevent 410 errors when fetching
+                query.results_key = None
+
+                # For async queries (not returning results inline), mark as FAILED
+                # because results are inaccessible to the user
+                if not return_results:
+                    query.status = QueryStatus.FAILED
+                    query.error_message = (
+                        "Failed to store query results in the results backend. "
+                        "Please try again or contact your administrator."
+                    )
+                    db.session.commit()
+                    raise SupersetErrorException(
+                        SupersetError(
+                            message=__(
+                                "Failed to store query results. Please try again."
+                            ),
+                            error_type=SupersetErrorType.RESULTS_BACKEND_ERROR,
+                            level=ErrorLevel.ERROR,
+                        )
+                    )
+            else:
+                # Write succeeded - set results_key in database
+                query.results_key = key
+                logger.info(
+                    "Query %s: Successfully stored results in backend, key: %s",
+                    str(query_id),
+                    key,
+                )
+
+    # Only set SUCCESS if we didn't already set FAILED above
+    if query.status != QueryStatus.FAILED:
+        query.status = QueryStatus.SUCCESS
     db.session.commit()
 
     if return_results:
@@ -596,7 +701,7 @@ def execute_sql_statements(  # noqa: C901
                 }
             )
         # Check the size of the serialized payload (opt-in logic for return_results)
-        if sql_lab_payload_max_mb := config.get("SQLLAB_PAYLOAD_MAX_MB"):
+        if sql_lab_payload_max_mb := app.config.get("SQLLAB_PAYLOAD_MAX_MB"):
             serialized_payload = _serialize_payload(
                 payload, cast(bool, results_backend_use_msgpack)
             )
@@ -621,7 +726,7 @@ def cancel_query(query: Query) -> bool:
     """
     Cancel a running query.
 
-    Note some engines implicitly handle the cancelation of a query and thus no explicit
+    Note some engines implicitly handle the cancellation of a query and thus no explicit
     action is required.
 
     :param query: Query to cancel

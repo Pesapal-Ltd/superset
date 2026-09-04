@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { t } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 import { useToasts } from 'src/components/MessageToasts/withToasts';
-import FormModal from 'src/components/Modal/FormModal';
-import { FormItem } from 'src/components/Form';
-import { Input } from 'src/components/Input';
-import Select from 'src/components/Select/Select';
-import { GroupObject, Role } from 'src/pages/GroupsList';
+import { ModalTitleWithIcon } from 'src/components/ModalTitleWithIcon';
 import { Actions } from 'src/constants';
-import AsyncSelect from 'src/components/Select/AsyncSelect';
-import { BaseGroupListModalProps, FormValues } from './types';
+import { GroupObject } from 'src/pages/GroupsList';
+import {
+  FormItem,
+  FormModal,
+  Input,
+  Select,
+  AsyncSelect,
+} from '@superset-ui/core/components';
+import { getUserDisplayLabel } from 'src/features/users/utils';
+import { FormValues, GroupModalProps } from './types';
 import { createGroup, fetchUserOptions, updateGroup } from './utils';
-
-export interface GroupModalProps extends BaseGroupListModalProps {
-  roles: Role[];
-  isEditMode?: boolean;
-  group?: GroupObject;
-}
 
 function GroupListModal({
   show,
@@ -97,7 +95,7 @@ function GroupListModal({
     users:
       group?.users?.map(user => ({
         value: user.id,
-        label: user.username,
+        label: getUserDisplayLabel(user),
       })) || [],
   };
 
@@ -105,7 +103,13 @@ function GroupListModal({
     <FormModal
       show={show}
       onHide={onHide}
-      title={isEditMode ? t('Edit Group') : t('Add Group')}
+      name={isEditMode ? 'Edit Group' : 'Add Group'}
+      title={
+        <ModalTitleWithIcon
+          isEditMode={isEditMode}
+          title={isEditMode ? t('Edit Group') : t('Add Group')}
+        />
+      }
       onSave={onSave}
       formSubmitHandler={handleFormSubmit}
       requiredFields={requiredFields}
@@ -136,7 +140,7 @@ function GroupListModal({
             value: role.id,
             label: role.name,
           }))}
-          getPopupContainer={trigger => trigger.closest('.antd5-modal-content')}
+          getPopupContainer={trigger => trigger.closest('.ant-modal-container')}
         />
       </FormItem>
       <FormItem name="users" label={t('Users')}>

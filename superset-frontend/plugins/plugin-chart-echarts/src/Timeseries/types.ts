@@ -25,12 +25,14 @@ import {
   QueryFormMetric,
   TimeFormatter,
   TimeGranularity,
+  TooltipTruncationMode,
 } from '@superset-ui/core';
 import {
   BaseChartProps,
   BaseTransformedProps,
   ContextMenuTransformedProps,
   CrossFilterTransformedProps,
+  LabelPositionEnum,
   LegendFormData,
   StackType,
   TitleFormData,
@@ -51,6 +53,14 @@ export enum EchartsTimeseriesSeriesType {
   End = 'end',
 }
 
+export enum BarValueLabelPosition {
+  Auto = 'auto',
+  InsideEnd = 'insideEnd',
+  OutsideEnd = 'outsideEnd',
+  InsideCenter = 'insideCenter',
+  InsideBase = 'insideBase',
+}
+
 export type EchartsTimeseriesFormData = QueryFormData & {
   annotationLayers: AnnotationLayer[];
   area: boolean;
@@ -66,25 +76,33 @@ export type EchartsTimeseriesFormData = QueryFormData & {
   logAxis: boolean;
   markerEnabled: boolean;
   markerSize: number;
+  maxMarkerSize?: number;
+  minMarkerSize?: number;
   metrics: QueryFormMetric[];
   minorSplitLine: boolean;
   minorTicks: boolean;
+  gridlines: boolean;
+  axisTicks: boolean;
   opacity: number;
   orderDesc: boolean;
   rowLimit: number;
   seriesType: EchartsTimeseriesSeriesType;
+  size?: QueryFormMetric;
   stack: StackType;
   stackDimension: string;
   timeCompare?: string[];
   tooltipTimeFormat?: string;
   showTooltipTotal?: boolean;
   showTooltipPercentage?: boolean;
+  tooltipTruncation?: TooltipTruncationMode;
   truncateXAxis: boolean;
   truncateYAxis: boolean;
   yAxisFormat?: string;
   xAxisForceCategorical?: boolean;
   xAxisTimeFormat?: string;
+  xAxisNumberFormat?: string;
   timeGrainSqla?: TimeGranularity;
+  forceMaxInterval?: boolean;
   xAxisBounds: [number | undefined | null, number | undefined | null];
   yAxisBounds: [number | undefined | null, number | undefined | null];
   zoomable: boolean;
@@ -92,15 +110,26 @@ export type EchartsTimeseriesFormData = QueryFormData & {
   xAxisLabelRotation: number;
   xAxisLabelInterval: number | string;
   showValue: boolean;
+  valueLabelPosition: BarValueLabelPosition;
+  /**
+   * Where the data label sits relative to its data point, applied when
+   * `showValue` is on.
+   *
+   * `'auto'` keeps the orientation-aware default the chart used before this
+   * control existed: `Right` for a horizontal chart, `Top` otherwise. It is
+   * also the value every chart saved before then resolves to, so the default
+   * must stay `'auto'` for those to keep rendering as they did.
+   */
+  labelPosition?: LabelPositionEnum | 'auto';
   onlyTotal: boolean;
   showExtraControls: boolean;
   percentageThreshold: number;
+  colorByPrimaryAxis?: boolean;
   orientation?: OrientationType;
 } & LegendFormData &
   TitleFormData;
 
-export interface EchartsTimeseriesChartProps
-  extends BaseChartProps<EchartsTimeseriesFormData> {
+export interface EchartsTimeseriesChartProps extends BaseChartProps<EchartsTimeseriesFormData> {
   formData: EchartsTimeseriesFormData;
 }
 
@@ -109,10 +138,12 @@ export type TimeseriesChartTransformedProps =
     ContextMenuTransformedProps &
     CrossFilterTransformedProps & {
       legendData?: OptionName[];
+      isRefreshing?: boolean;
       xValueFormatter: TimeFormatter | StringConstructor;
       xAxis: {
         label: string;
         type: AxisType;
       };
+      resolvedTimeGrain?: TimeGranularity;
       onFocusedSeries: (series: string | null) => void;
     };
