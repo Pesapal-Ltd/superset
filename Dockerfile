@@ -43,7 +43,9 @@ ARG NPM_BUILD_CMD="build"
 RUN /app/docker/apt-install.sh build-essential python3 zstd
 
 # Update npm to a version compatible with lockfileVersion 3
-RUN npm install -g npm@latest
+# RUN npm install -g npm@latest
+
+RUN npm install -g npm@11
 
 # Define environment variables for frontend build
 ENV BUILD_CMD=${NPM_BUILD_CMD} \
