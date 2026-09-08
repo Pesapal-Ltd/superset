@@ -19,7 +19,8 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, List, Typography, Space, Spin, Alert } from 'antd';
 import { WarningOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;

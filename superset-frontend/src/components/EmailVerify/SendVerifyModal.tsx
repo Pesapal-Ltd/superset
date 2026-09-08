@@ -45,7 +45,8 @@ import {
 } from 'antd';
 import { MailOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 import { RootState, Datasource } from 'src/dashboard/types';
 
 const { Option } = Select;

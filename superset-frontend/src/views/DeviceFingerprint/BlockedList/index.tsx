@@ -38,7 +38,8 @@ import {
   Typography,
 } from 'antd';
 import { SearchOutlined, ReloadOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Option } = Select;

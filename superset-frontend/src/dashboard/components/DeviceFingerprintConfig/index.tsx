@@ -27,7 +27,8 @@ import {
   Typography,
 } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 
 const { Paragraph } = Typography;
 

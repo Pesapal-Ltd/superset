@@ -40,7 +40,8 @@ import {
   Checkbox,
 } from 'antd';
 import { SwapOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 
 const { Text, Paragraph } = Typography;
 

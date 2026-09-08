@@ -41,7 +41,8 @@ import {
   Typography,
 } from 'antd';
 import { MailOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 
 const { Option } = Select;
 const { Text, Paragraph } = Typography;

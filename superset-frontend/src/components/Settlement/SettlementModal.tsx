@@ -51,7 +51,8 @@ import {
   PlayCircleOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { SupersetClient, t } from '@superset-ui/core';
+import { SupersetClient } from '@superset-ui/core';
+import { t } from '@apache-superset/core/translation';
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;
