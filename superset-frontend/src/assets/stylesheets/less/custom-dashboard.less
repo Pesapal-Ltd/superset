@@ -1,170 +1,62 @@
 /*Custom styles for the dashboard*/
-header#main-menu {
-  background-color: #A81414;
-  margin: 0 !important;
-  padding: 0.656rem 0 !important
+header#main-menu{background-color: #2C4A96;margin: 0 !important;padding:0.656rem 0 !important}
+.top .antd5-row .antd5-menu-light{background-color: transparent !important;color: #fff !important;}
+.top .antd5-row .antd5-menu-light .antd5-menu-item,.antd5-menu-submenu.antd5-menu-submenu-horizontal .antd5-menu-submenu-title{color: #D7EEFF !important;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);font-size: 16px;font-style: normal;line-height: 22px;}
+.top .antd5-row .antd5-menu-light .antd5-menu-item-selected{background-color: rgba(255,255,255,.2)  !important;}
+.antd5-menu-horizontal.main-nav{padding-left:30px !important}
+.antd5-menu-light.antd5-menu-horizontal > .antd5-menu-item-selected::after{border-bottom-color: rgba(255,255,255,.2) !important;}
+.antd5-menu-horizontal.main-nav,.css-buneur.antd5-menu-horizontal > .antd5-menu-item-selected{border-bottom: none !important; }
+.antd5-menu-light.antd5-menu-horizontal >.antd5-menu-item:hover::after,
+.antd5-menu-light>.antd5-menu.antd5-menu-horizontal >.antd5-menu-item:hover::after,
+.antd5-menu-light.antd5-menu-horizontal >.antd5-menu-submenu:hover::after,
+.antd5-menu-light.antd5-menu-horizontal >.antd5-menu-item-active::after,
+.antd5-menu-light>.antd5-menu.antd5-menu-horizontal >.antd5-menu-item-active::after,
+.antd5-menu-light.antd5-menu-horizontal >.antd5-menu-submenu-active::after,
+.antd5-menu-light.antd5-menu-horizontal >.antd5-menu-item-open::after,
+.antd5-menu-light>.antd5-menu.antd5-menu-horizontal >.antd5-menu-item-open::after {
+  border-bottom-color: rgba(255,255,255,.2) !important;background-color: rgba(255,255,255,.2)  !important;
 }
-
-.top .antd5-row .antd5-menu-light {
-  background-color: transparent !important;
-  color: #fff !important;
-}
-
-.top .antd5-row .antd5-menu-light .antd5-menu-item,
-.antd5-menu-submenu.antd5-menu-submenu-horizontal .antd5-menu-submenu-title {
-  color: #D7EEFF !important;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
-  font-size: 16px;
-  font-style: normal;
-  line-height: 22px;
-}
-
-.top .antd5-row .antd5-menu-light .antd5-menu-item-selected {
-  background-color: rgba(255, 255, 255, .2) !important;
-}
-
-.antd5-menu-horizontal.main-nav {
-  padding-left: 30px !important
-}
-
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-item-selected::after {
-  border-bottom-color: rgba(255, 255, 255, .2) !important;
-}
-
-.antd5-menu-horizontal.main-nav,
-.css-buneur.antd5-menu-horizontal>.antd5-menu-item-selected {
-  border-bottom: none !important;
-}
-
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-item:hover::after,
-.antd5-menu-light>.antd5-menu.antd5-menu-horizontal>.antd5-menu-item:hover::after,
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-submenu:hover::after,
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-item-active::after,
-.antd5-menu-light>.antd5-menu.antd5-menu-horizontal>.antd5-menu-item-active::after,
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-submenu-active::after,
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-item-open::after,
-.antd5-menu-light>.antd5-menu.antd5-menu-horizontal>.antd5-menu-item-open::after {
-  border-bottom-color: rgba(255, 255, 255, .2) !important;
-  background-color: rgba(255, 255, 255, .2) !important;
-}
-
 /* Target only the main navigation */
-#main-nav .navbar .nav li a:hover,
-.navbar-nav li a:hover,
-.antd5-menu-light.antd5-menu-horizontal>.antd5-menu-item:hover {
-  color: #A81414 !important;
-
+#main-nav .navbar .nav li a:hover,.navbar-nav li a:hover{color: #A81414 !important;}
+.antd5-menu-light.antd5-menu-horizontal > .antd5-menu-item:hover{color: #D9E4FA !important;}
+  
 }
 
-main .antd5-row.menu,
-main .dashboard-header-container {
-  border-bottom: 1px solid #CCC;
-  background: #FFF;
-  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.10)
-}
-
-.dragdroppable-column .with-popover-menu {
-  display: flex;
-}
-
-.ant-tabs>.ant-tabs-nav .ant-tabs-nav-list {
-  padding: .2rem 3.5rem !important;
-}
-
-.ant-tabs-tab {
-  margin: 0px 16px !important;
-}
-
-.dragdroppable-tab .editable-title span {
+main .dashboard-header-container{border-bottom: 1px solid #CCC;background: #FFF;box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.10)}
+main .antd5-row.menu{background: transparent !important;border-bottom: none;box-shadow: none;}
+.dragdroppable-column .with-popover-menu{display: flex;}
+.ant-tabs > .ant-tabs-nav .ant-tabs-nav-list{padding: .2rem 3.5rem !important;}
+.ant-tabs-tab{margin: 0px 16px !important;}
+.dragdroppable-tab .editable-title span{
   font-size: 14px !important;
   text-align: center;
   font-weight: 700 !important;
 }
-
 .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #1e68a2 !important;
   font-weight: 700 !important;
 }
-
 .navbar-brand {
   max-width: 248px !important;
 }
-
-.title-panel .dynamic-title,
-.antd5-row.menu .header {
-  margin-left: 40px;
-  color: #16659E !important;
-  font-size: 18px;
-  font-style: normal;
-  font-weight: 600;
-}
-
-.superset-list-view.dashboard-list-view .header {
-  margin: 15px 0;
-}
-
-.controls label {
-  font-weight: 700 !important;
-  font-size: 14px !important;
-}
-
-.dot {
-  background-color: #0B334F !important;
-}
-
-thead th {
-  border-top: 1px solid #CCC !important;
-  border-bottom: 1px solid #CCC !important;
-  background: #EEE !important;
-}
-
-thead tr th span {
-  color: #000 !important;
-  font-size: 14px !important;
-  font-style: normal;
-  font-weight: 700 !important;
-  text-transform: uppercase;
-}
-
-.table>tbody>tr>td,
-.table>tbody>tr>th,
-.table>tfoot>tr>td,
-.table>tfoot>tr>th,
-.table>thead>tr>td,
-.table>thead>tr>th {
-  padding: 15px 20px !important;
-  vertical-align: middle !important;
-}
-
-tbody td.table-cell a {
-  color: #16659E !important;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: normal;
-  text-transform: capitalize;
-}
-
-tbody tr:nth-child(even) {
-  background-color: #fafafa !important;
-}
-
-tbody tr:nth-child(odd) {
-  background-color: #ffffff !important;
-}
-
-.table>tbody>tr>td,
-.table>tbody>tr>th {
-  color: #000 !important;
-  font-size: 14px !important;
-  vertical-align: middle;
-}
+.title-panel .dynamic-title{margin-left:40px;color: #16659E !important;font-size: 18px;font-style: normal;font-weight: 600;}
+.antd5-row.menu .header{margin-left:40px;color: #FFFFFF !important;font-size: 18px;font-style: normal;font-weight: 600;}
+.superset-list-view.dashboard-list-view .header{margin: 15px 0;}
+.controls label{font-weight: 700 !important;font-size: 14px !important;}
+.dot{background-color: #0B334F !important;}
+thead th{border-top: 1px solid #CCC !important;border-bottom: 1px solid #CCC !important;background: #EEE !important;}
+thead tr th span{color: #000 !important;font-size: 14px !important;font-style: normal;font-weight: 700 !important;text-transform: uppercase;}
+.table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th{padding: 15px 20px !important;vertical-align: middle !important;}
+tbody td.table-cell a{color:#16659E !important;font-size: 14px;font-style: normal;font-weight: 600;line-height: normal;text-transform: capitalize;}
+tbody tr:nth-child(even) {background-color: #fafafa !important;}
+tbody tr:nth-child(odd) {background-color: #ffffff !important;}
+.table > tbody > tr > td, .table > tbody > tr > th{color: #000 !important;font-size: 14px !important;vertical-align: middle;}
 
 /*Custom styles for the dashboard*/
 
 body {
   background-color: #f5f5f5 !important;
-
   .app {
     min-height: 100vh;
     display: flex;
@@ -335,7 +227,6 @@ body {
   text-align: center;
   padding: 30px;
 }
-
 /* Custom color palette */
 :root {
   --chart-primary: #3b82f6;
@@ -353,23 +244,15 @@ body {
   stroke: var(--chart-secondary);
 }
 
-.custom-palette .slice:nth-child(1) {
-  fill: var(--chart-primary);
-}
-
-.custom-palette .slice:nth-child(2) {
-  fill: var(--chart-secondary);
-}
-
-.custom-palette .slice:nth-child(3) {
-  fill: var(--chart-accent);
-}
+.custom-palette .slice:nth-child(1) { fill: var(--chart-primary); }
+.custom-palette .slice:nth-child(2) { fill: var(--chart-secondary); }
+.custom-palette .slice:nth-child(3) { fill: var(--chart-accent); }
 
 /* Chart entrance animations */
 .slice_container {
   background: #ffffff;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow:none !important;
   border: medium none !important;
   padding: 0 !important;
   margin: 0 !important;
@@ -377,19 +260,17 @@ body {
   position: relative;
   overflow: hidden;
 }
-
 .slice_container {
   animation: fadeInUp 0.6s ease-out;
 }
 
-
+  
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
