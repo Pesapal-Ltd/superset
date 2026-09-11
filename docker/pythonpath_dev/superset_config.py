@@ -177,6 +177,9 @@ if os.getenv("CYPRESS_CONFIG") == "true":
 
     sys.path.pop(0)
 
+if superset_version := os.getenv("SUPERSET_VERSION"):
+    VERSION_STRING = superset_version
+
 #
 # Optionally import superset_config_docker.py (which will have been included on
 # the PYTHONPATH) in order to allow for local settings to be overridden
