@@ -56,6 +56,7 @@ const FilterPill = styled.button<{ $active: boolean }>`
     border: 1px solid ${$active ? theme.colorPrimary : theme.colorBorder};
     background: ${$active ? theme.colorPrimaryBg : theme.colorBgContainer};
     color: ${$active ? theme.colorPrimary : theme.colorText};
+    font-family: inherit;
     font-size: ${theme.fontSizeSM}px;
     font-weight: ${$active ? 600 : 400};
     cursor: pointer;

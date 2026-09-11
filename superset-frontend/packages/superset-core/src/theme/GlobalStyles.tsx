@@ -57,6 +57,14 @@ export const GlobalStyles = () => {
           font-family: ${theme.fontFamily};
         }
 
+        button,
+        input,
+        optgroup,
+        select,
+        textarea {
+          font-family: inherit;
+        }
+
         a {
           color: ${theme.colorLink};
         }
