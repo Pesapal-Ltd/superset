@@ -74,7 +74,8 @@ interface EmailVerifyConfig {
 
 interface SendVerifyModalProps {
   /** Whether the modal is open */
-  visible: boolean;
+  visible?: boolean;
+  open?: boolean;
   /** Dashboard context — used to load the email_verify_config */
   dashboardId?: number;
   /** Chart context */
@@ -93,6 +94,7 @@ interface SendVerifyModalProps {
 
 export default function SendVerifyModal({
   visible,
+  open,
   dashboardId,
   chartId,
   defaultRecipient,
@@ -100,6 +102,7 @@ export default function SendVerifyModal({
   selectedRows = [],
   onClose,
 }: SendVerifyModalProps) {
+  const isOpen = open ?? visible ?? false;
   const [form] = Form.useForm();
   const isBulk = selectedRows && selectedRows.length > 0;
 
@@ -157,9 +160,9 @@ export default function SendVerifyModal({
     return allCols;
   }, [datasetColumns, chart?.queriesResponse]);
 
-  //  Load dashboard/chart config on open 
+  // ── Load dashboard/chart config on open ──────────────────────────────────
   useEffect(() => {
-    if (!visible) return;
+    if (!isOpen) return;
 
     form.resetFields();
     setSendResult(null);
@@ -194,7 +197,7 @@ export default function SendVerifyModal({
     };
 
     loadConfig();
-  }, [visible, dashboardId, chartId, defaultRecipient, defaultMerchantId, form]);
+  }, [isOpen, dashboardId, chartId, defaultRecipient, defaultMerchantId, form]);
 
   //  Load templates when feature is enabled 
   useEffect(() => {
@@ -400,7 +403,7 @@ export default function SendVerifyModal({
           {t('Send Verification Email')}
         </Space>
       }
-      visible={visible}
+      open={isOpen}
       width={600}
       onCancel={onClose}
       footer={[

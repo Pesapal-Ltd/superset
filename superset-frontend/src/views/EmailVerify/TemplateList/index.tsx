@@ -93,20 +93,22 @@ function extractVariables(text: string): string[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TemplateModalProps {
-  visible: boolean;
+  visible?: boolean;
+  open?: boolean;
   editTemplate?: Template | null;
   onClose: () => void;
   onSaved: () => void;
 }
 
-function TemplateModal({ visible, editTemplate, onClose, onSaved }: TemplateModalProps) {
+function TemplateModal({ visible, open, editTemplate, onClose, onSaved }: TemplateModalProps) {
+  const isOpen = open ?? visible ?? false;
   const [form] = Form.useForm();
   const [detectedVars, setDetectedVars] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [htmlBody, setHtmlBody] = useState('');
 
   useEffect(() => {
-    if (visible) {
+    if (isOpen) {
       form.resetFields();
       const initialHtml = editTemplate?.html_body || '';
       setHtmlBody(initialHtml);
@@ -117,7 +119,7 @@ function TemplateModal({ visible, editTemplate, onClose, onSaved }: TemplateModa
         setDetectedVars([]);
       }
     }
-  }, [visible, editTemplate, form]);
+  }, [isOpen, editTemplate, form]);
 
   const updateHtmlBody = useCallback(
     (value: string) => {
@@ -145,37 +147,42 @@ function TemplateModal({ visible, editTemplate, onClose, onSaved }: TemplateModa
     try {
       const values = await form.validateFields();
       setSaving(true);
-      const method = editTemplate ? 'PUT' : 'POST';
-      const endpoint = editTemplate
-        ? `/api/v1/email-verify/templates/${editTemplate.id}`
-        : '/api/v1/email-verify/templates';
+      const payload = {
+        name: values.name,
+        subject: values.subject,
+        html_body: htmlBody,
+        type: values.type,
+        is_active: values.is_active !== false,
+      };
 
-      const response = await SupersetClient.request({
-        method,
-        endpoint,
-        jsonPayload: values,
-      });
-
-      if (response.json) {
-        message.success(t(editTemplate ? 'Template updated!' : 'Template created!'));
-        onSaved();
-        onClose();
+      if (editTemplate) {
+        await SupersetClient.put({
+          endpoint: `/api/v1/email-verify/templates/${editTemplate.id}`,
+          jsonPayload: payload,
+        });
+        message.success(t('Template updated successfully.'));
+      } else {
+        await SupersetClient.post({
+          endpoint: '/api/v1/email-verify/templates',
+          jsonPayload: payload,
+        });
+        message.success(t('Template created successfully.'));
       }
+      onSaved();
+      onClose();
     } catch (err: any) {
-      // Only show the generic error if it's a network/API error,
-      // not an Ant Design form validation error (those show inline).
-      if (err?.errorFields === undefined) {
-        message.error(t('Failed to save template. Please check all fields.'));
-      }
+      if (err?.errorFields) return; // Ant Form validation error
+      message.error(err?.message || t('Failed to save template.'));
     } finally {
       setSaving(false);
     }
   };
 
   const readFile = (file: File): Promise<string> =>
-    new Promise(resolve => {
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = e => resolve((e.target?.result as string) || '');
+      reader.onerror = reject;
       reader.readAsText(file);
     });
 
@@ -188,7 +195,7 @@ function TemplateModal({ visible, editTemplate, onClose, onSaved }: TemplateModa
   return (
     <Modal
       title={editTemplate ? t('Edit Template') : t('Create Email Template')}
-      visible={visible}
+      open={isOpen}
       width={800}
       onCancel={onClose}
       footer={[
@@ -284,26 +291,28 @@ function TemplateModal({ visible, editTemplate, onClose, onSaved }: TemplateModa
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface PreviewModalProps {
-  visible: boolean;
+  visible?: boolean;
+  open?: boolean;
   template: Template | null;
   onClose: () => void;
 }
 
-function PreviewModal({ visible, template, onClose }: PreviewModalProps) {
+function PreviewModal({ visible, open, template, onClose }: PreviewModalProps) {
+  const isOpen = open ?? visible ?? false;
   const [varValues, setVarValues] = useState<Record<string, string>>({});
   const [renderedHtml, setRenderedHtml] = useState<string>('');
   const [renderedSubject, setRenderedSubject] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (visible && template) {
+    if (isOpen && template) {
       const init: Record<string, string> = {};
       (template.variables || []).forEach(v => {
         init[v] = `[${v}]`;
       });
       setVarValues(init);
     }
-  }, [visible, template]);
+  }, [isOpen, template]);
 
   const handlePreview = async () => {
     if (!template) return;
@@ -326,7 +335,7 @@ function PreviewModal({ visible, template, onClose }: PreviewModalProps) {
   return (
     <Modal
       title={t('Preview: {{name}}', { name: template?.name })}
-      visible={visible}
+      open={isOpen}
       width={900}
       onCancel={onClose}
       footer={[

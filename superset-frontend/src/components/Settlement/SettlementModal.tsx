@@ -70,7 +70,8 @@ interface SettlementConfig {
 }
 
 interface SettlementModalProps {
-  visible: boolean;
+  visible?: boolean;
+  open?: boolean;
   action: 'hold' | 'release';
   dashboardId: number;
   chartId: number;
@@ -116,6 +117,7 @@ const TaskStatusIcon = ({ status }: { status: TaskStatus['status'] }) => {
 
 export default function SettlementModal({
   visible,
+  open,
   action,
   dashboardId,
   chartId,
@@ -123,6 +125,7 @@ export default function SettlementModal({
   settlementConfig,
   onClose,
 }: SettlementModalProps) {
+  const isOpen = open ?? visible ?? false;
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState<Step>('summary');
   const [submitting, setSubmitting] = useState(false);
@@ -140,7 +143,7 @@ export default function SettlementModal({
 
   // ── Reset on open ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (visible) {
+    if (isOpen) {
       setCurrentStep(requireReasonInput ? 'summary' : 'confirm');
       setTaskStatuses([]);
       setSubmitting(false);
@@ -150,7 +153,7 @@ export default function SettlementModal({
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Poll task statuses ────────────────────────────────────────────────────
   const pollTaskStatuses = useCallback(
@@ -348,7 +351,7 @@ export default function SettlementModal({
           </Tag>
         </Space>
       }
-      visible={visible}
+      open={isOpen}
       width={620}
       onCancel={onClose}
       footer={renderFooter()}

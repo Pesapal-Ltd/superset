@@ -32,7 +32,8 @@ interface DeviceFingerprintConfig {
 }
 
 interface DeviceFingerprintBlockModalProps {
-  visible: boolean;
+  visible?: boolean;
+  open?: boolean;
   dashboardId: number;
   chartId: number;
   selectedRows: Record<string, any>[];
@@ -42,12 +43,14 @@ interface DeviceFingerprintBlockModalProps {
 
 export default function DeviceFingerprintBlockModal({
   visible,
+  open,
   dashboardId,
   chartId,
   selectedRows,
   deviceFingerprintConfig,
   onClose,
 }: DeviceFingerprintBlockModalProps) {
+  const isOpen = open ?? visible ?? false;
   const [step, setStep] = useState<'confirm' | 'submitting' | 'result'>('confirm');
   const [blockReason, setBlockReason] = useState('');
   const [submitResult, setSubmitResult] = useState<{
@@ -69,12 +72,12 @@ export default function DeviceFingerprintBlockModal({
   );
 
   useEffect(() => {
-    if (visible) {
+    if (isOpen) {
       setStep('confirm');
       setBlockReason('');
       setSubmitResult(null);
     }
-  }, [visible]);
+  }, [isOpen]);
 
   const handleConfirm = async () => {
     setStep('submitting');
@@ -114,7 +117,7 @@ export default function DeviceFingerprintBlockModal({
           <span>{t('Block Device Fingerprint')}</span>
         </Space>
       }
-      visible={visible}
+      open={isOpen}
       onCancel={onClose}
       footer={
         step === 'confirm' ? [
