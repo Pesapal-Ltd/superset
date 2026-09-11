@@ -206,10 +206,10 @@ export default styled.div`
     }
 
     tr.dt-row-selected {
-      background-color: ${theme.colors.primary.light4} !important;
+      background-color: ${theme.colorPrimaryBg} !important;
     }
     .table-striped tbody tr.dt-row-selected:nth-of-type(odd) {
-      background-color: ${theme.colors.primary.light4} !important;
+      background-color: ${theme.colorPrimaryBg} !important;
     }
   `}
 `;
