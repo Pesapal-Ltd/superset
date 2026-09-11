@@ -46,115 +46,201 @@ interface MenuProps {
 }
 
 const StyledHeader = styled.header`
-  ${({ theme }) => css`
-    background-color: ${theme.colorBgContainer};
-    border-bottom: 1px solid ${theme.colorBorderSecondary};
-    padding: 0 ${theme.sizeUnit * 4}px;
-    z-index: 10;
+  ${({ theme }) => {
+    const isCustomHeader = Boolean(theme.headerBg);
+    const headerBg = theme.headerBg || theme.colorBgContainer;
+    const headerBorder =
+      theme.headerBorderColor ||
+      (isCustomHeader ? 'transparent' : theme.colorBorderSecondary);
+    const headerColor =
+      theme.headerColor ||
+      (isCustomHeader ? 'rgba(255, 255, 255, 0.9)' : theme.colorText);
 
-    &:nth-last-of-type(2) nav {
-      margin-bottom: 2px;
-    }
+    return css`
+      background: ${headerBg};
+      border-bottom: 1px solid ${headerBorder};
+      padding: 0 ${theme.sizeUnit * 4}px;
+      z-index: 10;
 
-    .caret {
-      display: none;
-    }
-  `}
+      &:nth-last-of-type(2) nav {
+        margin-bottom: 2px;
+      }
+
+      .caret {
+        display: none;
+      }
+
+      ${isCustomHeader &&
+      css`
+        .main-nav {
+          background: transparent !important;
+        }
+
+        .right-menu .ant-menu {
+          background: transparent !important;
+        }
+
+        .right-menu .ant-menu-item,
+        .right-menu .ant-menu-submenu-title,
+        .right-menu a,
+        .right-menu .anticon,
+        .right-menu [data-icon='down'] {
+          color: ${headerColor} !important;
+        }
+
+        .right-menu .ant-menu-item:hover,
+        .right-menu .ant-menu-submenu-title:hover,
+        .right-menu a:hover,
+        .right-menu .ant-menu-submenu:hover .anticon {
+          color: #ffffff !important;
+        }
+      `}
+    `;
+  }}
 `;
 
 const StyledBrandText = styled.div`
-  ${({ theme }) => css`
-    border-left: 1px solid ${theme.colorBorderSecondary};
-    border-right: 1px solid ${theme.colorBorderSecondary};
-    height: 100%;
-    color: ${theme.colorText};
-    padding-left: ${theme.sizeUnit * 4}px;
-    padding-right: ${theme.sizeUnit * 4}px;
-    font-size: ${theme.fontSizeLG}px;
-    float: left;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  ${({ theme }) => {
+    const isCustomHeader = Boolean(theme.headerBg);
+    const headerColor =
+      theme.headerColor ||
+      (isCustomHeader ? '#ffffff' : theme.colorText);
+    const borderColor =
+      theme.headerBorderColor ||
+      (isCustomHeader
+        ? 'rgba(255, 255, 255, 0.2)'
+        : theme.colorBorderSecondary);
 
-    span {
-      max-width: ${theme.sizeUnit * 58}px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    return css`
+      border-left: 1px solid ${borderColor};
+      border-right: 1px solid ${borderColor};
+      height: 100%;
+      color: ${headerColor};
+      padding-left: ${theme.sizeUnit * 4}px;
+      padding-right: ${theme.sizeUnit * 4}px;
+      font-size: ${theme.fontSizeLG}px;
+      float: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
 
-    @media (max-width: 1127px) {
-      display: none;
-    }
-  `}
+      span {
+        max-width: ${theme.sizeUnit * 58}px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      @media (max-width: 1127px) {
+        display: none;
+      }
+    `;
+  }}
 `;
 
 const StyledMainNav = styled(MainNav)`
-  ${({ theme }) => css`
-    .ant-menu-item .ant-menu-item-icon + span,
-    .ant-menu-submenu-title .ant-menu-item-icon + span,
-    .ant-menu-item .anticon + span,
-    .ant-menu-submenu-title .anticon + span {
-      margin-inline-start: 0;
-    }
+  ${({ theme }) => {
+    const isCustomHeader = Boolean(theme.headerBg);
+    const headerColor =
+      theme.headerColor ||
+      (isCustomHeader ? 'rgba(255, 255, 255, 0.9)' : theme.colorText);
+    const activeColor = isCustomHeader ? '#ffffff' : theme.colorPrimary;
+    const underlineColor = isCustomHeader
+      ? '#ffffff'
+      : theme.colorPrimaryBorderHover;
 
-    .ant-menu-submenu.ant-menu-submenu-horizontal {
-      display: flex;
-      align-items: center;
-      height: 100%;
-      padding: 0;
+    return css`
+      background: transparent !important;
 
+      .ant-menu-item .ant-menu-item-icon + span,
+      .ant-menu-submenu-title .ant-menu-item-icon + span,
+      .ant-menu-item .anticon + span,
+      .ant-menu-submenu-title .anticon + span {
+        margin-inline-start: 0;
+      }
+
+      .ant-menu-item,
       .ant-menu-submenu-title {
+        color: ${headerColor};
+      }
+
+      .ant-menu-item a {
+        color: ${headerColor};
+      }
+
+      .ant-menu-item:hover,
+      .ant-menu-submenu-title:hover {
+        color: ${activeColor} !important;
+      }
+
+      .ant-menu-item.ant-menu-item-selected,
+      .ant-menu-item.ant-menu-item-selected a,
+      .ant-menu-item a.is-active {
+        color: ${activeColor} !important;
+        font-weight: 600;
+      }
+
+      .ant-menu-submenu.ant-menu-submenu-horizontal {
         display: flex;
-        gap: ${theme.sizeUnit * 2}px;
-        flex-direction: row-reverse;
         align-items: center;
         height: 100%;
-        padding: 0 ${theme.sizeUnit * 4}px;
-      }
+        padding: 0;
 
-      [data-icon='down'] {
-        color: ${theme.colorIcon};
-        /* sizeXS (an antd token, always computed) rather than fontSizeXS
-           (a Superset custom token seeded only via THEME_DEFAULT in
-           config.py) so this stays small in contexts that construct a
-           theme without that seed, e.g. Storybook and Jest. Both resolve
-           to the same 8px in the app's default theme. */
-        font-size: ${theme.sizeXS}px;
-      }
+        .ant-menu-submenu-title {
+          display: flex;
+          gap: ${theme.sizeUnit * 2}px;
+          flex-direction: row-reverse;
+          align-items: center;
+          height: 100%;
+          padding: 0 ${theme.sizeUnit * 4}px;
+        }
 
-      &:hover,
-      &.ant-menu-submenu-active {
-        .ant-menu-title-content {
-          color: ${theme.colorPrimary};
+        [data-icon='down'] {
+          color: ${isCustomHeader ? headerColor : theme.colorIcon};
+          /* sizeXS (an antd token, always computed) rather than fontSizeXS
+             (a Superset custom token seeded only via THEME_DEFAULT in
+             config.py) so this stays small in contexts that construct a
+             theme without that seed, e.g. Storybook and Jest. Both resolve
+             to the same 8px in the app's default theme. */
+          font-size: ${theme.sizeXS}px;
+        }
+
+        &:hover,
+        &.ant-menu-submenu-active {
+          .ant-menu-title-content {
+            color: ${activeColor};
+          }
+          [data-icon='down'] {
+            color: ${activeColor};
+          }
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          width: 98%;
+          height: 2px;
+          background-color: ${underlineColor};
+          bottom: ${theme.sizeUnit / 8}px;
+          left: 1%;
+          right: auto;
+          inset-inline-start: 1%;
+          inset-inline-end: auto;
+          transform: scale(0);
+          transition: 0.2s all ease-out;
+        }
+
+        &:hover::after,
+        &.ant-menu-submenu-open::after {
+          transform: scale(1);
         }
       }
 
-      &::after {
-        content: '';
-        position: absolute;
-        width: 98%;
-        height: 2px;
-        background-color: ${theme.colorPrimaryBorderHover};
-        bottom: ${theme.sizeUnit / 8}px;
-        left: 1%;
-        right: auto;
-        inset-inline-start: 1%;
-        inset-inline-end: auto;
-        transform: scale(0);
-        transition: 0.2s all ease-out;
-      }
-
-      &:hover::after,
-      &.ant-menu-submenu-open::after {
+      .ant-menu-submenu-selected.ant-menu-submenu-horizontal::after {
         transform: scale(1);
       }
-    }
-
-    .ant-menu-submenu-selected.ant-menu-submenu-horizontal::after {
-      transform: scale(1);
-    }
-  `}
+    `;
+  }}
 `;
 
 const StyledBrandWrapper = styled.div<{ margin?: string }>`
@@ -478,7 +564,7 @@ export function Menu({
             />
           )}
         </StyledCol>
-        <Col md={8} xs={isMobile ? 4 : 24}>
+        <Col md={8} xs={isMobile ? 4 : 24} className="right-menu">
           <RightMenu
             align={isMd || isMobile ? 'flex-end' : 'flex-start'}
             settings={settings}

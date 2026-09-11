@@ -138,6 +138,11 @@ export interface SupersetSpecificTokens {
   fontWeightStrong: number;
   fontWeightBold: string;
 
+  // Header / Navbar-related
+  headerBg?: string;
+  headerColor?: string;
+  headerBorderColor?: string;
+
   // Brand-related
   brandIconMaxWidth: number;
   brandAppName?: string;

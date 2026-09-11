@@ -48,6 +48,11 @@ const SUPERSET_CUSTOM_TOKENS: Set<string> = new Set([
   'fontWeightNormal',
   'fontWeightLight',
 
+  // Header / Navbar tokens
+  'headerBg',
+  'headerColor',
+  'headerBorderColor',
+
   // Brand tokens
   'brandIconMaxWidth',
   'brandAppName',

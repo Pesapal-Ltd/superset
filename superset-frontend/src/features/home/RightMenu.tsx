@@ -847,7 +847,10 @@ const RightMenu = ({
                 height: 100%;
               }
               [data-icon='down'] {
-                color: ${theme.colorIcon};
+                color: ${theme.headerColor ||
+                (theme.headerBg
+                  ? 'rgba(255, 255, 255, 0.9)'
+                  : theme.colorIcon)};
                 /* sizeXS (an antd token, always computed) rather than
                    fontSizeXS (a Superset custom token seeded only via
                    THEME_DEFAULT in config.py) so this stays small in
@@ -862,7 +865,10 @@ const RightMenu = ({
               &.ant-menu-submenu:hover,
               &.ant-menu-submenu-active {
                 .ant-menu-title-content {
-                  color: ${theme.colorPrimary};
+                  color: ${theme.headerBg ? '#ffffff' : theme.colorPrimary};
+                }
+                [data-icon='down'] {
+                  color: ${theme.headerBg ? '#ffffff' : theme.colorPrimary};
                 }
               }
             }
