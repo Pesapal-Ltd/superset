@@ -179,13 +179,13 @@ EXPOSE_BUILD_DETAILS_TO_USERS = utils.cast_to_boolean(
 DEFAULT_VIZ_TYPE = "table"
 
 # default row limit when requesting chart data
-ROW_LIMIT = 1_000  # from 50000
+ROW_LIMIT = 500  # from 50000
 # default row limit when requesting samples from datasource in explore view
 SAMPLES_ROW_LIMIT = 100  # from 1k
 # default row limit for native filters
-NATIVE_FILTER_DEFAULT_ROW_LIMIT = 1_000  # from 100k
+NATIVE_FILTER_DEFAULT_ROW_LIMIT = 500  # from 100k
 # max rows retrieved by filter select auto complete
-FILTER_SELECT_ROW_LIMIT = 1_000
+FILTER_SELECT_ROW_LIMIT = 500
 
 # Upper bound on the number of time-shift comparisons a single chart may request.
 # Each comparison spawns an additional query, so this caps the work amplification
@@ -200,7 +200,7 @@ DECK_MULTI_MAX_SLICES = 50
 # Upper bound on the page size accepted by the generic DAO list/pagination layer.
 # Caps how many rows a single paginated query can request, regardless of the
 # requested page size, to keep query result sets bounded.
-SQLALCHEMY_DAO_MAX_PAGE_SIZE = 1000
+SQLALCHEMY_DAO_MAX_PAGE_SIZE = 200 # from 1k
 
 # SupersetClient HTTP retry configuration
 # Controls retry behavior for all HTTP requests made through SupersetClient
@@ -376,7 +376,7 @@ SQLGLOT_DIALECTS_EXTENSIONS: DialectExtensions | Callable[[], DialectExtensions]
 EXTRA_PANDAS_POSTPROCESSING_OPS: list[Callable[..., Any]] = []
 
 # The limit of queries fetched for query search
-QUERY_SEARCH_LIMIT = 1_000
+QUERY_SEARCH_LIMIT = 500
 
 # Flask-WTF flag for CSRF
 WTF_CSRF_ENABLED = True
@@ -2065,12 +2065,12 @@ SQL_MAX_ROW = 1_000  # from 100k
 MAX_PROPHET_PERIODS = 10000
 
 # Maximum number of rows for any query with Server Pagination in Table Viz type
-TABLE_VIZ_MAX_ROW_SERVER = 50000  # from 500k
+TABLE_VIZ_MAX_ROW_SERVER = 5_000  # from 500k
 
 # Maximum number of rows displayed in SQL Lab UI
 # Is set to avoid out of memory/localstorage issues in browsers. Does not affect
 # exported CSVs
-DISPLAY_MAX_ROW = 1000  # from 10k
+DISPLAY_MAX_ROW = 500  # from 10k
 
 # Default row limit for SQL Lab queries. Is overridden by setting a new limit in
 # the SQL Lab UI
@@ -2081,10 +2081,10 @@ DEFAULT_SQLLAB_LIMIT = 10  # from 1k
 DATASET_AUTO_DETECT_DATETIME_FORMATS = True
 
 # Sample size for datetime format detection
-DATETIME_FORMAT_DETECTION_SAMPLE_SIZE = 1000
+DATETIME_FORMAT_DETECTION_SAMPLE_SIZE = 500  # from 1k
 
 # The limit for the Superset Meta DB when the feature flag ENABLE_SUPERSET_META_DB is on
-SUPERSET_META_DB_LIMIT: int | None = 1000
+SUPERSET_META_DB_LIMIT: int | None = 500 #from 1k
 
 # Master switch for entity-version-history capture. A falsy value disables
 # version writes while keeping existing history available read-only through the
