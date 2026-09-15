@@ -179,13 +179,13 @@ EXPOSE_BUILD_DETAILS_TO_USERS = utils.cast_to_boolean(
 DEFAULT_VIZ_TYPE = "table"
 
 # default row limit when requesting chart data
-ROW_LIMIT = 10_000  # from 50000
+ROW_LIMIT = 1_000  # from 50000
 # default row limit when requesting samples from datasource in explore view
 SAMPLES_ROW_LIMIT = 100  # from 1k
 # default row limit for native filters
-NATIVE_FILTER_DEFAULT_ROW_LIMIT = 10_000  # from 100k
+NATIVE_FILTER_DEFAULT_ROW_LIMIT = 1_000  # from 100k
 # max rows retrieved by filter select auto complete
-FILTER_SELECT_ROW_LIMIT = 10000
+FILTER_SELECT_ROW_LIMIT = 1_000
 
 # Upper bound on the number of time-shift comparisons a single chart may request.
 # Each comparison spawns an additional query, so this caps the work amplification
@@ -376,7 +376,7 @@ SQLGLOT_DIALECTS_EXTENSIONS: DialectExtensions | Callable[[], DialectExtensions]
 EXTRA_PANDAS_POSTPROCESSING_OPS: list[Callable[..., Any]] = []
 
 # The limit of queries fetched for query search
-QUERY_SEARCH_LIMIT = 1000
+QUERY_SEARCH_LIMIT = 1_000
 
 # Flask-WTF flag for CSRF
 WTF_CSRF_ENABLED = True
@@ -2058,7 +2058,7 @@ QUERY_LOGGER = custom_query_logger
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
 # Maximum number of rows returned for any analytical database query
-SQL_MAX_ROW = 10_000  # from 100k
+SQL_MAX_ROW = 1_000  # from 100k
 
 # Maximum number of forecast periods accepted by the Prophet post-processing
 # operation. Bounds resource usage when predicting into the future.
