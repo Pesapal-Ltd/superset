@@ -231,6 +231,10 @@ class DashboardJSONMetadataSchema(Schema):
     remote_id = fields.Integer()
     filter_bar_orientation = fields.Str(allow_none=True)
     native_filter_migration = fields.Dict()
+    async_mode = fields.Str(
+        allow_none=True,
+        validate=OneOf(["default", "force_on", "force_off"]),
+    )
     email_verify_config = fields.Dict(allow_none=True)
     settlement_config = fields.Dict(allow_none=True)
 
