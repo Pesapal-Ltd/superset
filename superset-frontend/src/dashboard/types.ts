@@ -263,6 +263,7 @@ export type Datasource = Dataset & {
   supports_samples?: boolean;
   /** False when the datasource can't answer drill-to-detail requests. */
   supports_drill_to_detail?: boolean;
+  can_access?: boolean;
 };
 export type DatasourcesState = {
   [key: string]: Datasource;

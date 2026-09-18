@@ -374,6 +374,7 @@ class DashboardDatasetSchema(Schema):
     granularity_sqla = fields.List(fields.List(fields.Str()))
     normalize_columns = fields.Bool()
     always_filter_main_dttm = fields.Bool()
+    can_access = fields.Bool()
 
     # pylint: disable=unused-argument
     @post_dump()

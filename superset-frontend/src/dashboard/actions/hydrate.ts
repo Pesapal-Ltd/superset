@@ -164,10 +164,11 @@ export const hydrateDashboard =
 
     charts.forEach((slice: HydrateChartData) => {
       const key = slice.slice_id;
+      const sliceFormData = slice.form_data || {};
       const formData = {
-        ...slice.form_data,
+        ...sliceFormData,
         url_params: {
-          ...(slice.form_data.url_params as JsonObject),
+          ...((sliceFormData.url_params as JsonObject) || {}),
           ...regularUrlParams,
         },
       };
@@ -184,8 +185,8 @@ export const hydrateDashboard =
         slice_url: slice.slice_url,
         slice_name: slice.slice_name,
         form_data: slice.form_data,
-        viz_type: slice.form_data.viz_type,
-        datasource: slice.form_data.datasource,
+        viz_type: slice.form_data?.viz_type,
+        datasource: slice.form_data?.datasource,
         description: slice.description,
         description_markdown: slice.description_markeddown,
         editors: slice.editors,

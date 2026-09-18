@@ -121,7 +121,7 @@ jest.mock('src/components/MessageToasts/withToasts', () => ({
 
 jest.mock('src/dashboard/util/injectCustomCss', () => ({
   __esModule: true,
-  default: () => () => {},
+  default: () => () => { },
 }));
 
 jest.mock('src/dashboard/util/activeAllDashboardFilters', () => ({
@@ -629,4 +629,156 @@ test('clears undo history after hydrating the dashboard', async () => {
   const clearOrder = (clearDashboardHistory as jest.Mock).mock
     .invocationCallOrder[0];
   expect(clearOrder).toBeGreaterThan(hydrateOrder);
+});
+
+test('renders dataset access error screen when datasets are inaccessible', async () => {
+  mockUseDashboardDatasets.mockReturnValue({
+    result: [
+      { id: 1, table_name: 'orders', can_access: false },
+      { id: 2, table_name: 'customers', can_access: true },
+      { id: 3, table_name: 'payments', can_access: false },
+    ],
+    error: null,
+    status: 'complete',
+  });
+
+  render(
+    <Suspense fallback="loading">
+      <DashboardPage idOrSlug="1" />
+    </Suspense>,
+    {
+      useRedux: true,
+      useRouter: true,
+      initialState: {
+        dashboardInfo: { id: 1, metadata: {} },
+        dashboardState: { sliceIds: [] },
+        nativeFilters: { filters: {} },
+        dataMask: {},
+      },
+    },
+  );
+
+  expect(
+    await screen.findByText('Access to Datasets Required'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      /You do not have access to the following datasets: orders \(1\), payments \(3\) needed to access the dashboard/,
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByTestId('dashboard-builder')).not.toBeInTheDocument();
+  expect(screen.queryByText('loading')).not.toBeInTheDocument();
+  expect(hydrateDashboard).not.toHaveBeenCalled();
+
+  await userEvent.click(
+    screen.getByRole('button', { name: 'See all dashboards' }),
+  );
+  expect(window.location.pathname).toBe('/dashboard/list/');
+});
+
+test('renders dataset access error screen when dataset is missing columns without can_access', async () => {
+  mockUseDashboardDatasets.mockReturnValue({
+    result: [{ id: 4, table_name: 'legacy_table' }],
+    error: null,
+    status: 'complete',
+  });
+
+  render(
+    <Suspense fallback="loading">
+      <DashboardPage idOrSlug="1" />
+    </Suspense>,
+    {
+      useRedux: true,
+      useRouter: true,
+      initialState: {
+        dashboardInfo: { id: 1, metadata: {} },
+        dashboardState: { sliceIds: [] },
+        nativeFilters: { filters: {} },
+        dataMask: {},
+      },
+    },
+  );
+
+  expect(
+    await screen.findByText('Access to Datasets Required'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      /You do not have access to the following datasets: legacy_table \(4\) needed to access the dashboard/,
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByTestId('dashboard-builder')).not.toBeInTheDocument();
+  expect(hydrateDashboard).not.toHaveBeenCalled();
+});
+
+test('renders access denied screen instead of throwing when dashboard 403s', async () => {
+  mockUseDashboard.mockReturnValue({
+    result: null,
+    error: new SupersetApiError({ status: 403, message: 'Forbidden' }),
+  });
+
+  render(
+    <Suspense fallback="loading">
+      <DashboardPage idOrSlug="403" />
+    </Suspense>,
+    {
+      useRedux: true,
+      useRouter: true,
+      initialState: {
+        dashboardInfo: {},
+        dashboardState: { sliceIds: [] },
+        nativeFilters: { filters: {} },
+        dataMask: {},
+      },
+    },
+  );
+
+  expect(await screen.findByText('Access Denied')).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      'You do not have permission to access this dashboard. Please contact dashboard administrator or Data Team for access.',
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByTestId('dashboard-builder')).not.toBeInTheDocument();
+  expect(hydrateDashboard).not.toHaveBeenCalled();
+
+  await userEvent.click(
+    screen.getByRole('button', { name: 'See all dashboards' }),
+  );
+  expect(window.location.pathname).toBe('/dashboard/list/');
+});
+
+test('renders dataset access error screen when datasets endpoint 403s', async () => {
+  mockUseDashboardDatasets.mockReturnValue({
+    result: null,
+    error: new SupersetApiError({ status: 403, message: 'Forbidden' }),
+    status: 'error',
+  });
+
+  render(
+    <Suspense fallback="loading">
+      <DashboardPage idOrSlug="1" />
+    </Suspense>,
+    {
+      useRedux: true,
+      useRouter: true,
+      initialState: {
+        dashboardInfo: { id: 1, metadata: {} },
+        dashboardState: { sliceIds: [] },
+        nativeFilters: { filters: {} },
+        dataMask: {},
+      },
+    },
+  );
+
+  expect(
+    await screen.findByText('Access to Datasets Required'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      'You do not have permission to access this dashboard. Please contact dashboard administrator or Data Team for access.',
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByTestId('dashboard-builder')).not.toBeInTheDocument();
+  expect(hydrateDashboard).not.toHaveBeenCalled();
 });

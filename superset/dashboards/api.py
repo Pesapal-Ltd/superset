@@ -755,10 +755,13 @@ class DashboardRestApi(
         self, datasource: Any, payload: dict[str, Any]
     ) -> dict[str, Any]:
         """Dump a member dataset, narrowed when the caller cannot access it."""
+        can_access = security_manager.can_access_datasource(datasource)
+        payload["can_access"] = can_access
         serialized = self.dashboard_dataset_schema.dump(payload)
-        if not security_manager.can_access_datasource(datasource):
+        if not can_access:
             for key in DASHBOARD_DATASET_INACCESSIBLE_FIELDS:
                 serialized.pop(key, None)
+        serialized["can_access"] = can_access
         return serialized
 
     def _serialize_dashboard_chart(self, chart: Any) -> dict[str, Any]:

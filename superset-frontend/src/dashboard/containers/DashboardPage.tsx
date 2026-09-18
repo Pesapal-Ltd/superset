@@ -151,11 +151,53 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
   } = useDashboardDatasets(idOrSlug);
   const isDashboardHydrated = useRef(false);
 
+  const inaccessibleDatasets = useMemo(() => {
+    if (!datasets) {
+      return [];
+    }
+    const seen = new Set<string | number>();
+    return datasets.filter(ds => {
+      const isInaccessible =
+        ds.can_access === false ||
+        (!('columns' in ds) && ds.can_access !== true);
+      if (!isInaccessible) {
+        return false;
+      }
+      if (ds.id != null && seen.has(ds.id)) {
+        return false;
+      }
+      if (ds.id != null) {
+        seen.add(ds.id);
+      }
+      return true;
+    });
+  }, [datasets]);
+
+  const datasetListString = useMemo(
+    () =>
+      inaccessibleDatasets
+        .map(ds =>
+          ds.table_name || ds.name
+            ? `${ds.table_name || ds.name} (${ds.id})`
+            : `${ds.id}`,
+        )
+        .join(', '),
+    [inaccessibleDatasets],
+  );
+
   const error = dashboardApiError || chartsApiError;
-  // Only 404 gets a graceful not-found state; a 403 (access denied) still
-  // surfaces through the error boundary.
   const isNotFoundError = (error as SupersetApiError | null)?.status === 404;
-  const readyToRender = Boolean(dashboard && charts);
+  const isAccessDeniedError =
+    (dashboardApiError as SupersetApiError | null)?.status === 403 ||
+    (chartsApiError as SupersetApiError | null)?.status === 403;
+  const isDatasetsAccessDeniedError =
+    (datasetsApiError as SupersetApiError | null)?.status === 403;
+  const hasDatasetAccessIssues =
+    inaccessibleDatasets.length > 0 || isDatasetsAccessDeniedError;
+
+  const readyToRender = Boolean(
+    dashboard && charts && datasets && !hasDatasetAccessIssues,
+  );
   const { dashboard_title, id = 0 } = dashboard || {};
 
   // The live title is edited in Redux and persisted via an in-SPA save with no
@@ -364,26 +406,34 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
       // when dashboard unmounts or changes
       return injectCustomCss(css);
     }
-    return () => {};
+    return () => { };
   }, [css]);
 
   useEffect(() => {
     if (datasetsApiError) {
       // A missing dashboard also 404s its datasets; the not-found state covers it.
-      if (!isNotFoundError) {
+      if (!isNotFoundError && !isDatasetsAccessDeniedError) {
         addDangerToast(
           t('Error loading chart datasources. Filters may not work correctly.'),
         );
       }
-    } else {
+    } else if (datasets && !hasDatasetAccessIssues) {
       dispatch(setDatasources(datasets));
     }
-  }, [addDangerToast, datasets, datasetsApiError, dispatch, isNotFoundError]);
+  }, [
+    addDangerToast,
+    datasets,
+    datasetsApiError,
+    dispatch,
+    hasDatasetAccessIssues,
+    isDatasetsAccessDeniedError,
+    isNotFoundError,
+  ]);
 
   const relevantDataMask = useSelector(selectRelevantDatamask);
   const activeFilters = useSelector(selectActiveFilters);
 
-  if (error && !isNotFoundError) throw error; // caught in error boundary
+  if (error && !isNotFoundError && !isAccessDeniedError) throw error; // caught in error boundary
 
   const globalStyles = useMemo(
     () => [
@@ -396,8 +446,6 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
     [theme],
   );
 
-  if (error && !isNotFoundError) throw error; // caught in error boundary
-
   const DashboardBuilderComponent = useMemo(() => <DashboardBuilder />, []);
 
   if (isNotFoundError) {
@@ -409,6 +457,43 @@ export const DashboardPage: FC<PageProps> = ({ idOrSlug }: PageProps) => {
         description={t(
           'The dashboard you are looking for may have been deleted or moved.',
         )}
+        buttonText={t('See all dashboards')}
+        buttonAction={() => history.push(RoutePaths.DASHBOARD_LIST)}
+      />
+    );
+  }
+
+  if (isAccessDeniedError) {
+    return (
+      <EmptyState
+        size="large"
+        image="empty-dashboard.svg"
+        title={t('Access Denied')}
+        description={t(
+          'You do not have permission to access this dashboard. Please contact dashboard administrator or Data Team for access.',
+        )}
+        buttonText={t('See all dashboards')}
+        buttonAction={() => history.push(RoutePaths.DASHBOARD_LIST)}
+      />
+    );
+  }
+
+  if (hasDatasetAccessIssues) {
+    const description =
+      datasetListString.length > 0
+        ? t(
+          'You do not have access to the following datasets: %s needed to access the dashboard. Please contact dashboard administrator or Data Team for access.',
+          datasetListString,
+        )
+        : t(
+          'You do not have access to the datasets needed to access the dashboard. Please contact dashboard administrator or Data Team for access.',
+        );
+    return (
+      <EmptyState
+        size="large"
+        image="empty-dataset.svg"
+        title={t('Access to Datasets Required')}
+        description={description}
         buttonText={t('See all dashboards')}
         buttonAction={() => history.push(RoutePaths.DASHBOARD_LIST)}
       />
