@@ -165,7 +165,7 @@ class ExtensionStorageRestApi(BaseApi):
                       codec:
                         type: string
                         description: Name of the codec 'result' was encoded
-                          with, e.g. "json" (default) or "binary"
+                          with, e.g. 'json' (default) or 'binary'
                       isBinary:
                         type: boolean
                         description: Whether the stored value is binary
@@ -247,7 +247,7 @@ class ExtensionStorageRestApi(BaseApi):
                     codec:
                       type: string
                       description: Name of the codec used to encode 'value',
-                        e.g. "json" (default). Must be one of the codecs
+                        e.g. 'json' (default). Must be one of the codecs
                         allowed over the REST API.
                     isBinary:
                       type: boolean
@@ -543,7 +543,7 @@ class ExtensionStorageRestApi(BaseApi):
                       codec:
                         type: string
                         description: Name of the codec 'result' was encoded
-                          with, e.g. "json" (default) or "binary"
+                          with, e.g. 'json' (default) or 'binary'
                       isBinary:
                         type: boolean
                         description: Whether the stored value is binary
@@ -626,7 +626,7 @@ class ExtensionStorageRestApi(BaseApi):
                     codec:
                       type: string
                       description: Name of the codec used to encode 'value',
-                        e.g. "json" (default). Must be one of the codecs
+                        e.g. 'json' (default). Must be one of the codecs
                         allowed over the REST API.
                     isBinary:
                       type: boolean
