@@ -246,3 +246,53 @@ class TestDeviceFingerprintApi(SupersetTestCase):
         # Verify db update
         db.session.refresh(record)
         self.assertEqual(record.status, "inactive")
+
+    def test_get_fingerprints_alone(self):
+        admin_user_id = self.test_user.id
+        r1 = BlockedDeviceFingerprint(
+            device_fingerprint="fp_active_1", blocked_by_fk=admin_user_id, status="active"
+        )
+        r2 = BlockedDeviceFingerprint(
+            device_fingerprint="fp_active_2", blocked_by_fk=admin_user_id, status="active"
+        )
+        r3 = BlockedDeviceFingerprint(
+            device_fingerprint="fp_inactive", blocked_by_fk=admin_user_id, status="inactive"
+        )
+        r4 = BlockedDeviceFingerprint(
+            device_fingerprint="fp_active_1", blocked_by_fk=admin_user_id, status="active"
+        )
+        db.session.add_all([r1, r2, r3, r4])
+        db.session.commit()
+
+        # Default query (active only, deduplicated list of strings)
+        uri = "api/v1/device-fingerprint/fingerprints"
+        rv = self.client.get(uri)
+        self.assertEqual(rv.status_code, 200)
+        data = json.loads(rv.data.decode("utf-8"))
+        self.assertIsInstance(data, list)
+        self.assertEqual(len(data), 2)
+        self.assertIn("fp_active_1", data)
+        self.assertIn("fp_active_2", data)
+        self.assertNotIn("fp_inactive", data)
+
+        # Alias route: /api/v1/device-fingerprint/blocked/fingerprints
+        uri_alias = "api/v1/device-fingerprint/blocked/fingerprints"
+        rv_alias = self.client.get(uri_alias)
+        self.assertEqual(rv_alias.status_code, 200)
+        data_alias = json.loads(rv_alias.data.decode("utf-8"))
+        self.assertEqual(data, data_alias)
+
+        # Query all
+        uri_all = "api/v1/device-fingerprint/fingerprints?status=all"
+        rv_all = self.client.get(uri_all)
+        self.assertEqual(rv_all.status_code, 200)
+        data_all = json.loads(rv_all.data.decode("utf-8"))
+        self.assertEqual(len(data_all), 3)
+        self.assertIn("fp_inactive", data_all)
+
+        # Query inactive
+        uri_inactive = "api/v1/device-fingerprint/fingerprints?status=inactive"
+        rv_inactive = self.client.get(uri_inactive)
+        self.assertEqual(rv_inactive.status_code, 200)
+        data_inactive = json.loads(rv_inactive.data.decode("utf-8"))
+        self.assertEqual(data_inactive, ["fp_inactive"])

@@ -26,7 +26,7 @@ import time
 from datetime import datetime
 from typing import Any
 
-from flask import current_app, g, request
+from flask import current_app, g, jsonify, request
 from flask_appbuilder.api import expose, protect, safe
 
 from superset.extensions import cache_manager, db
@@ -124,12 +124,16 @@ class DeviceFingerprintRestApi(BaseSupersetApi):
     resource_name = "device-fingerprint"
     route_base = "/api/v1/device-fingerprint"
     allow_browser_login = True
+    method_permission_name = {
+        "get_fingerprints": "list_blocked",
+    }
     include_route_methods = {
         "get_config",
         "save_dashboard_config",
         "save_chart_config",
         "block",
         "list_blocked",
+        "get_fingerprints",
         "patch_blocked",
     }
 
@@ -464,6 +468,99 @@ class DeviceFingerprintRestApi(BaseSupersetApi):
         ]
 
         return self.response(200, result=result, count=total, page=page, page_size=page_size)
+
+    @expose("/fingerprints", methods=("GET",))
+    @expose("/blocked/fingerprints", methods=("GET",))
+    @protect()
+    @safe
+    def get_fingerprints(self) -> FlaskResponse:
+        """Get device fingerprints alone.
+        ---
+        get:
+          summary: Get device fingerprints alone
+          parameters:
+            - in: query
+              name: status
+              schema:
+                type: string
+                enum: [active, inactive, all]
+              description: Filter by status (active, inactive, or all). Defaults to active.
+          responses:
+            200:
+              description: List of device fingerprints
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      data:
+                        type: object
+                        properties:
+                          fingerprints:
+                            type: array
+                            items:
+                              type: string
+                          count:
+                            type: integer
+                          status_filter:
+                            type: string
+                      meta:
+                        type: object
+                        properties:
+                          timestamp:
+                            type: string
+                            format: date-time
+            400:
+              description: Invalid query parameter
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      error:
+                        type: object
+                        properties:
+                          code:
+                            type: string
+                          message:
+                            type: string
+        """
+        VALID_STATUSES = ("active", "inactive", "all")
+        status_filter = (request.args.get("status") or "active").strip().lower()
+
+        if status_filter not in VALID_STATUSES:
+            return jsonify({
+                "success": False,
+                "error": {
+                    "code": "INVALID_STATUS",
+                    "message": f"status must be one of {VALID_STATUSES}",
+                },
+            }), 400
+
+        query = db.session.query(BlockedDeviceFingerprint.device_fingerprint)
+        if status_filter in ("active", "inactive"):
+            query = query.filter(BlockedDeviceFingerprint.status == status_filter)
+        query = query.filter(BlockedDeviceFingerprint.device_fingerprint.isnot(None))
+        query = query.order_by(BlockedDeviceFingerprint.id.desc())
+
+        records = query.all()
+        fingerprints = list(dict.fromkeys(r[0] for r in records if r[0]))
+
+        return jsonify({
+            "success": True,
+            "data": {
+                "fingerprints": fingerprints,
+                "count": len(fingerprints),
+                "status_filter": status_filter,
+            },
+            "meta": {
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            },
+        }), 200
 
     # Toggle/Patch Block Status (Unblock support)
     @expose("/blocked/<int:pk>", methods=("PATCH",))
