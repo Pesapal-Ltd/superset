@@ -225,6 +225,14 @@ def test_get_since_until() -> None:
     expected = expected = datetime(2016, 1, 1, 0, 0, 0), datetime(2017, 1, 1, 0, 0, 0)
     assert result == expected
 
+    result = get_since_until("Risk current day")
+    expected = datetime(2016, 11, 6, 0, 0, 0), datetime(2016, 11, 8, 0, 0, 0)
+    assert result == expected
+
+    result = get_since_until("Risk current week")
+    expected = datetime(2016, 11, 6, 0, 0, 0), datetime(2016, 11, 13, 0, 0, 0)
+    assert result == expected
+
     # Tests for our new instant_time_comparison logic and Feature Flag off
     result = get_since_until(
         time_range="2000-01-01T00:00:00 : 2018-01-01T00:00:00",
@@ -872,3 +880,32 @@ def test_datetime_eval_does_not_emit_parsedatetime_debug_logs(
         "flood production logs. Records: "
         + repr([(r.levelname, r.getMessage()) for r in parsedatetime_records])
     )
+
+
+@pytest.mark.parametrize(
+    "frozen_date,expected_week_start,expected_week_end",
+    [
+        # Sunday -> starts on the same Sunday
+        ("2024-06-09", datetime(2024, 6, 9), datetime(2024, 6, 16)),
+        # Monday -> starts on the preceding Sunday
+        ("2024-06-10", datetime(2024, 6, 9), datetime(2024, 6, 16)),
+        # Wednesday -> starts on the preceding Sunday
+        ("2024-06-12", datetime(2024, 6, 9), datetime(2024, 6, 16)),
+        # Saturday -> starts on the preceding Sunday
+        ("2024-06-15", datetime(2024, 6, 9), datetime(2024, 6, 16)),
+    ],
+)
+def test_risk_current_week_starts_on_sunday(
+    frozen_date: str,
+    expected_week_start: datetime,
+    expected_week_end: datetime,
+) -> None:
+    with freezegun.freeze_time(frozen_date):
+        result = get_since_until("Risk current week")
+        assert result == (expected_week_start, expected_week_end)
+
+
+def test_risk_current_day_starts_from_d_minus_1() -> None:
+    with freezegun.freeze_time("2024-06-10"):
+        result = get_since_until("Risk current day")
+        assert result == (datetime(2024, 6, 9), datetime(2024, 6, 11))

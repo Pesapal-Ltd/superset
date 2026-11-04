@@ -18,7 +18,12 @@
  */
 import { render, screen } from 'spec/helpers/testing-library';
 import { CurrentCalendarFrame } from '../components/CurrentCalendarFrame';
-import { CurrentDay, CurrentWeek } from '../types';
+import {
+  CurrentDay,
+  CurrentWeek,
+  RiskCurrentDay,
+  RiskCurrentWeek,
+} from '../types';
 
 const mockOnChange = jest.fn();
 
@@ -38,4 +43,16 @@ test('selects the radio button matching the current value', () => {
   render(<CurrentCalendarFrame onChange={mockOnChange} value={CurrentDay} />);
 
   expect(screen.getByRole('radio', { name: CurrentDay })).toBeChecked();
+});
+
+test('selects RiskCurrentDay and RiskCurrentWeek radio buttons', () => {
+  const { rerender } = render(
+    <CurrentCalendarFrame onChange={mockOnChange} value={RiskCurrentDay} />,
+  );
+  expect(screen.getByRole('radio', { name: RiskCurrentDay })).toBeChecked();
+
+  rerender(
+    <CurrentCalendarFrame onChange={mockOnChange} value={RiskCurrentWeek} />,
+  );
+  expect(screen.getByRole('radio', { name: RiskCurrentWeek })).toBeChecked();
 });

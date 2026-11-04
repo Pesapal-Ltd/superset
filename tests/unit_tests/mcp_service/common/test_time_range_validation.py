@@ -71,6 +71,8 @@ class TestValidateTimeRangePassthrough:
             "Current month",
             "Current quarter",
             "Current year",
+            "Risk current day",
+            "Risk current week",
             "first week of this year",
             "first month of this quarter",
             "first week of last month",

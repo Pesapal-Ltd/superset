@@ -95,12 +95,16 @@ export const CurrentWeek = 'Current week';
 export const CurrentMonth = 'Current month';
 export const CurrentYear = 'Current year';
 export const CurrentQuarter = 'Current quarter';
+export const RiskCurrentDay = 'Risk current day';
+export const RiskCurrentWeek = 'Risk current week';
 export type CurrentRangeType =
   | typeof CurrentDay
   | typeof CurrentWeek
   | typeof CurrentMonth
   | typeof CurrentQuarter
-  | typeof CurrentYear;
+  | typeof CurrentYear
+  | typeof RiskCurrentDay
+  | typeof RiskCurrentWeek;
 
 export type FrameComponentProps = {
   onChange: (timeRange: string) => void;

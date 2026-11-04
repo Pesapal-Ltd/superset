@@ -561,6 +561,21 @@ def get_since_until(  # pylint: disable=too-many-arguments,too-many-locals,too-m
         and separator not in time_range
     ):
         time_range = "DATETRUNC(DATEADD(DATETIME('today'), 0, YEAR), YEAR) : DATETRUNC(DATEADD(DATETIME('today'), 1, YEAR), YEAR)"  # noqa: E501
+    if (
+        time_range
+        and time_range.startswith("Risk current day")
+        and separator not in time_range
+    ):
+        time_range = "DATETRUNC(DATEADD(DATETIME('today'), -1, DAY), DAY) : DATETRUNC(DATEADD(DATETIME('today'), 1, DAY), DAY)"  # noqa: E501
+    if (
+        time_range
+        and time_range.startswith("Risk current week")
+        and separator not in time_range
+    ):
+        time_range = (
+            "DATEADD(DATETRUNC(DATEADD(DATETIME('today'), 1, DAY), WEEK), -1, DAY) : "
+            "DATEADD(DATETRUNC(DATEADD(DATETIME('today'), 1, DAY), WEEK), 6, DAY)"
+        )
 
     # Handle "first [subunit] of [scope] [unit]" patterns that produce a range
     # e.g., "first week of this year" -> returns start of year to end of first week

@@ -31,6 +31,8 @@ import {
   CurrentYear,
   CurrentQuarter,
   CurrentDay,
+  RiskCurrentDay,
+  RiskCurrentWeek,
 } from 'src/explore/components/controls/DateFilterControl/types';
 import { CheckboxOptionType } from '@superset-ui/core/components/Radio';
 import { extendedDayjs } from '@superset-ui/core/utils/dates';
@@ -71,6 +73,8 @@ export const CURRENT_RANGE_OPTIONS: CheckboxOptionType[] = [
   { value: CurrentMonth, label: t('Current month') },
   { value: CurrentQuarter, label: t('Current quarter') },
   { value: CurrentYear, label: t('Current year') },
+  { value: RiskCurrentDay, label: t('Risk current day') },
+  { value: RiskCurrentWeek, label: t('Risk current week') },
 ];
 export const CURRENT_RANGE_VALUES_SET = new Set(
   CURRENT_RANGE_OPTIONS.map(value => value.value),
@@ -132,6 +136,8 @@ export const CURRENT_CALENDAR_RANGE_SET: Set<CurrentRangeType> = new Set([
   CurrentMonth,
   CurrentQuarter,
   CurrentYear,
+  RiskCurrentDay,
+  RiskCurrentWeek,
 ]);
 
 export const DAYJS_FORMAT = 'YYYY-MM-DD[T]HH:mm:ss';

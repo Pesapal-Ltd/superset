@@ -96,6 +96,9 @@ venv
 .venv
 @eaDir/
 
+#OpenIdea
+.openidea/
+
 # PyCharm
 .run
 
@@ -144,3 +147,4 @@ PROJECT.md
 oxc-custom-build/
 *.code-workspace
 *.duckdb
+

@@ -2507,6 +2507,8 @@ def test_convert_query_object_filter_temporal_range_with_value() -> None:
         "previous calendar year",
         "Current day",
         "Current week",
+        "Risk current day",
+        "Risk current week",
     ],
 )
 def test_convert_query_object_filter_temporal_range_named_ranges(
