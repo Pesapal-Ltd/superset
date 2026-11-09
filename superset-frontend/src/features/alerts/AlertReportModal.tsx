@@ -106,6 +106,7 @@ import { getChartDataRequest } from 'src/components/Chart/chartAction';
 import DateFilterControl from 'src/explore/components/controls/DateFilterControl';
 import { Icons } from '@superset-ui/core/components/Icons';
 import { StandardModal, ModalFormField } from 'src/components/Modal';
+import NumberInput from './components/NumberInput';
 import { AlertReportCronScheduler } from './components/AlertReportCronScheduler';
 import { NotificationMethod } from './components/NotificationMethod';
 import { buildErrorTooltipMessage } from './buildErrorTooltipMessage';
@@ -2775,7 +2776,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                         >
                           <div className="control-label">
                             {t('CSV attachment SQL query')}
-                            <StyledTooltip
+                            <InfoTooltip
                               tooltip={t(
                                 'This SELECT query runs after the threshold condition is met. ' +
                                 'The results are attached as a CSV file to the outgoing alert email. ' +
