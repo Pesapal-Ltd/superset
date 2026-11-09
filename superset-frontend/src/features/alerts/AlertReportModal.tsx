@@ -2249,21 +2249,15 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                       onChange={onInputChange}
                     />
                   </ModalFormField>
-                  <ModalFormField label={t('Owners')} required>
-                    <AsyncSelect
-                      ariaLabel={t('Owners')}
+                  <ModalFormField label={t('Editors')} required>
+                    <SubjectPicker
+                      relatedUrl="/api/v1/report/related/editors"
+                      ariaLabel={t('Editors')}
                       allowClear
-                      name="editors"
-                      mode="multiple"
-                      placeholder={t('Select owners')}
-                      value={
-                        (currentAlert?.editors as {
-                          label: string;
-                          value: number | string;
-                        }[]) || []
-                      }
-                      options={loadOwnerOptions}
-                      onChange={onOwnersChange}
+                      placeholder={t('Select editors')}
+                      value={currentAlert?.editors || []}
+                      onChange={onEditorsChange}
+                      dataTest="editors-select"
                     />
                   </ModalFormField>
                   <ModalFormField label={t('Description')}>
