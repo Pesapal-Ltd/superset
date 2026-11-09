@@ -2480,7 +2480,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                                   );
                                 }
                               }}
-                              icon={<Icons.Link />}
+                              icon={<Icons.LinkOutlined />}
                             />
                           </Tooltip>
                         </div>
@@ -2529,7 +2529,7 @@ const AlertReportModal: FunctionComponent<AlertReportModalProps> = ({
                                   );
                                 }
                               }}
-                              icon={<Icons.Link />}
+                              icon={<Icons.LinkOutlined />}
                             />
                           </Tooltip>
                         </div>
