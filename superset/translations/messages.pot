@@ -25,7 +25,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Superset VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-30 19:32+0000\n"
+"POT-Creation-Date: 2026-11-16 06:16+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -11393,13 +11393,13 @@ msgstr ""
 msgid "Refreshing columns"
 msgstr ""
 
+msgid "Region"
+msgstr ""
+
 msgid "Region name"
 msgstr ""
 
 msgid "Region value format"
-msgstr ""
-
-msgid "Region"
 msgstr ""
 
 msgid "Register"
@@ -14588,14 +14588,10 @@ msgstr ""
 msgid "The feature property to use for point labels"
 msgstr ""
 
-msgid ""
-"The filters from the link you opened could not be loaded, so this link "
-"shares the default view."
+msgid "The filters from the link you opened could not be loaded, so this link shares the default view."
 msgstr ""
 
-msgid ""
-"The filters from this link have expired, so you’re seeing the default "
-"view."
+msgid "The filters from this link have expired, so you’re seeing the default view."
 msgstr ""
 
 msgid "The following charts could not be exported:"
@@ -15555,10 +15551,10 @@ msgstr ""
 msgid "This chart has been moved to a different filter scope."
 msgstr ""
 
-msgid "This chart is archived or unavailable. An editor can restore archived charts from Recently Archived."
+msgid "This chart is archived or unavailable."
 msgstr ""
 
-msgid "This chart is archived or unavailable."
+msgid "This chart is archived or unavailable. An editor can restore archived charts from Recently Archived."
 msgstr ""
 
 msgid "This chart is managed externally and can't be overwritten in Superset."
@@ -17210,9 +17206,7 @@ msgstr ""
 msgid "We can't seem to resolve the column \"%(column_name)s\"."
 msgstr ""
 
-msgid ""
-"We couldn’t load the filters from this link, so you’re seeing the default"
-" view."
+msgid "We couldn’t load the filters from this link, so you’re seeing the default view."
 msgstr ""
 
 #, python-format

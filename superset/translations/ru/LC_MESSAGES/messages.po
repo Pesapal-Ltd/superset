@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 06:18+0000\n"
+"POT-Creation-Date: 2026-11-16 06:16+0000\n"
 "PO-Revision-Date: 2026-07-17 09:44+0100\n"
 "Last-Translator: Daniel Checheta\n"
 "Language: ru\n"
@@ -785,6 +785,9 @@ msgstr ""
 "сохранены, если вы очистите куки или смените браузер.\n"
 "\n"
 
+msgid "-----BEGIN PRIVATE KEY-----"
+msgstr ""
+
 #, python-format
 msgid "... and %d more"
 msgstr "... и еще %d"
@@ -1447,6 +1450,21 @@ msgstr "Асинхронные запросы"
 msgid "AUG"
 msgstr "АВГ"
 
+msgid "AWS Access Key ID"
+msgstr ""
+
+msgid "AWS Secret Access Key"
+msgstr ""
+
+msgid "AWS access key ID"
+msgstr ""
+
+msgid "AWS region, e.g. us-east-1"
+msgstr ""
+
+msgid "AWS secret access key"
+msgstr ""
+
 msgid "Aborted"
 msgstr "Отменен"
 
@@ -1556,6 +1574,9 @@ msgstr "Добавить плагин"
 
 msgid "Add a dataset"
 msgstr "Создать датасет"
+
+msgid "Add a datasource"
+msgstr ""
 
 msgid "Add a new tab"
 msgstr "Новая вкладка"
@@ -2900,11 +2921,17 @@ msgstr ""
 msgid "Asynchronous query execution"
 msgstr "Асинхронное выполнение запросов"
 
+msgid "Athena work group to run queries against"
+msgstr ""
+
 msgid "Attribution"
 msgstr "Атрибуция"
 
 msgid "August"
 msgstr "Август"
+
+msgid "Authentication method"
+msgstr ""
 
 msgid "Authorization Request URI"
 msgstr "URI запроса авторизации"
@@ -3491,6 +3518,9 @@ msgid ""
 "{\"confirmed_impact_token\": <token>} — before deleting the database. "
 "Restoring them (POST /api/v1/dataset/<uuid>/restore) keeps the datasets, "
 "but the database still cannot be deleted."
+msgstr ""
+
+msgid "Cannot delete semantic views"
 msgstr ""
 
 msgid "Cannot delete system themes"
@@ -4707,6 +4737,9 @@ msgstr "Настройте этот дашборд, чтобы встроить 
 msgid "Configure your how you overlay is displayed here."
 msgstr "Настройка отображения слоя аннотации поверх диаграммы"
 
+msgid "Configured"
+msgstr ""
+
 msgid "Confirm"
 msgstr "Подтвердить"
 
@@ -4939,10 +4972,6 @@ msgstr ""
 #, python-format
 msgid "Could not connect to database: \"%(database)s\""
 msgstr "Не удалось подключиться к базе данных: \"%(database)s\""
-
-#, python-format
-msgid "Could not delete semantic views %s: %s"
-msgstr ""
 
 msgid "Could not fetch all saved charts"
 msgstr "Не удалось получить все сохраненные диаграммы"
@@ -5895,6 +5924,9 @@ msgstr ""
 "может быть больше, чем указанная, если остальным столбцам не будет "
 "хватать места."
 
+msgid "Default schema (database) to connect to"
+msgstr ""
+
 msgid "Default value must be set when \"Filter has default value\" is checked"
 msgstr "Включив эту настройку, нужно выбрать значение фильтра по умолчанию"
 
@@ -6109,6 +6141,16 @@ msgstr ""
 msgid "Delete template"
 msgstr "Удалить шаблон"
 
+#, python-format
+msgid "Delete the other semantic view, %s? This cannot be undone."
+msgid_plural "Delete the other semantic views, %s? This cannot be undone."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "Delete the other semantic views?"
+msgstr ""
+
 msgid "Delete theme"
 msgstr "Удалить тему"
 
@@ -6211,6 +6253,13 @@ msgstr "Удалено %s"
 #, python-format
 msgid "Deleted %s item(s)"
 msgstr "Удалено %s элемент(ов)"
+
+#, python-format
+msgid "Deleted %s semantic view"
+msgid_plural "Deleted %s semantic views"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #, python-format
 msgid "Deleted group: %s"
@@ -7075,6 +7124,20 @@ msgstr ""
 msgid "Embedded dashboard could not be deleted."
 msgstr "Не удалось удалить встроенный дашборд."
 
+msgid "Embedded guest credentials"
+msgstr ""
+
+msgid ""
+"Embedded guest credentials are invalid or incomplete. Provide all "
+"required fields or clear them to leave embedded viewers unconfigured."
+msgstr ""
+
+msgid ""
+"Embedded guest credentials only apply to connections that use OAuth2 with"
+" \"Impersonate logged in user\" turned on. Configure OAuth2 client "
+"information and turn on impersonation, or clear the embedded credentials."
+msgstr ""
+
 msgid "Embedding deactivated."
 msgstr "Встраивание отключено"
 
@@ -7279,6 +7342,12 @@ msgstr "Введите имя группы"
 #, python-format
 msgid "Enter the required %(dbModelName)s credentials"
 msgstr "Введите обязательные данные для %(dbModelName)s"
+
+msgid ""
+"Enter the scopes allowed by your Snowflake integration, for example "
+"session:role:ANALYST refresh_token. Without a role scope, Snowflake uses "
+"the user's default role."
+msgstr ""
 
 msgid "Enter the unique project id for your database."
 msgstr "Введите уникальный идентификатор проекта для вашей базы данных."
@@ -8201,7 +8270,9 @@ msgid ""
 "mirrored."
 msgstr ""
 
-msgid "Filters on this column are mapped onto the partition column, but mirroring has not been confirmed."
+msgid ""
+"Filters on this column are mapped onto the partition column, but "
+"mirroring has not been confirmed."
 msgstr ""
 
 msgid ""
@@ -8864,8 +8935,9 @@ msgid ""
 "hive.server2.proxy.user property. If Databricks, uses OAuth2 to "
 "authenticate as the currently logged on user. If Snowflake or Google "
 "Sheets, and OAuth authentication is configured for the database, will run"
-" the queries as the currently logged on user via their own OAuth "
-"credentials."
+" the queries as the currently logged on user via their own OAuth2 "
+"credentials. Snowflake OAuth2 connections also require it for embedded "
+"guest credentials."
 msgstr ""
 
 msgid "If a metric is specified, sorting will be done based on the metric value"
@@ -9466,6 +9538,9 @@ msgstr "Ключ"
 msgid "Key Prefix"
 msgstr "Префикс"
 
+msgid "Key pair"
+msgstr ""
+
 msgid "Keyboard shortcuts"
 msgstr "Горячие клавиши"
 
@@ -9923,6 +9998,15 @@ msgstr "Список обновлен"
 msgid "List view"
 msgstr "Список пользователей"
 
+msgid "Literal filters require scalar values"
+msgstr ""
+
+msgid "Literal membership filters require a non-empty list of scalar values"
+msgstr ""
+
+msgid "Literal substring filters require a string column and value"
+msgstr ""
+
 msgid "Live render"
 msgstr "Мгновенная отрисовка"
 
@@ -9959,6 +10043,9 @@ msgid "Loading semantic layer types…"
 msgstr ""
 
 msgid "Loading semantic layers…"
+msgstr ""
+
+msgid "Loading the view shared with you…"
 msgstr ""
 
 msgid "Loading timezones..."
@@ -11161,6 +11248,10 @@ msgid ""
 " a semantic layer or grant you access to one."
 msgstr ""
 
+#, python-format
+msgid "No semantic views were deleted because other assets depend on %s."
+msgstr ""
+
 msgid "No sort (original order)"
 msgstr ""
 
@@ -11706,6 +11797,9 @@ msgid ""
 msgstr ""
 "Необязательное измерение, которое разбивает график на несколько свечных "
 "рядов."
+
+msgid "Optional if your workgroup sets a result location."
+msgstr ""
 
 msgid ""
 "Optional metric used to scale the size of each dot. Dot areas are scaled "
@@ -12523,6 +12617,12 @@ msgstr "Приватный ключ и пароль"
 msgid "Private Key Password"
 msgstr "Пароль приватного ключа"
 
+msgid "Private key (PEM)"
+msgstr ""
+
+msgid "Private key passphrase (optional)"
+msgstr ""
+
 msgid "Proceed"
 msgstr "Продолжить"
 
@@ -12712,6 +12812,9 @@ msgstr ""
 msgid "Raw records"
 msgstr "Сырые записи"
 
+msgid "Re-enter the access token when changing the connection destination."
+msgstr ""
+
 msgid "Re-pick fields"
 msgstr ""
 
@@ -12814,6 +12917,9 @@ msgstr "Обновление диаграмм"
 msgid "Refreshing columns"
 msgstr "Обновление столбцов"
 
+msgid "Region"
+msgstr ""
+
 msgid "Region name"
 msgstr ""
 
@@ -12888,6 +12994,9 @@ msgid "Remove customization"
 msgstr "Удалить настройку"
 
 msgid "Remove dependency"
+msgstr ""
+
+msgid "Remove embedded guest credentials"
 msgstr ""
 
 msgid "Remove filter"
@@ -13175,6 +13284,11 @@ msgid "Required if your account already has a password"
 msgstr ""
 
 msgid "Required to mirror range filters, including the time range."
+msgstr ""
+
+msgid ""
+"Requires OAuth2 client information and “Impersonate logged in user” "
+"(Advanced → Security)."
 msgstr ""
 
 msgid "Resample"
@@ -13532,6 +13646,15 @@ msgstr "Выполняется"
 #, python-format
 msgid "Running block %(block_num)s out of %(block_count)s"
 msgstr "Выполняется блок %(block_num)s из %(block_count)s"
+
+msgid ""
+"S3 location where Athena query results are stored, e.g. s3://my-bucket"
+"/athena-results/. Can be left empty when the work group defines a query "
+"result location or uses managed query results."
+msgstr ""
+
+msgid "S3 query results location"
+msgstr ""
 
 msgid "SAT"
 msgstr "СБ"
@@ -16493,6 +16616,16 @@ msgstr ""
 msgid "The feature property to use for point labels"
 msgstr "Свойство объекта, используемое для подписей точек"
 
+msgid ""
+"The filters from the link you opened could not be loaded, so this link "
+"shares the default view."
+msgstr ""
+
+msgid ""
+"The filters from this link have expired, so you’re seeing the default "
+"view."
+msgstr ""
+
 msgid "The following charts could not be exported:"
 msgstr ""
 
@@ -16761,54 +16894,31 @@ msgstr "Сброс пароля выполнен успешно"
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the charts. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
+"together with the charts. Please note that the \"Certificate\" section of"
+" the database configuration is not present in export files, and should be"
+" added manually after the import if it is needed."
 msgstr ""
-"Для баз данных нужны пароли, чтобы импортировать их вместе с диаграммами."
-" Пожалуйста, обратите внимание, что разделы \"Безопасность\" и "
-"\"Утверждение\" в настройках конфигурации базы данных отсутствуют в "
-"экспортируемых файлов и должны быть добавлены вручную после импорта, если"
-" необходимо."
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the dashboards. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
+"together with the dashboards. Please note that the \"Certificate\" "
+"section of the database configuration is not present in export files, and"
+" should be added manually after the import if it is needed."
 msgstr ""
-"Для баз данных нужны пароли, чтобы импортировать их вместе с дашбордами. "
-"Пожалуйста, обратите внимание, что разделы \"Безопасность\" и "
-"\"Утверждение\" в настройках конфигурации базы данных отсутствуют в "
-"экспортируемых файлах и должны быть добавлены вручную после импорта, если"
-" необходимо."
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the datasets. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
+"together with the datasets. Please note that the \"Certificate\" section "
+"of the database configuration is not present in export files, and should "
+"be added manually after the import if it is needed."
 msgstr ""
-"Пароли к базам данных требуются, чтобы импортировать их вместе с "
-"датасетами. Пожалуйста, обратите внимание, что разделы \"Безопасность\" и"
-" \"Утверждение\" конфигурации базы данных отсутствуют в экспортируемых "
-"файлах и должны быть добавлены после импорта вручную, если необходимо."
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the saved queries. Please note that the \"Secure Extra\" "
-"and \"Certificate\" sections of the database configuration are not "
-"present in export files, and should be added manually after the import if"
-" they are needed."
+"together with the saved queries. Please note that the \"Certificate\" "
+"section of the database configuration is not present in export files, and"
+" should be added manually after the import if it is needed."
 msgstr ""
-"Для баз данных нужны пароли, чтобы импортировать их вместе с сохраненными"
-" запросами. Пожалуйста, обратите внимание, что разделы \"Безопасность\" и"
-" \"Утверждение\" в настройках конфигурации базы данных отсутствуют в "
-"экспортируемых файлах и должны быть добавлены вручную после импорта, если"
-" необходимо."
 
 # Machine-translated via backfill_po.py (claude-sonnet-4-6) [refs: de, sr,
 # sr_Latn]
@@ -17824,8 +17934,21 @@ msgstr ""
 "Эта диаграмма применяет кросс-фильтрацию к другим диаграммам, содержащим "
 "столбцы с такими же названиями"
 
+msgid ""
+"This chart can't be shown here because its database connection isn't set "
+"up for embedded dashboards. Please contact the dashboard's owner."
+msgstr ""
+
 msgid "This chart has been moved to a different filter scope."
 msgstr "Эта диаграмма была перемещена в другой набор фильтров"
+
+msgid "This chart is archived or unavailable."
+msgstr ""
+
+msgid ""
+"This chart is archived or unavailable. An editor can restore archived "
+"charts from Recently Archived."
+msgstr ""
 
 msgid "This chart is managed externally and can't be overwritten in Superset."
 msgstr ""
@@ -19010,6 +19133,10 @@ msgid "Unable to fetch semantic views. Check the layer configuration."
 msgstr "Не удалось получить представления аннотаций. Проверьте конфигурацию слоя."
 
 #, python-format
+msgid "Unable to find such a country: [%(country)s]"
+msgstr ""
+
+#, python-format
 msgid "Unable to find such a holiday: [%(holiday)s]"
 msgstr "Не удалось найти такой праздник: [%(holiday)s]"
 
@@ -19447,6 +19574,14 @@ msgstr ""
 " именем пакета из package.json"
 
 msgid ""
+"Used only when a dashboard is viewed through an embedded guest token. "
+"Every embedded viewer of this connection queries as this one user, so it "
+"should be a dedicated account with the narrowest access those dashboards "
+"need. Logged-in users are unaffected and continue to authenticate "
+"individually via OAuth2."
+msgstr ""
+
+msgid ""
 "Used to summarize a set of data by grouping together multiple statistics "
 "along two axes. Examples: Sales numbers by region and month, tasks by "
 "status and assignee, active users by age and location. Not the most "
@@ -19721,6 +19856,9 @@ msgstr "Наблюдатель"
 msgid "Viewers"
 msgstr "Наблюдатели"
 
+msgid "Viewers cannot be added while the ENABLE_VIEWERS feature flag is disabled"
+msgstr ""
+
 msgid ""
 "Viewers is a list of subjects who can view the dashboard. If no viewers "
 "are defined, the dashboard is accessible to all users with appropriate "
@@ -19935,6 +20073,11 @@ msgstr "Не удалось обнаружить столбец \"%(column_name)
 
 #, python-format
 msgid "We can't seem to resolve the column \"%(column_name)s\"."
+msgstr ""
+
+msgid ""
+"We couldn’t load the filters from this link, so you’re seeing the default"
+" view."
 msgstr ""
 
 #, python-format
@@ -20362,6 +20505,9 @@ msgstr "Облако слов"
 
 msgid "Word Rotation"
 msgstr "Поворот текста"
+
+msgid "Work Group"
+msgstr ""
 
 msgid "Working"
 msgstr "Обрабатывается"
@@ -21268,6 +21414,9 @@ msgstr "создать"
 msgid "create a new chart"
 msgstr "создать новую диаграмму"
 
+msgid "create a semantic view"
+msgstr ""
+
 msgid "create dataset from SQL query"
 msgstr "создайте датасет из SQL-запроса"
 
@@ -21404,6 +21553,9 @@ msgstr "например, 127.0.0.1"
 msgid "e.g. 5432"
 msgstr "например, 5432"
 
+msgid "e.g. AKIAIOSFODNN7EXAMPLE"
+msgstr ""
+
 msgid "e.g. AccountAdmin"
 msgstr "например, AccountAdmin"
 
@@ -21416,14 +21568,26 @@ msgstr "например, compute_wh"
 msgid "e.g. default"
 msgstr "например, default"
 
+msgid "e.g. embedded_viewer"
+msgstr ""
+
 msgid "e.g. hive_metastore"
 msgstr "например, hive_metastore"
 
 msgid "e.g. param1=value1&param2=value2"
 msgstr "например, параметр1=значение1&параметр2=значение2"
 
+msgid "e.g. primary"
+msgstr ""
+
+msgid "e.g. s3://my-bucket/athena-results/"
+msgstr ""
+
 msgid "e.g. sql/protocolv1/o/12345"
 msgstr "например, sql/protocolv1/o/12345"
+
+msgid "e.g. us-east-1"
+msgstr ""
 
 msgid "e.g. world_population"
 msgstr "например, world_population"
