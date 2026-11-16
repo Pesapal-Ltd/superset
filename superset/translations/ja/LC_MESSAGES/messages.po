@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-11-02 06:18+0000\n"
+"POT-Creation-Date: 2026-11-16 06:16+0000\n"
 "PO-Revision-Date: 2024-05-14 13:30+0900\n"
 "Last-Translator: Yuri Umezaki <bungoume@gmail.com>\n"
 "Language: ja\n"
@@ -697,6 +697,9 @@ msgstr ""
 "-- 注: クエリを保存しない限り、ブラウザのCookieを削除したりブラウザを変更したりすると、これらのタブは保持されません。\n"
 "\n"
 
+msgid "-----BEGIN PRIVATE KEY-----"
+msgstr ""
+
 #, python-format
 msgid "... and %d more"
 msgstr "... 他 %d 件"
@@ -1331,6 +1334,21 @@ msgstr "非同期クエリ実行"
 msgid "AUG"
 msgstr "8月"
 
+msgid "AWS Access Key ID"
+msgstr ""
+
+msgid "AWS Secret Access Key"
+msgstr ""
+
+msgid "AWS access key ID"
+msgstr ""
+
+msgid "AWS region, e.g. us-east-1"
+msgstr ""
+
+msgid "AWS secret access key"
+msgstr ""
+
 msgid "Aborted"
 msgstr "中止済み"
 
@@ -1438,6 +1456,9 @@ msgstr "プラグインを追加"
 
 msgid "Add a dataset"
 msgstr "データセットを追加"
+
+msgid "Add a datasource"
+msgstr ""
 
 msgid "Add a new tab"
 msgstr "新しいタブを追加"
@@ -2703,11 +2724,17 @@ msgstr ""
 msgid "Asynchronous query execution"
 msgstr "非同期クエリ実行"
 
+msgid "Athena work group to run queries against"
+msgstr ""
+
 msgid "Attribution"
 msgstr "属性"
 
 msgid "August"
 msgstr "8月"
+
+msgid "Authentication method"
+msgstr ""
 
 msgid "Authorization Request URI"
 msgstr "認可リクエストURI"
@@ -3242,6 +3269,9 @@ msgid ""
 "{\"confirmed_impact_token\": <token>} — before deleting the database. "
 "Restoring them (POST /api/v1/dataset/<uuid>/restore) keeps the datasets, "
 "but the database still cannot be deleted."
+msgstr ""
+
+msgid "Cannot delete semantic views"
 msgstr ""
 
 msgid "Cannot delete system themes"
@@ -4397,6 +4427,9 @@ msgstr "外部Webアプリケーションに埋め込むためのダッシュボ
 msgid "Configure your how you overlay is displayed here."
 msgstr "オーバーレイの表示方法をここで設定します。"
 
+msgid "Configured"
+msgstr ""
+
 msgid "Confirm"
 msgstr "確認"
 
@@ -4627,10 +4660,6 @@ msgstr ""
 #, python-format
 msgid "Could not connect to database: \"%(database)s\""
 msgstr "データベース「%(database)s」に接続できませんでした"
-
-#, python-format
-msgid "Could not delete semantic views %s: %s"
-msgstr ""
 
 msgid "Could not fetch all saved charts"
 msgstr "保存済みチャートをすべて取得できませんでした"
@@ -5537,6 +5566,9 @@ msgid ""
 "than this if other columns don't need much space"
 msgstr "既定の最小列幅(ピクセル単位)。他の列のスペース状況により、実際の幅はこれより大きくなる場合があります"
 
+msgid "Default schema (database) to connect to"
+msgstr ""
+
 msgid "Default value must be set when \"Filter has default value\" is checked"
 msgstr "「フィルターに既定値を設定する」にチェックがある場合、既定値の指定は必須です"
 
@@ -5727,6 +5759,14 @@ msgstr ""
 msgid "Delete template"
 msgstr "テンプレートを削除"
 
+#, python-format
+msgid "Delete the other semantic view, %s? This cannot be undone."
+msgid_plural "Delete the other semantic views, %s? This cannot be undone."
+msgstr[0] ""
+
+msgid "Delete the other semantic views?"
+msgstr ""
+
 msgid "Delete theme"
 msgstr "テーマを削除"
 
@@ -5807,6 +5847,11 @@ msgstr "%s を削除しました"
 #, python-format
 msgid "Deleted %s item(s)"
 msgstr "%s 個の項目を削除しました"
+
+#, python-format
+msgid "Deleted %s semantic view"
+msgid_plural "Deleted %s semantic views"
+msgstr[0] ""
 
 #, python-format
 msgid "Deleted group: %s"
@@ -6615,6 +6660,20 @@ msgstr ""
 msgid "Embedded dashboard could not be deleted."
 msgstr "埋め込みダッシュボードを削除できませんでした。"
 
+msgid "Embedded guest credentials"
+msgstr ""
+
+msgid ""
+"Embedded guest credentials are invalid or incomplete. Provide all "
+"required fields or clear them to leave embedded viewers unconfigured."
+msgstr ""
+
+msgid ""
+"Embedded guest credentials only apply to connections that use OAuth2 with"
+" \"Impersonate logged in user\" turned on. Configure OAuth2 client "
+"information and turn on impersonation, or clear the embedded credentials."
+msgstr ""
+
 msgid "Embedding deactivated."
 msgstr "埋め込みを無効にしました。"
 
@@ -6813,6 +6872,12 @@ msgstr "グループの名前を入力"
 #, python-format
 msgid "Enter the required %(dbModelName)s credentials"
 msgstr "%(dbModelName)s に必要な認証情報を入力してください"
+
+msgid ""
+"Enter the scopes allowed by your Snowflake integration, for example "
+"session:role:ANALYST refresh_token. Without a role scope, Snowflake uses "
+"the user's default role."
+msgstr ""
 
 msgid "Enter the unique project id for your database."
 msgstr "データベースの一意なプロジェクトIDを入力してください。"
@@ -7722,7 +7787,9 @@ msgid ""
 "mirrored."
 msgstr ""
 
-msgid "Filters on this column are mapped onto the partition column, but mirroring has not been confirmed."
+msgid ""
+"Filters on this column are mapped onto the partition column, but "
+"mirroring has not been confirmed."
 msgstr ""
 
 msgid ""
@@ -8343,8 +8410,9 @@ msgid ""
 "hive.server2.proxy.user property. If Databricks, uses OAuth2 to "
 "authenticate as the currently logged on user. If Snowflake or Google "
 "Sheets, and OAuth authentication is configured for the database, will run"
-" the queries as the currently logged on user via their own OAuth "
-"credentials."
+" the queries as the currently logged on user via their own OAuth2 "
+"credentials. Snowflake OAuth2 connections also require it for embedded "
+"guest credentials."
 msgstr ""
 
 msgid "If a metric is specified, sorting will be done based on the metric value"
@@ -8928,6 +8996,9 @@ msgstr "キー"
 msgid "Key Prefix"
 msgstr "キーの接頭辞"
 
+msgid "Key pair"
+msgstr ""
+
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
 
@@ -9373,6 +9444,15 @@ msgstr "リストを更新しました"
 msgid "List view"
 msgstr "リストビュー"
 
+msgid "Literal filters require scalar values"
+msgstr ""
+
+msgid "Literal membership filters require a non-empty list of scalar values"
+msgstr ""
+
+msgid "Literal substring filters require a string column and value"
+msgstr ""
+
 msgid "Live render"
 msgstr "ライブ描画"
 
@@ -9408,6 +9488,9 @@ msgid "Loading semantic layer types…"
 msgstr ""
 
 msgid "Loading semantic layers…"
+msgstr ""
+
+msgid "Loading the view shared with you…"
 msgstr ""
 
 msgid "Loading timezones..."
@@ -10554,6 +10637,10 @@ msgid ""
 " a semantic layer or grant you access to one."
 msgstr ""
 
+#, python-format
+msgid "No semantic views were deleted because other assets depend on %s."
+msgstr ""
+
 msgid "No sort (original order)"
 msgstr ""
 
@@ -11068,6 +11155,9 @@ msgid ""
 "Optional dimension used to split the chart into multiple candlestick "
 "series."
 msgstr "チャートを複数のローソク足系列に分割する任意のディメンション。"
+
+msgid "Optional if your workgroup sets a result location."
+msgstr ""
 
 msgid ""
 "Optional metric used to scale the size of each dot. Dot areas are scaled "
@@ -11837,6 +11927,12 @@ msgstr "秘密鍵とパスワード"
 msgid "Private Key Password"
 msgstr "秘密鍵のパスワード"
 
+msgid "Private key (PEM)"
+msgstr ""
+
+msgid "Private key passphrase (optional)"
+msgstr ""
+
 msgid "Proceed"
 msgstr "進む"
 
@@ -12026,6 +12122,9 @@ msgstr ""
 msgid "Raw records"
 msgstr "未加工レコード"
 
+msgid "Re-enter the access token when changing the connection destination."
+msgstr ""
+
 msgid "Re-pick fields"
 msgstr ""
 
@@ -12127,6 +12226,9 @@ msgstr "チャートを更新中"
 msgid "Refreshing columns"
 msgstr "列を更新中"
 
+msgid "Region"
+msgstr ""
+
 msgid "Region name"
 msgstr ""
 
@@ -12202,6 +12304,9 @@ msgstr "カスタマイズを削除"
 
 msgid "Remove dependency"
 msgstr "依存関係を削除"
+
+msgid "Remove embedded guest credentials"
+msgstr ""
 
 msgid "Remove filter"
 msgstr "フィルターを削除"
@@ -12476,6 +12581,11 @@ msgid "Required if your account already has a password"
 msgstr ""
 
 msgid "Required to mirror range filters, including the time range."
+msgstr ""
+
+msgid ""
+"Requires OAuth2 client information and “Impersonate logged in user” "
+"(Advanced → Security)."
 msgstr ""
 
 msgid "Resample"
@@ -12828,6 +12938,15 @@ msgstr "実行中"
 #, python-format
 msgid "Running block %(block_num)s out of %(block_count)s"
 msgstr "全 %(block_count)s ブロック中、%(block_num)s 番目のブロックを実行中"
+
+msgid ""
+"S3 location where Athena query results are stored, e.g. s3://my-bucket"
+"/athena-results/. Can be left empty when the work group defines a query "
+"result location or uses managed query results."
+msgstr ""
+
+msgid "S3 query results location"
+msgstr ""
 
 msgid "SAT"
 msgstr "土"
@@ -15619,6 +15738,16 @@ msgstr "アプリ起動時のマップの表示範囲。「データに合わせ
 msgid "The feature property to use for point labels"
 msgstr "ポイントラベルに使用するプロパティ"
 
+msgid ""
+"The filters from the link you opened could not be loaded, so this link "
+"shares the default view."
+msgstr ""
+
+msgid ""
+"The filters from this link have expired, so you’re seeing the default "
+"view."
+msgstr ""
+
 msgid "The following charts could not be exported:"
 msgstr ""
 
@@ -15849,35 +15978,31 @@ msgstr "パスワードのリセットに成功しました"
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the charts. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
-msgstr "チャートと一緒にインポートするには、以下のデータベースのパスワードが必要です。なお、データベース設定の「セキュア設定」および「証明書」セクションはエクスポートファイルには含まれません。必要に応じて、インポート後に手動で追加してください。"
+"together with the charts. Please note that the \"Certificate\" section of"
+" the database configuration is not present in export files, and should be"
+" added manually after the import if it is needed."
+msgstr ""
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the dashboards. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
-msgstr "ダッシュボードと一緒にインポートするには、以下のデータベースのパスワードが必要です。なお、データベース設定の「セキュア設定」および「証明書」セクションはエクスポートファイルには含まれません。必要に応じて、インポート後に手動で追加してください。"
+"together with the dashboards. Please note that the \"Certificate\" "
+"section of the database configuration is not present in export files, and"
+" should be added manually after the import if it is needed."
+msgstr ""
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the datasets. Please note that the \"Secure Extra\" and "
-"\"Certificate\" sections of the database configuration are not present in"
-" export files, and should be added manually after the import if they are "
-"needed."
-msgstr "データセットと一緒にインポートするには、以下のデータベースのパスワードが必要です。なお、データベース設定の「セキュア設定」および「証明書」セクションはエクスポートファイルには含まれません。必要に応じて、インポート後に手動で追加してください。"
+"together with the datasets. Please note that the \"Certificate\" section "
+"of the database configuration is not present in export files, and should "
+"be added manually after the import if it is needed."
+msgstr ""
 
 msgid ""
 "The passwords for the databases below are needed in order to import them "
-"together with the saved queries. Please note that the \"Secure Extra\" "
-"and \"Certificate\" sections of the database configuration are not "
-"present in export files, and should be added manually after the import if"
-" they are needed."
-msgstr "保存済みクエリと一緒にインポートするには、以下のデータベースのパスワードが必要です。なお、データベース設定の「セキュア設定」および「証明書」セクションはエクスポートファイルには含まれません。必要に応じて、インポート後に手動で追加してください。"
+"together with the saved queries. Please note that the \"Certificate\" "
+"section of the database configuration is not present in export files, and"
+" should be added manually after the import if it is needed."
+msgstr ""
 
 msgid "The passwords for the databases below are needed in order to import them."
 msgstr "以下のデータベースをインポートするには、それぞれのパスワードが必要です。"
@@ -16814,8 +16939,21 @@ msgid ""
 " with the same name."
 msgstr "このチャートは、同じ名前の列を含むデータセットを使用した他のチャートに対してクロスフィルターを適用します。"
 
+msgid ""
+"This chart can't be shown here because its database connection isn't set "
+"up for embedded dashboards. Please contact the dashboard's owner."
+msgstr ""
+
 msgid "This chart has been moved to a different filter scope."
 msgstr "このチャートは別のフィルタースコープへ移動されました。"
+
+msgid "This chart is archived or unavailable."
+msgstr ""
+
+msgid ""
+"This chart is archived or unavailable. An editor can restore archived "
+"charts from Recently Archived."
+msgstr ""
 
 msgid "This chart is managed externally and can't be overwritten in Superset."
 msgstr "このチャートは外部で管理されているため、Superset では上書きできません"
@@ -17890,6 +18028,10 @@ msgid "Unable to fetch semantic views. Check the layer configuration."
 msgstr "セマンティックビューを取得できません。レイヤーの設定を確認してください。"
 
 #, python-format
+msgid "Unable to find such a country: [%(country)s]"
+msgstr ""
+
+#, python-format
 msgid "Unable to find such a holiday: [%(holiday)s]"
 msgstr "指定された祝日が見つかりませんでした: [%(holiday)s]"
 
@@ -18301,6 +18443,14 @@ msgid ""
 msgstr "プラグインを識別するために内部的に使用されます。プラグインの package.json にあるパッケージ名を設定してください"
 
 msgid ""
+"Used only when a dashboard is viewed through an embedded guest token. "
+"Every embedded viewer of this connection queries as this one user, so it "
+"should be a dedicated account with the narrowest access those dashboards "
+"need. Logged-in users are unaffected and continue to authenticate "
+"individually via OAuth2."
+msgstr ""
+
+msgid ""
 "Used to summarize a set of data by grouping together multiple statistics "
 "along two axes. Examples: Sales numbers by region and month, tasks by "
 "status and assignee, active users by age and location. Not the most "
@@ -18562,6 +18712,9 @@ msgstr "閲覧者"
 msgid "Viewers"
 msgstr "閲覧者"
 
+msgid "Viewers cannot be added while the ENABLE_VIEWERS feature flag is disabled"
+msgstr ""
+
 msgid ""
 "Viewers is a list of subjects who can view the dashboard. If no viewers "
 "are defined, the dashboard is accessible to all users with appropriate "
@@ -18740,6 +18893,11 @@ msgstr "%(location)s 行目の列「%(column_name)s」を解決できません�
 
 #, python-format
 msgid "We can't seem to resolve the column \"%(column_name)s\"."
+msgstr ""
+
+msgid ""
+"We couldn’t load the filters from this link, so you’re seeing the default"
+" view."
 msgstr ""
 
 #, python-format
@@ -19116,6 +19274,9 @@ msgstr "ワードクラウド"
 
 msgid "Word Rotation"
 msgstr "単語の回転"
+
+msgid "Work Group"
+msgstr ""
 
 msgid "Working"
 msgstr "処理中"
@@ -19964,6 +20125,9 @@ msgstr "作成"
 msgid "create a new chart"
 msgstr "新しいチャートを作成"
 
+msgid "create a semantic view"
+msgstr ""
+
 msgid "create dataset from SQL query"
 msgstr "SQL クエリからデータセットを作成"
 
@@ -20099,6 +20263,9 @@ msgstr "例: 127.0.0.1"
 msgid "e.g. 5432"
 msgstr "例: 5432"
 
+msgid "e.g. AKIAIOSFODNN7EXAMPLE"
+msgstr ""
+
 msgid "e.g. AccountAdmin"
 msgstr "例: AccountAdmin"
 
@@ -20111,14 +20278,26 @@ msgstr "例: compute_wh"
 msgid "e.g. default"
 msgstr "例: default"
 
+msgid "e.g. embedded_viewer"
+msgstr ""
+
 msgid "e.g. hive_metastore"
 msgstr "例: hive_metastore"
 
 msgid "e.g. param1=value1&param2=value2"
 msgstr "例: param1=value1&param2=value2"
 
+msgid "e.g. primary"
+msgstr ""
+
+msgid "e.g. s3://my-bucket/athena-results/"
+msgstr ""
+
 msgid "e.g. sql/protocolv1/o/12345"
 msgstr "例: sql/protocolv1/o/12345"
+
+msgid "e.g. us-east-1"
+msgstr ""
 
 msgid "e.g. world_population"
 msgstr "例: world_population"
