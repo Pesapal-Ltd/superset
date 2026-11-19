@@ -1,0 +1,24 @@
+{
+  "name": "@superset-ui/plugin-chart-zoho-kpi",
+  "version": "0.1.0",
+  "description": "Superset Chart - Zoho Analytics style KPI widget (value, comparison, target, sparkline)",
+  "sideEffects": false,
+  "main": "lib/index.js",
+  "module": "esm/index.js",
+  "files": [
+    "esm",
+    "lib"
+  ],
+  "keywords": [
+    "superset",
+    "kpi"
+  ],
+  "author": "Pesapal",
+  "license": "Apache-2.0",
+  "private": true,
+  "peerDependencies": {
+    "@superset-ui/chart-controls": "*",
+    "@superset-ui/core": "*",
+    "react": "^16.13.1 || ^17.0.2 || ^18.3.0"
+  }
+}
