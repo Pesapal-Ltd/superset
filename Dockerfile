@@ -27,21 +27,6 @@ ARG BUILDPLATFORM=${BUILDPLATFORM:-amd64}
 ARG BUILD_TRANSLATIONS="false"
 
 ######################################################################
-# superset-source applies the Pesapal extensions (pesapal-superset-kit)
-# to a copy of the source tree. The frontend and backend stages below
-# consume this patched tree, so the working copy is never modified and
-# the extensions are always part of the image build.
-######################################################################
-FROM python:${PY_VER} AS superset-source
-WORKDIR /app
-COPY superset-frontend /app/superset-frontend
-COPY superset /app/superset
-COPY pesapal-superset-kit /opt/pesapal-superset-kit
-# install.py exits non-zero when an edit can't be applied automatically,
-# which fails the build instead of shipping a half-installed extension.
-RUN python /opt/pesapal-superset-kit/install.py /app
-
-######################################################################
 # superset-node-ci used as a base for building frontend assets and CI
 ######################################################################
 FROM --platform=${BUILDPLATFORM} node:24-trixie-slim AS superset-node-ci
@@ -98,18 +83,7 @@ RUN --mount=type=bind,source=./superset-frontend/package.json,target=./package.j
     fi
 
 # Runs the webpack build process
-# The source comes from the patched tree so the Pesapal plugins are included.
-COPY --from=superset-source /app/superset-frontend /app/superset-frontend
-
-# The Pesapal kit adds new workspace plugins to package.json, so link them
-# (and resolve any new dependencies) on top of the cached `npm ci` above.
-RUN --mount=type=cache,target=/root/.cache \
-    --mount=type=cache,target=/root/.npm \
-    if [ "${DEV_MODE}" = "false" ]; then \
-        npm install --no-audit --no-fund; \
-    else \
-        echo "Skipping 'npm install' in dev mode"; \
-    fi
+COPY superset-frontend /app/superset-frontend
 
 ######################################################################
 # superset-node is used for compiling frontend assets
@@ -303,8 +277,7 @@ COPY --from=superset-node /app/superset/static/assets superset/static/assets
 COPY --from=superset-node /app/superset/static/service-worker.j[s] superset/static/service-worker.js
 
 # TODO, when the next version comes out, use --exclude superset/translations
-# Patched tree: includes the Pesapal backend (superset/semantic) and menu wiring.
-COPY --from=superset-source /app/superset superset
+COPY superset superset
 # TODO in the meantime, remove the .po files
 RUN rm superset/translations/*/*/*.po
 
@@ -335,10 +308,6 @@ USER root
 RUN /app/docker/apt-install.sh \
     pkg-config \
     default-libmysqlclient-dev
-
-# Playwright's bundled Node driver links against libatomic on arm64
-# (e.g. Apple Silicon); without it `playwright install-deps` fails to start.
-RUN /app/docker/apt-install.sh libatomic1
 
 # Bundle the common metadata/analytics drivers (postgres, mysql) and the
 # MCP server dependencies (fastmcp) so the default image is usable without
@@ -397,8 +366,7 @@ COPY --from=superset-node /app/superset/static/assets superset/static/assets
 COPY --from=superset-node /app/superset/static/service-worker.j[s] superset/static/service-worker.js
 
 # TODO, when the next version comes out, use --exclude superset/translations
-# Patched tree: includes the Pesapal backend (superset/semantic) and menu wiring.
-COPY --from=superset-source /app/superset superset
+COPY superset superset
 # TODO in the meantime, remove the .po files
 RUN rm superset/translations/*/*/*.po
 

@@ -23,7 +23,6 @@
 import logging
 import os
 import sys
-from typing import Any, Callable
 
 from celery.schedules import crontab
 from flask_caching.backends.filesystemcache import FileSystemCache
@@ -132,32 +131,6 @@ FEATURE_FLAGS = {
     "MOBILE_CONSUMPTION_MODE": True,
     "SEMANTIC_LAYERS": True,
 }
-
-
-# ---------------------------------------------------------------------------
-# Pesapal extensions (pesapal-superset-kit): Semantic Model (DAX measures) and
-# what-if parameters. Mirrors pesapal-superset-kit/config/superset_config_additions.py.
-# DAX measures and what-if parameters are compiled to SQL with Jinja templates.
-# ---------------------------------------------------------------------------
-FEATURE_FLAGS["ENABLE_TEMPLATE_PROCESSING"] = True
-
-
-def _dax_helper(name: str) -> Callable[..., Any]:
-    """Return a Jinja helper that lazily proxies to ``superset.semantic.dax``."""
-
-    def call(*args: Any, **kwargs: Any) -> Any:
-        from superset.semantic import dax
-
-        return getattr(dax, name)(*args, **kwargs)
-
-    call.__name__ = name
-    return call
-
-
-JINJA_CONTEXT_ADDONS = {
-    n: _dax_helper(n) for n in ("dax_over", "dax_ok", "dax_num", "dax_partition")
-}
-
 EXTENSIONS_PATH = "/app/docker/extensions"
 ALERT_REPORTS_NOTIFICATION_DRY_RUN = False
 # The Docker Compose app service is named "superset" and listens on 8088. Report
