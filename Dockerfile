@@ -200,13 +200,16 @@ RUN mkdir -p \
       requirements \
     && touch superset/static/version_info.json
 
-# Install Playwright and optionally setup headless browsers
+# Install Playwright and optionally setup headless browsers.
+# libatomic1 is required by Playwright's bundled Node.js driver before
+# `playwright install-deps` can execute on Debian slim images.
 ENV PLAYWRIGHT_BROWSERS_PATH=/usr/local/share/playwright-browsers
 
 ARG INCLUDE_CHROMIUM="false"
 ARG INCLUDE_FIREFOX="false"
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
     if [ "${INCLUDE_CHROMIUM}" = "true" ] || [ "${INCLUDE_FIREFOX}" = "true" ]; then \
+        /app/docker/apt-install.sh libatomic1 && \
         uv pip install playwright && \
         playwright install-deps && \
         if [ "${INCLUDE_CHROMIUM}" = "true" ]; then playwright install chromium; fi && \
@@ -324,8 +327,11 @@ RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
 # INCLUDE_CHROMIUM build arg on python-common) because this stage builds
 # FROM lean, which is already past that arg. Chromium ships for both
 # linux/amd64 and linux/arm64, so this works on multi-platform builds.
+# libatomic1 is required by Playwright's bundled Node.js driver before
+# `playwright install-deps` can execute on Debian slim images.
 RUN --mount=type=cache,target=${SUPERSET_HOME}/.cache/uv \
-    uv pip install playwright \
+    /app/docker/apt-install.sh libatomic1 \
+    && uv pip install playwright \
     && playwright install-deps \
     && playwright install chromium
 
