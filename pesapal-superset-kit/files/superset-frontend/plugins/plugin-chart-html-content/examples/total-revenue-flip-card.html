@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: Inter, Helvetica, Arial, sans-serif; color: #323232; padding: 8px; }
+    .card { width: 100%; height: 100%; perspective: 1400px; cursor: pointer; }
+    .inner {
+      position: relative; width: 100%; height: 100%;
+      transition: transform .7s cubic-bezier(.4,.2,.2,1); transform-style: preserve-3d;
+    }
+    .card.flipped .inner { transform: rotateY(180deg); }
+    @media (hover: hover) { .card:hover .inner { transform: rotateY(180deg); } }
+    .face {
+      position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      background: #fff; border: 1px solid #E0E0E0; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.06); overflow: hidden;
+      display: flex; flex-direction: column; padding: 18px 22px 14px 26px;
+    }
+    .face::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: #1B7C8C; }
+    .back { transform: rotateY(180deg); }
+    .title { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #666; }
+    .sub { font-size: 12px; color: #999; margin-top: 2px; }
+    .value { font-size: clamp(32px, 14vmin, 120px); font-weight: 700; line-height: 1.05; margin: 8px 0 6px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #666; align-items: center; }
+    .badge { padding: 3px 9px; border-radius: 12px; font-weight: 700; }
+    .up { color: #2B6144; background: #EEF8F3; }
+    .down { color: #A7323F; background: #FAEDEE; }
+    .flat { color: #666; background: #F0F0F0; }
+    svg.spark { flex: 1; min-height: 40px; width: calc(100% + 22px); margin: 10px -22px -14px -26px; }
+    .hint { position: absolute; right: 14px; top: 14px; font-size: 10px; color: #B2B2B2; }
+    .insights { list-style: none; margin: 12px 0 0; padding: 0; flex: 1; overflow: auto;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; align-content: start; }
+    .insights li { display: flex; gap: 10px; align-items: flex-start; background: #F7F9FA;
+      border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.4; }
+    .ico { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+      font-size: 14px; background: #E3F2F4; }
+    .insights b { color: #1B1F31; }
+    .muted { color: #888; }
+    .msg { color: #666; font-size: 13px; padding: 16px; }
+  </style>
+</head>
+<body>
+  <div id="root" style="height:100%"></div>
+  <script>
+    const { rows } = window.supersetData;
+    const root = document.getElementById('root');
+    const need = ['order_date', 'sales'];
+
+    if (!rows.length || need.some(c => !(c in rows[0]))) {
+      const got = Object.keys(rows[0] || {}).map(c => String(c).replace(/</g, '&lt;')).join(', ') || 'no rows';
+      root.innerHTML =
+        '<div class="msg">Use Query mode "Raw records" with columns: order_number, order_date, sales, ' +
+        'status, product_line, country, customer_name, deal_size. Set Row limit to 10000.' +
+        '<br><br>Columns received right now: <b>' + got + '</b></div>';
+    } else {
+      // ---------- helpers ----------
+      const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+      const money = v => {
+        const a = Math.abs(v);
+        const s = a >= 1e9 ? (v / 1e9).toFixed(1) + 'B'
+          : a >= 1e6 ? (v / 1e6).toFixed(1) + 'M'
+          : a >= 1e3 ? (v / 1e3).toFixed(1) + 'k'
+          : v.toFixed(0);
+        return '$' + s;
+      };
+      const pct = v => `${(v * 100).toFixed(1)}%`;
+      const toDate = v => new Date(typeof v === 'string' && !v.includes('T') && !isNaN(+v) ? +v : v);
+      const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const sumBy = (key) => {
+        const m = {};
+        rows.forEach(r => { const k = r[key] ?? 'Unknown'; m[k] = (m[k] || 0) + r._v; });
+        return Object.entries(m).sort((a, b) => b[1] - a[1]);
+      };
+
+      rows.forEach(r => { r._v = Number(r.sales) || 0; r._d = toDate(r.order_date); });
+      const data = rows.filter(r => !isNaN(r._d));
+      const total = data.reduce((a, r) => a + r._v, 0);
+
+      // ---------- cumulative trend by month ----------
+      const byMonth = {};
+      data.forEach(r => {
+        const k = r._d.getUTCFullYear() * 12 + r._d.getUTCMonth();
+        byMonth[k] = (byMonth[k] || 0) + r._v;
+      });
+      const monthKeys = Object.keys(byMonth).map(Number).sort((a, b) => a - b);
+      let run = 0;
+      const cum = monthKeys.map(k => (run += byMonth[k]));
+      const maxC = cum[cum.length - 1] || 1;
+      const pts = cum.map((v, i) => [cum.length > 1 ? (i / (cum.length - 1)) * 100 : 50, 100 - (v / maxC) * 96]);
+      const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+
+      // ---------- insights ----------
+      const last = new Date(Math.max(...data.map(r => +r._d)));
+      const first = new Date(Math.min(...data.map(r => +r._d)));
+      const ly = last.getUTCFullYear();
+      const cutoff = (d, y) => {
+        const c = new Date(Date.UTC(y, last.getUTCMonth(), last.getUTCDate(), 23, 59, 59));
+        return d.getUTCFullYear() === y && d <= c;
+      };
+      const ytd = data.filter(r => cutoff(r._d, ly)).reduce((a, r) => a + r._v, 0);
+      const pytd = data.filter(r => cutoff(r._d, ly - 1)).reduce((a, r) => a + r._v, 0);
+      const yoy = pytd ? (ytd - pytd) / pytd : null;
+
+      const orders = 'order_number' in rows[0]
+        ? new Set(rows.map(r => r.order_number)).size : null;
+      const bestMonthKey = monthKeys.reduce((a, k) => (byMonth[k] > byMonth[a] ? k : a), monthKeys[0]);
+      const bestMonth = `${MONTHS[bestMonthKey % 12]} ${Math.floor(bestMonthKey / 12)}`;
+
+      const ins = [];
+      if (yoy !== null) {
+        ins.push(['📈', `<b>${ly} YTD ${money(ytd)}</b>, ${yoy >= 0 ? 'up' : 'down'} <b>${pct(Math.abs(yoy))}</b> vs the same period of ${ly - 1} (${money(pytd)}).`]);
+      }
+      if (orders) {
+        ins.push(['🧾', `<b>${orders.toLocaleString()} orders</b> with an average order value of <b>${money(total / orders)}</b>.`]);
+      }
+      ins.push(['🏆', `Best month was <b>${bestMonth}</b> at <b>${money(byMonth[bestMonthKey])}</b> (${pct(byMonth[bestMonthKey] / total)} of all revenue).`]);
+      if ('product_line' in rows[0]) {
+        const [p, v] = sumBy('product_line')[0];
+        ins.push(['🚗', `<b>${esc(p)}</b> is the top product line: <b>${money(v)}</b>, ${pct(v / total)} of revenue.`]);
+      }
+      if ('country' in rows[0]) {
+        const c = sumBy('country');
+        ins.push(['🌍', `<b>${esc(c[0][0])}</b> leads with <b>${pct(c[0][1] / total)}</b>${c[1] ? `, then ${esc(c[1][0])} (${pct(c[1][1] / total)})` : ''}.`]);
+      }
+      if ('customer_name' in rows[0]) {
+        const [cu, v] = sumBy('customer_name')[0];
+        ins.push(['⭐', `Top customer <b>${esc(cu)}</b> brought in <b>${money(v)}</b>.`]);
+      }
+      if ('status' in rows[0]) {
+        const risk = data.filter(r => ['Cancelled', 'On Hold', 'Disputed'].includes(r.status))
+          .reduce((a, r) => a + r._v, 0);
+        ins.push(['⚠️', risk
+          ? `<b>${money(risk)}</b> (${pct(risk / total)}) is Cancelled, On Hold or Disputed.`
+          : 'No revenue is Cancelled, On Hold or Disputed.']);
+      }
+      if ('deal_size' in rows[0]) {
+        const large = data.filter(r => r.deal_size === 'Large').reduce((a, r) => a + r._v, 0);
+        ins.push(['💼', `Large deals make up <b>${pct(large / total)}</b> of revenue.`]);
+      }
+
+      const range = `${MONTHS[first.getUTCMonth()]} ${first.getUTCFullYear()} – ${MONTHS[last.getUTCMonth()]} ${last.getUTCFullYear()}`;
+      const dir = yoy === null || yoy === 0 ? 'flat' : yoy > 0 ? 'up' : 'down';
+
+      root.innerHTML = `
+        <div class="card" id="card">
+          <div class="inner">
+            <div class="face front">
+              <div class="title">Total Revenue</div>
+              <div class="sub">${range}</div>
+              <div class="value" title="$${total.toLocaleString()}">${money(total)}</div>
+              <div class="chips">
+                ${yoy === null ? '' : `<span class="badge ${dir}">${yoy >= 0 ? '▲' : '▼'} ${pct(Math.abs(yoy))}</span><span>${ly} YTD vs ${ly - 1}</span>`}
+                ${orders ? `<span class="muted">· ${orders.toLocaleString()} orders</span>` : ''}
+              </div>
+              <svg class="spark" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#1B7C8C" stop-opacity=".55"/>
+                  <stop offset="1" stop-color="#1B7C8C" stop-opacity="0"/>
+                </linearGradient></defs>
+                <path d="${line} L100,100 L0,100 Z" fill="url(#g)"/>
+                <path d="${line}" fill="none" stroke="#1B7C8C" stroke-width="2"
+                      vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+              </svg>
+              <div class="hint">hover for insights ↻</div>
+            </div>
+            <div class="face back">
+              <div class="title">Revenue insights</div>
+              <div class="sub">${money(total)} · ${range}</div>
+              <ul class="insights">${ins.map(([i, t]) => `<li><span class="ico">${i}</span><span>${t}</span></li>`).join('')}</ul>
+            </div>
+          </div>
+        </div>`;
+      const card = document.getElementById('card');
+      if (!matchMedia('(hover: hover)').matches) {
+        card.addEventListener('click', () => card.classList.toggle('flipped'));
+      }
+    }
+  </script>
+</body>
+</html>
