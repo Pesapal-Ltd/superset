@@ -2587,7 +2587,7 @@ ZOHO_DESK_DEFAULT_CONTACT: dict = {
 # Settlement
 
 # Global kill switch
-SETTLEMENT_ENABLED = True
+SETTLEMENT_ENABLED = False
 
 # Settlement API (
 SETTLEMENT_BASE_URL: str = os.environ.get("SETTLEMENT_BASE_URL", "")
@@ -2605,7 +2605,7 @@ SETTLEMENT_DB_CONNECTION_ID: int | None = _safe_int_env("SETTLEMENT_DB_CONNECTIO
 # Uses SQLAlchemy text() with a :confirmation_code bind parameter.
 SETTLEMENT_LOOKUP_QUERY: str = os.environ.get("SETTLEMENT_LOOKUP_QUERY", "")
 
-DEVICE_FINGERPRINT_BLOCK_ENABLED=True
+DEVICE_FINGERPRINT_BLOCK_ENABLED=False
 # Whether to bump the logging level to ERROR on the flask_appbuilder package
 # Set to False if/when debugging FAB related issues like
 # permission management
